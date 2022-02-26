@@ -1,0 +1,19 @@
+FUNCTION main :
+  temp1 := #0
+  var2 := temp1
+  temp2 := #3
+  var1 := temp2
+LABEL label4 :
+  temp3 := #0
+  IF var1 > temp3 GOTO label3
+  GOTO label1
+LABEL label3 :
+  temp4 := var2 + var1
+  var2 := temp4
+  temp5 := #1
+  temp6 := var1 - temp5
+  var1 := temp6
+  GOTO label4
+LABEL label1 :
+  RETURN var2
+
