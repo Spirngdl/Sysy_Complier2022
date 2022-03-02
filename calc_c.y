@@ -50,15 +50,13 @@ decl: constdecl                            {$$ = $1;}
     | vardecl                              {$$ = $1;}
      ;
 //常量声明
-constdecl: TOK_CONST TOK_INT constdecl_ TOK_SEMICOLON {struct node*temp = mknode(TYPE,NULL,NULL,NULL,yylineno);strcpy(temp->type_id,"const int");temp->type = CONST_INT;
-                                                        $$ = mknode(CONSTDEF,temp,$3,NULL,yylineno);}
+constdecl: TOK_CONST TOK_INT constdef           {strcpy($3->type_value,"const int");$2->kind = CONSTDEF;$$ = $2;}
+         | constdecl TOK_COMMA constdef         {strcpy($3->type_value,"const int");$$ = mknode(VAR_DECL_LIST,$1,$3);}
+         | constdecl TOK_SEMICOLON              {$$ = $1;}
          ;
-constdecl_: constdef TOK_COMMA constdecl_          {$$ = mknode(CONSTDECL_LIST,$1,$3,NULL,yylineno);}
-          | constdef                               {$$ = $1;}
-          ;
 constdef: IDENT                                         {$$ = mknode(ID,NULL,NULL,NULL,yylineno);strcpy($$->type_id,$1);} //ID结点，标识符符号串存放结点的type_id
-        | constdef TOK_LSQUARE INTCONST TOK_RSQUARE     {struct node *temp=mknode(INT,NULL,NULL,NULL,yylineno);temp->type_int=$3;
-                                                        $$=mknode(ARRAY_DEC, $1, temp, NULL,yylineno);}
+        | constdef TOK_LSQUARE INTCONST TOK_RSQUARE     {//struct node *temp=mknode(INT,NULL,NULL,NULL,yylineno);temp->type_int=$3; $$=mknode(ARRAY_DEC, $1, temp, NULL,yylineno);
+                                                         $$ = mkarraynode(ARRAY_DEC,$1,$3,yylineno)}
         | constdef TOK_ASSIGN constinitval              {$$=mknode(TOK_ASSIGN,$1,$3,NULL,yylineno);strcpy($$->type_id,"TOK_ASSIGN");}
         ;
 constinitval: constexp                                                  {$$ = $1;}
@@ -68,16 +66,17 @@ constinitval: constexp                                                  {$$ = $1
 constinitval_:TOK_COMMA constinitval constinitval_              {$$ = mknode(CONSTINITVAL_LIST,$2,$3,NULL,yylineno);}
              |                                                  {$$ = NULL;}
              ;
-vardecl: TOK_INT vardef vardecl_ TOK_SEMICOLON                 {struct node*temp = mknode(TYPE,NULL,NULL,NULL,yylineno);strcpy(temp->type_id,$1);temp->type = INT;
-                                                                struct node*temp2= mknode(VAR_DECL_LIST,$2,$3,NULL,yylineno); $$ = mknode(VAR_DEF,temp,temp2,NULL,yylineno);}
+vardecl: TOK_INT vardef                                         {//struct node*temp = mknode(TYPE,NULL,NULL,NULL,yylineno);strcpy(temp->type_id,$1);temp->type = INT;
+                                                                //struct node*temp2= mknode(VAR_DECL_LIST,$2,$3,NULL,yylineno); $$ = mknode(VAR_DEF,temp,temp2,NULL,yylineno);
+                                                                strcpy($2->type_value,$1);$2->kind = VAR_DEF;$$ = $2;}
+       | vardecl TOK_COMMA vardef                               {strcpy($3-type_value,"int");$$ = mknode(VAR_DECL_LIST,$1,$3);}
+       | vardecl TOK_SEMICOLON                                  {$$ = $1;}
        ;
-vardecl_: TOK_COMMA vardef vardecl_                             {$$ = mknode(VAR_DECL_LIST,$2,$3,NULL,yylineno);}
-        |                                                       {$$ = NULL;}
-        ;
+
 vardef: IDENT                                            {$$ = mknode(ID,NULL,NULL,NULL,yylineno);strcpy($$->type_id,$1);}//ID结点，标识符符号串存放结点的type_id
       | vardef TOK_LSQUARE INTCONST TOK_RSQUARE          {//struct node *temp=mknode(INT,NULL,NULL,NULL,yylineno);temp->type_int=$3;$$=mknode(ARRAY_DEC, $1, temp, NULL,yylineno);
-                                                          mkarraynode($1,$3);}
-      | vardef TOK_ASSIGN initval                        {$$=mknode(TOK_ASSIGN,$1,$3,NULL,yylineno);strcpy($$->type_id,"TOK_ASSIGN");}
+                                                          $$ =  mkarraynode(ARRAY_DEC,$1,$3,yylineno);}
+      | vardef TOK_ASSIGN initval                        {$$ = mknode(TOK_ASSIGN,$1,$3,NULL,yylineno);strcpy($$->type_id,"TOK_ASSIGN");}
       ;
 initval: exp                                                    {$$ = $1;}
         | TOK_LBRACKET initval initval_ TOK_RBRACKET            {$$ = mknode(INITVAL_LIST,$2,$3,NULL,yylineno);}
@@ -86,33 +85,23 @@ initval: exp                                                    {$$ = $1;}
 initval_: TOK_COMMA initval initval_                            {$$ = mknode(INITVAL_LIST,$2,$3,NULL,yylineno);}
         |                                                       {$$ = NULL;}
         ;
-funcdef: TOK_INT IDENT TOK_LPAR funcfparams TOK_RPAR block     {struct node * temp1 = mknode(TYPE,NULL,NULL,NULL,yylineno);strcpy(temp1->type_id,$1);temp1->type = INT;
-                                                                struct node *temp2 = mknode(FUNC_DEC,$4,NULL,NULL,yylineno);strcpy(temp2->type_id,$2);
-                                                                $$ = mknode(FUNC_DEF,temp1,temp2,$6,yylineno);}//该结点对应一个函数定义
-       | TOK_VOID IDENT TOK_LPAR funcfparams TOK_RPAR block     {struct node * temp1 = mknode(TYPE,NULL,NULL,NULL,yylineno);strcpy(temp1->type_id,$1);temp1->type = TOK_VOID;
-                                                                struct node *temp2 = mknode(FUNC_DEC,$4,NULL,NULL,yylineno);strcpy(temp2->type_id,$2);
-                                                                $$ = mknode(FUNC_DEF,temp1,temp2,$6,yylineno);}//该结点对应一个函数定义
-       | TOK_INT IDENT TOK_LPAR TOK_RPAR block                 {struct node * temp1 = mknode(TYPE,NULL,NULL,NULL,yylineno);strcpy(temp1->type_id,$1);temp1->type = INT;
-                                                                struct node *temp2 = mknode(FUNC_DEC,NULL,NULL,NULL,yylineno);strcpy(temp2->type_id,$2);
-                                                                $$ = mknode(FUNC_DEF,temp1,temp2,$5,yylineno);}//该结点对应一个函数定义
-       | TOK_VOID IDENT TOK_LPAR TOK_RPAR block                 {struct node * temp1 = mknode(TYPE,NULL,NULL,NULL,yylineno);strcpy(temp1->type_id,$1);temp1->type = TOK_VOID;
-                                                                struct node *temp2 = mknode(FUNC_DEC,NULL,NULL,NULL,yylineno);strcpy(temp2->type_id,$2);
-                                                                $$ = mknode(FUNC_DEF,temp1,temp2,$5,yylineno);}//该结点对应一个函数定义
+funcdef: TOK_INT IDENT TOK_LPAR funcfparams TOK_RPAR block     {struct node* temp = mknode(FUNC_DEF,$4,$6,NULL,yylineno);strcpy(temp->type_id,$2);strcpy(temp->type_value,"int");
+                                                                temp->type = TOK_INT;$$ = temp;}//该结点对应一个函数定义
+       | TOK_VOID IDENT TOK_LPAR funcfparams TOK_RPAR block     {struct node* temp = mknode(FUNC_DEF,$4,$6,NULL,yylineno);strcpy(temp->type_id,$2);strcpy(temp->type_value,"void");
+                                                                temp->type = TOK_VOID;$$ = temp;}//该结点对应一个函数定义
+       | TOK_INT IDENT TOK_LPAR TOK_RPAR block                 {struct node* temp = mknode(FUNC_DEF,$5,NULL,NULL,yylineno);strcpy(temp->type_id,$2);strcpy(temp->type_value,"int");
+                                                                temp->type = TOK_INT;$$ = temp;}//该结点对应一个函数定义
+       | TOK_VOID IDENT TOK_LPAR TOK_RPAR block                 {struct node* temp = mknode(FUNC_DEF,$5,NULL,NULL,yylineno);strcpy(temp->type_id,$2);strcpy(temp->type_value,"void");
+                                                                temp->type = TOK_VOID;$$ = temp;}//该结点对应一个函数定义
         ;
 funcfparams: funcfparam TOK_COMMA funcfparams                   {$$ = mknode(PARAM_LIST,$1,$3,NULL,yylineno);}
            | funcfparam                                         {$$ = mknode(PARAM_LIST,$1,NULL,NULL,yylineno);}
            ;
-funcfparam: TOK_INT IDENT TOK_LSQUARE TOK_RSQUARE funcfparam_     {struct node * temp1 = mknode(TYPE,NULL,NULL,NULL,yylineno);strcpy(temp1->type_id,$1);temp1->type = INT;
-                                                                   struct node *temp2 = mknode(ID,NULL,NULL,NULL,yylineno);strcpy(temp2->type_id,$2);
-                                                                   $$ = mknode(PARAM_ARRAY,temp1,temp2,$5,yylineno); }
-          | TOK_INT IDENT                                         {struct node * temp1 = mknode(TYPE,NULL,NULL,NULL,yylineno);strcpy(temp1->type_id,$1);temp1->type = INT;
-                                                                   struct node *temp2 = mknode(ID,NULL,NULL,NULL,yylineno);strcpy(temp2->type_id,$2);
-                                                                   $$ = mknode(PARAM_DEC,temp1,temp2,NULL,yylineno);}               
+funcfparam: TOK_INT IDENT TOK_LSQUARE TOK_RSQUARE               {struct node *temp = mknode(PARAM_ARRAY,NULL,NULL,NULL,yylineno);strcpy(temp->type_id,$2);strcpy(temp->type_value,"int");temp->type = TOK_INT;
+                                                                 temp->array_dimension = 1;$$ = temp;}
+          | funcfparam TOK_LSQUARE INTCONST TOK_RSQUARE         {$$ = mkarraynode(PARAM_ARRAY,$1,$3,yylineno);}
+          | TOK_INT IDENT                                         {struct node *temp = mknode(PARAM_DEC,NULL,NULL,yylineno); strcpy(temp->type_id,$2);strcpy(temp->type_value,"int"); }               
           ;
-funcfparam_: TOK_LSQUARE INTCONST TOK_RSQUARE funcfparam_       {struct node *temp=mknode(INT,NULL,NULL,NULL,yylineno);temp->type_int=$2;
-                                                                 $$=mknode(ARRAY_DEC, temp, $4, NULL,yylineno);}
-            |                                                   {$$ = NULL;}
-            ;
 block: TOK_LBRACKET block_ TOK_RBRACKET                         {$$ = mknode(BLOCK,$2,NULL,NULL,yylineno);}
      ;
 block_: blockitem block_                                        {$$ = mknode(BLOCK_LIST,$1,$2,NULL,yylineno);}

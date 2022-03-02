@@ -9,21 +9,23 @@ struct node *mknode(int kind, struct node *first, struct node *second, struct no
     T->pos = pos;
     return T;
 }
-struct node *mkarrnode(struct node *first, int length)
+struct node *mkarrnode(int kind, struct node *first, int length, int pos)
 {
+
     if (first->kind == ID)
     {
         struct node *newnode = (struct node *)malloc(sizeof(struct node));
-        newnode->kind = ARRAY_DEC;
-        newnode->array_dimension = 1; //初始化维度
-        newnode->length[0] = length;  //该维度的长度
-        strcpy(newnode->type_id,first->type_id);//传递id
+        newnode->kind = kind;                     // ARRAY_DEC
+        newnode->array_dimension = 1;             //初始化维度
+        newnode->length[0] = length;              //该维度的长度
+        strcpy(newnode->type_id, first->type_id); //传递id
+        newnode->place = pos;
         return newnode;
     }
     else
     {
-        first->length[first->array_dimension] = length;//该维度的长度
-        first->array_dimension += 1;//维度加1
+        first->length[first->array_dimension] = length; //该维度的长度
+        first->array_dimension += 1;                    //维度加1
         return first;
     }
 }
