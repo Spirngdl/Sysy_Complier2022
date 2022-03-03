@@ -9,9 +9,9 @@ struct node *mknode(int kind, struct node *first, struct node *second, struct no
     T->pos = pos;
     return T;
 }
+
 struct node *mkarrnode(int kind, struct node *first, int length, int pos)
 {
-
     if (first->kind == ID)
     {
         struct node *newnode = (struct node *)malloc(sizeof(struct node));

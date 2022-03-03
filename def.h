@@ -86,8 +86,8 @@ struct opn
     int offset; //变量单元偏移量，或函数在符号表的定义位置序号，目标代码生成时用
 };
 
-struct codenode
-{                                  //三地址TAC代码结点,采用双向循环链表存放中间语言代码
+struct codenode                     //三地址TAC代码结点,采用双向循环链表存放中间语言代码
+{                                  
     int op;                        // TAC代码的运算符种类
     struct opn opn1, opn2, result; // 2个操作数和运算结果
     struct codenode *next, *prior;
@@ -123,7 +123,7 @@ struct Struct
     struct Struct *next;
 };
 
-struct node
+struct node             //语法树结点
 {                        //以下对结点属性定义没有考虑存储效率，只是简单地列出要用到的一些属性
     enum node_kind kind; //结点类型
     //char struct_name[33];
@@ -181,6 +181,7 @@ struct symbol_scope_begin
     int TX[30];
     int top;
 } symbol_scope_TX;
+//基本块
 struct Block
 {
     struct codenode *tac_list; //中间代码集合
@@ -189,11 +190,12 @@ struct Block
 };
 /*generate AST*/
 struct node *mknode(int kind, struct node *first, struct node *second, struct node *third, int pos);
-
+struct node *mkarrnode(int kind, struct node *first, int length, int pos);
 /*semantic analysis*/
 void semantic_error(int line, char *msg1, char *msg2);
 int searchSymbolTable(char *name);
 int fillSymbolTable(char *name, char *alias, int level, int type, char flag, int offset);
+
 void Exp(struct node *T);
 void boolExp(struct node *T);
 void semantic_Analysis(struct node *T);
@@ -243,10 +245,10 @@ void unaryexp(struct node *T);
 void block(struct node *T);
 void block_list(struct node *T);
 int match_param(int i, struct node *T);
+//划分基本块
+struct Block *divide_block(struct codenode *head); //分块根据in out
+struct Block *newblock(); // 创建新结点
+struct Block *merge_block(struct Block *head, struct Block *newnode); //连接结点
 
-struct Block *divide_block(struct codenode *head);
-struct Block *newblock();
-struct Block *merge_block(struct Block *head, struct Block *newnode);
-
-void make_uid(struct codenode*head);
-void change_label(struct codenode *head);
+void make_uid(struct codenode*head); // 设置uid
+void change_label(struct codenode *head);// 把label改成uid
