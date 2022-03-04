@@ -189,7 +189,7 @@ struct Block
 };
 /*generate AST*/
 struct node *mknode(int kind, struct node *first, struct node *second, struct node *third, int pos);
-
+struct node *mkarrnode(int kind,struct node*first,int length,int pos);
 /*semantic analysis*/
 void semantic_error(int line, char *msg1, char *msg2);
 int searchSymbolTable(char *name);

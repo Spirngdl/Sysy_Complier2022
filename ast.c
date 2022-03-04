@@ -11,7 +11,16 @@ struct node *mknode(int kind, struct node *first, struct node *second, struct no
 }
 struct node *mkarrnode(int kind, struct node *first, int length, int pos)
 {
-
+    if(kind = PARAM_ARRAY)
+    {
+        struct node *newnode = (struct node *)malloc(sizeof(struct node));
+        newnode->kind = kind;                     // ARRAY_DEC
+        newnode->array_dimension = 2;             //初始化维度
+        newnode->length[1] = length;              //该维度的长度
+       // strcpy(newnode->type_id, first->type_id); //传递id
+        newnode->place = pos;
+        return newnode;
+    }
     if (first->kind == ID)
     {
         struct node *newnode = (struct node *)malloc(sizeof(struct node));
