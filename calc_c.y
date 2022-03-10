@@ -50,7 +50,7 @@ decl: constdecl                            {$$ = $1;}
     | vardecl                              {$$ = $1;}
      ;
 //常量声明
-constdecl: TOK_CONST TOK_INT constdef constdecl_ TOK_SEMICOLON  {strcpy($3->type_value,"const int");$3->type = CONST_INT;
+constdecl: TOK_CONST TOK_INT constdef constdecl_ TOK_SEMICOLON  {strcpy($3->type_value,"const int");$3->type = CONST_INT;$3->kind = VAR_DECL;
                                                                 if($4 != NULL)
                                                                 {struct node * temp = mknode(VAR_DECL_LIST,$3,$4,NULL,yylineno);$$ = temp;}
                                                                 else
@@ -71,13 +71,13 @@ constinitval: constexp                                                  {$$ = $1
 constinitval_:TOK_COMMA constinitval constinitval_              {$$ = mknode(CONSTINITVAL_LIST,$2,$3,NULL,yylineno);}
              |                                                  {$$ = NULL;}
              ;
-vardecl: TOK_INT vardef vardecl_ TOK_SEMICOLON                   {strcpy($2->type_value,"int");$2->type = TOK_INT;$2->kind = VAR_DEF;
+vardecl: TOK_INT vardef vardecl_ TOK_SEMICOLON                   {strcpy($2->type_value,"int");$2->type = TOK_INT;$2->kind = VAR_DECL;
                                                                  if($3 != NULL)
-                                                                        {struct node * temp = mknode(VAR_DECL_LIST,$2,$3,NULL,yylineno); $$ = temp;}
-                                                                 else{$$=$2;}
-                                                                 }
+                                                                  {struct node * temp = mknode(VAR_DECL_LIST,$2,$3,NULL,yylineno); $$ = temp;}
+                                                                 else
+                                                                 {$$=$2;} }
         ;
-vardecl_: TOK_COMMA vardef vardecl_                             {strcpy($2->type_value,"int");$2->type = TOK_INT;$2->kind = VAR_DEF;$$ = mknode(VAR_DECL_LIST,$2,$3,NULL,yylineno);}
+vardecl_: TOK_COMMA vardef vardecl_                             {strcpy($2->type_value,"int");$2->type = TOK_INT;$2->kind = VAR_DECL;$$ = mknode(VAR_DECL_LIST,$2,$3,NULL,yylineno);}
         |                                                       {$$ = NULL;}
         ;
 
@@ -85,7 +85,8 @@ vardecl_: TOK_COMMA vardef vardecl_                             {strcpy($2->type
 vardef: IDENT                                            {$$ = mknode(ID,NULL,NULL,NULL,yylineno);strcpy($$->type_id,$1);}//ID结点，标识符符号串存放结点的type_id
       | vardef TOK_LSQUARE INTCONST TOK_RSQUARE          {//struct node *temp=mknode(INT,NULL,NULL,NULL,yylineno);temp->type_int=$3;$$=mknode(ARRAY_DEC, $1, temp, NULL,yylineno);
                                                           $$ =  mkarrnode(ARRAY_DEC,$1,$3,yylineno);}
-      | vardef TOK_ASSIGN initval                        {$$ = mknode(TOK_ASSIGN,$1,$3,NULL,yylineno);strcpy($$->type_id,"TOK_ASSIGN");}
+      | vardef TOK_ASSIGN initval                        {/*$$ = mknode(TOK_ASSIGN,$1,$3,NULL,yylineno);strcpy($$->type_id,"TOK_ASSIGN");*/
+                                                         $1->ptr[0] = $3;$$ = $1;}
       ;
 initval: exp                                                    {$$ = $1;}
         | TOK_LBRACKET initval initval_ TOK_RBRACKET            {$$ = mknode(INITVAL_LIST,$2,$3,NULL,yylineno);}

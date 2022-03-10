@@ -5,6 +5,7 @@
 #include "calc_c.tab.h"
 enum node_kind
 {
+    VAR_DECL,
     VAR_DECL_LIST,
     COMPUNIT_LIST,
     CONSTDEF,
@@ -25,7 +26,8 @@ enum node_kind
     DECL,
     BLOCK,
     NONE,
-
+    ARRAY_ASSIGN,
+    
     EXT_DEF_LIST,
     EXT_VAR_DEF,
     FUNC_DEF,
@@ -71,16 +73,17 @@ enum node_kind
 struct opn
 {
     int kind; //标识操作的类型
-    int type; //标识操作数的类型
+    //int type; //标识操作数的类型
     union
     {
         int const_int;     //整常数值，立即数
-        float const_float; //浮点常数值，立即数
-        char const_char;   //字符常数值，立即数
-        char *const_string;
+      //  float const_float; //浮点常数值，立即数
+        //char const_char;   //字符常数值，立即数
+        //char *const_string;
         char id[33]; //变量或临时变量的别名或标号字符串
-        struct Array *type_array;
-        struct Struct *type_struct;
+        //指针连接符号表
+        //struct Array *type_array;
+        //struct Struct *type_struct;
     };
     int level;  //变量的层号，0表示是全局变量，数据保存在静态数据区
     int offset; //变量单元偏移量，或函数在符号表的定义位置序号，目标代码生成时用
@@ -144,10 +147,12 @@ struct node
 
     int level;                  //层号
     int place;                  //表示结点对应的变量或运算结果符号表的位置序号
+    
     char Etrue[15], Efalse[15]; //对布尔表达式的翻译时，真假转移目标的标号
     char Snext[15];             //该结点对饮语句执行后的下一条语句位置标号
     char Scontinu[15];
     char Sbreak[15];
+    
     struct codenode *code; //该结点中间代码链表头指针
     char op[10];
     int type;   //结点对应值的类型

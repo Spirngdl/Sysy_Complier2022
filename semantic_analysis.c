@@ -83,7 +83,7 @@ void print_IR(struct codenode *head)
     struct codenode *h = head;
     do
     {
-        //printf("%d: ",h->UID);
+        // printf("%d: ",h->UID);
         if (h->opn1.kind == INT)
             sprintf(opnstr1, "#%d", h->opn1.const_int);
         if (h->opn1.kind == ID)
@@ -224,9 +224,11 @@ void semantic_Analysis(struct node *T)
             break;
         case CONSTDEF:
             const_var_def(T);
-        case VAR_DEF: //处理一个局部变量定义,将第一个孩子(TYPE结点)中的类型送到第二个孩子的类型域
-            var_def(T);
+        case VAR_DECL_LIST: //处理一个局部变量定义,将第一个孩子(TYPE结点)中的类型送到第二个孩子的类型域
+            var_decl_list(T);
             break;
+        case VAR_DECL:
+            var_decl(T);
         // case EXT_VAR_DEF: //处理外部说明,将第一个孩子(TYPE结点)中的类型送到第二个孩子的类型域
         //     ext_var_def(T);
         //     break;
@@ -314,7 +316,7 @@ void compunit_list(struct node *T)
         T->code = merge(2, T->code, T->ptr[1]->code);
     }
 }
-void const_def_list(struct node *T)
+void var_decl_list(struct node *T)
 {
     if (!T->ptr[0])
         return;
@@ -329,6 +331,77 @@ void const_def_list(struct node *T)
         T->ptr[1]->offset = T->ptr[0]->offset + T->ptr[0]->width;
         semantic_Analysis(T->ptr[1]); //访问list中的其他
         T->code = merge(2, T->code, T->ptr[1]->code);
+    }
+}
+void var_decl(struct node *T) //变量声明 -- kind -- NAME --TYPE
+{
+    int rtn, num, width;
+    struct opn opn1, opn2, opn3, result;
+    struct node *T0;
+    T->code = NULL;
+    if (T->array_dimension == 0) //非数组
+    {
+        if (T->type == TOK_INT)
+            T->width = 4;
+
+        rtn = fillSymbolTable(T->type_id, newAlias(), LEV, T->type, 'V', T->width + T->offset); //填符号表
+        if (rtn == -1)
+            semantic_error(T->pos, T->type_id, "变量重复定义");
+        else
+            T->place = rtn;    //用place记录在符号表中的位置
+        if (T->ptr[0] != NULL) //赋值
+        {
+            T->ptr[0]->offset = T->offset + T->width;
+            Exp(T->ptr[0]);
+            opn1.kind = ID;
+            strcpy(opn1.id, symbolTable.symbols[T->ptr[0]->place].alias); //赋上别名
+            result.kind = ID;
+            strcpy(result.id, symbolTable.symbols[T->place].alias);                              //赋上别名
+            T->code = merge(3, T->code, T->ptr[0]->code, genIR(TOK_ASSIGN, opn1, opn2, result)); //合并三地址代码
+        }
+    }
+    else if (T->array_dimension > 0) //数组了
+    {
+        if (T->type == TOK_INT)
+        {
+            int widths = 0;
+            for (int i = 0; i < T->array_dimension; i++)
+            {
+                widths = widths + 4 * T->length[i];
+            }
+            T->width = widths;
+        }
+        rtn = fillSymbolTable(T->type_id, newAlias(), LEV, T->type, 'V', T->width + T->offset); //填符号表
+        if (rtn == -1)
+            semantic_error(T->pos, T->type_id, "变量重复定义");
+        else
+            T->place = rtn;    //用place记录在符号表中的位置
+        if (T->ptr[0] != NULL) //数组赋值
+        {
+            //假设只有一维
+            T->ptr[0]->offset = T->offset + T->width;
+            T0 = T->ptr[0];
+            for (int i = 0; i < T->length[0]; i++)
+            {
+                struct opn op1, op2, res; // res[op2] = op1 op2 = 4 * i
+                Exp(T0->ptr[0]);
+                op1.kind = ID;
+                strcpy(op1.id, symbolTable.symbols[T0->ptr[0]->place].alias); //附上别名
+
+                struct opn ops1, ops2;                                     //用于生成语句 op2 = 4 * i
+                int place = temp_add(newTemp(), LEV, INT, 'V', T->offset); //生成临时变量
+                op2.kind = ID;
+                strcpy(op2.id, symbolTable.symbols[place].alias);
+                ops1.kind = INT;
+                ops1.const_int = i;
+                ops2.kind = INT;
+                ops2.const_int = 4;
+                struct codenode *addr = genIR(TOK_MUL, ops1, ops2, op2); //生成三地址代码
+
+                T->code = merge(3, T->code, T0->ptr[0]->code, addr, genIR(ARRAY_ASSIGN, op1, op2, res)); //合并三地址代码
+                T0 = T0->ptr[1];
+            }
+        }
     }
 }
 void const_var_def(struct node *T)
@@ -834,19 +907,47 @@ void const_var_list(struct node *T)
     }
 }
 
-void func_def(struct node *T)
+void func_def(struct node *T) // kind type name ---params -- block
 {
-    if (!strcmp(T->ptr[0]->type_id, "int"))
-    {
-        T->ptr[1]->type = INT;
-    }
-    if (!strcmp(T->ptr[0]->type_id, "void"))
-    {
-        T->ptr[1]->type = TOK_VOID;
-    }
+    // if (!strcmp(T->ptr[0]->type_id, "int"))
+    // {
+    //     T->ptr[1]->type = INT;
+    // }
+    // if (!strcmp(T->ptr[0]->type_id, "void"))
+    // {
+    //     T->ptr[1]->type = TOK_VOID;
+    // }
+
     //填写函数定义信息到符号表
-    T->width = 0;                  //函数的宽度设置为0，不会对外部变量的地址分配产生影响
-    T->offset = DX;                //设置局部变量在活动记录中的偏移量初值
+    T->width = 0;   //函数的宽度设置为0，不会对外部变量的地址分配产生影响
+    T->offset = DX; //设置局部变量在活动记录中的偏移量初值
+    //处理函数名
+    int rtn;
+    struct opn opn1, opn2, result;
+    rtn = fillSymbolTable(T->type_id, newAlias(), LEV, T->type, 'F', 0);
+    if (rtn == -1)
+    {
+        semantic_error(T->pos, T->type_id, "函数名重复使用，可能是函数重复定义，语义错误");
+        return;
+    }
+    else
+        T->place = rtn;
+    result.kind = ID;
+    strcpy(result.id, T->type_id);
+    result.offset = rtn;
+    T->code = genIR(FUNCTION, opn1, opn2, result);
+    T->offset = DX;
+    if (T->ptr[0])
+    {
+        //判断是否有参数
+        T->ptr[0]->offset = T->offset;
+        semantic_Analysis(T->ptr[0]); //处理函数参数列表
+        T->width = T->ptr[0]->width;
+        symbolTable.symbols[rtn].paramnum = T->ptr[0]->num;
+        T->code = merge(2, T->code, T->ptr[0]->code);
+    }
+    else
+        symbolTable.symbols[rtn].paramnum = 0, T->width = 0;
     semantic_Analysis(T->ptr[1]);  //处理函数名和参数结点部分，这里不考虑用寄存器传递参数
     T->offset += T->ptr[1]->width; //用形参单元宽度修改函数局部变量的起始偏移量
     T->ptr[2]->offset = T->offset;
@@ -1088,7 +1189,7 @@ void make_uid(struct codenode *head)
             uid++;
         }
         temp = temp->next;
-    }while(temp != head);
+    } while (temp != head);
 }
 void change_label(struct codenode *head)
 {
@@ -1097,36 +1198,34 @@ void change_label(struct codenode *head)
     {
         if (hcode->op == GOTO || hcode->op == JLE || hcode->op == JLT || hcode->op == JLT || hcode->op == JGE || hcode->op == JGT || hcode->op == EQ || hcode->op == NEQ)
         {
-            struct codenode*temp = head;
+            struct codenode *temp = head;
             while (temp)
             {
-                if(temp->op == LABEL)
+                if (temp->op == LABEL)
                 {
-                    if(!strcmp(temp->result.id,hcode->result.id))
+                    if (!strcmp(temp->result.id, hcode->result.id))
                     {
-                        sprintf(hcode->result.id,"%d",temp->UID);
+                        sprintf(hcode->result.id, "%d", temp->UID);
                         break;
                     }
                 }
                 temp = temp->next;
             }
-            
         }
         hcode = hcode->next;
-    }while(hcode != head);
+    } while (hcode != head);
     hcode = head;
     do
     {
-        if(hcode->op == LABEL)
+        if (hcode->op == LABEL)
         {
             hcode->prior->next = hcode->next;
             hcode->next->prior = hcode->prior;
-            struct codenode*delnode = hcode;
+            struct codenode *delnode = hcode;
             hcode = hcode->next;
             free(delnode);
         }
         else
             hcode = hcode->next;
-    }while(hcode != head);
-    
+    } while (hcode != head);
 }
