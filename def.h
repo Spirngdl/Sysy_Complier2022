@@ -27,7 +27,8 @@ enum node_kind
     BLOCK,
     NONE,
     ARRAY_ASSIGN,
-    
+    BACK,
+
     EXT_DEF_LIST,
     EXT_VAR_DEF,
     FUNC_DEF,
@@ -73,17 +74,17 @@ enum node_kind
 struct opn
 {
     int kind; //标识操作的类型
-    //int type; //标识操作数的类型
+    int type; //标识操作数的类型
     union
     {
-        int const_int;     //整常数值，立即数
-      //  float const_float; //浮点常数值，立即数
-        //char const_char;   //字符常数值，立即数
-        //char *const_string;
+        int const_int; //整常数值，立即数
+                       //  float const_float; //浮点常数值，立即数
+        // char const_char;   //字符常数值，立即数
+        // char *const_string;
         char id[33]; //变量或临时变量的别名或标号字符串
         //指针连接符号表
-        //struct Array *type_array;
-        //struct Struct *type_struct;
+        // struct Array *type_array;
+        // struct Struct *type_struct;
     };
     int level;  //变量的层号，0表示是全局变量，数据保存在静态数据区
     int offset; //变量单元偏移量，或函数在符号表的定义位置序号，目标代码生成时用
@@ -96,7 +97,7 @@ struct codenode
     struct codenode *next, *prior;
     int in;  //划分基本块
     int out; //划分基本块
-    int UID;    //编号
+    int UID; //编号
 };
 
 union Value
@@ -129,30 +130,30 @@ struct Struct
 struct node
 {                        //以下对结点属性定义没有考虑存储效率，只是简单地列出要用到的一些属性
     enum node_kind kind; //结点类型
-    //char struct_name[33];
+    // char struct_name[33];
     union
     {
-        char type_id[33]; //由标识符生成的叶结点  ** int **
+        char type_id[33];    //由标识符生成的叶结点  ** int **
         char type_value[33]; // int or void
-        int type_int;     //由整常数生成的叶结点  
-        //float type_float; //由浮点常数生成的叶结点 
+        int type_int;        //由整常数生成的叶结点
+        // float type_float; //由浮点常数生成的叶结点
         char type_char;
 
         struct Array *type_array;
         struct Struct *type_struct;
     };
-    struct node *ptr[3];        //子树指针，由kind确定有多少棵子树
-    int array_dimension;        //数组维度
-    int length[10];             //每一维的长度
+    struct node *ptr[3]; //子树指针，由kind确定有多少棵子树
+    int array_dimension; //数组维度
+    int length[10];      //每一维的长度
 
-    int level;                  //层号
-    int place;                  //表示结点对应的变量或运算结果符号表的位置序号
-    
+    int level; //层号
+    int place; //表示结点对应的变量或运算结果符号表的位置序号
+
     char Etrue[15], Efalse[15]; //对布尔表达式的翻译时，真假转移目标的标号
     char Snext[15];             //该结点对饮语句执行后的下一条语句位置标号
     char Scontinu[15];
     char Sbreak[15];
-    
+
     struct codenode *code; //该结点中间代码链表头指针
     char op[10];
     int type;   //结点对应值的类型
@@ -189,12 +190,14 @@ struct symbol_scope_begin
 struct Block
 {
     struct codenode *tac_list; //中间代码集合
-    struct Block *next;        //下一个子块
-    struct Block *pre;         //上一个
+    int num_children;          //统计孩子结点个数
+    struct Block *children[2];
+    // struct Block *next; //下一个子块
+    // struct Block *pre;  //上一个
 };
 /*generate AST*/
 struct node *mknode(int kind, struct node *first, struct node *second, struct node *third, int pos);
-struct node *mkarrnode(int kind,struct node*first,int length,int pos);
+struct node *mkarrnode(int kind, struct node *first, int length, int pos);
 /*semantic analysis*/
 void semantic_error(int line, char *msg1, char *msg2);
 int searchSymbolTable(char *name);
@@ -212,6 +215,7 @@ char *newTemp();
 struct codenode *genIR(int op, struct opn opn1, struct opn opn2, struct opn result);
 struct codenode *genLabel(char *label);
 struct codenode *genGoto(char *label);
+struct codenode *genback(int kind);
 struct codenode *merge(int num, ...);
 void print_IR(struct codenode *head);
 
@@ -231,6 +235,12 @@ void param_dec(struct node *T);
 
 void def_list(struct node *T);
 void var_def(struct node *T);
+
+void else_if_stmt(struct node *T, char *Efalse); // else if的情况且无else
+void if_else_stmt(struct node *T);
+void else_if_else_stmt(struct node *T, char *Enext);
+void if_stmt(struct node *T);
+void while_stmt(struct node *T);
 
 void if_then(struct node *T);
 void if_then_else(struct node *T);
@@ -253,5 +263,5 @@ struct Block *divide_block(struct codenode *head);
 struct Block *newblock();
 struct Block *merge_block(struct Block *head, struct Block *newnode);
 
-void make_uid(struct codenode*head);
+void make_uid(struct codenode *head);
 void change_label(struct codenode *head);

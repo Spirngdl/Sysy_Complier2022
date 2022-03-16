@@ -1,5 +1,7 @@
 #include "def.h"
 
+
+
 struct Block *newblock()
 {
     struct Block *block = (struct Block *)malloc(sizeof(struct Block));

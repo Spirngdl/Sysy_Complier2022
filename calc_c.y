@@ -112,7 +112,7 @@ funcfparam: TOK_INT IDENT TOK_LSQUARE TOK_RSQUARE funcfparam_     {if($5 != NULL
                                                                     else{
                                                                             struct node *temp1 = mknode(PARAM_DEC,NULL,NULL,NULL,yylineno);strcpy(temp1->type_id,$2);strcpy(temp1->type_value,"int");temp1->type = TOK_INT;
                                                                     }}
-          | TOK_INT IDENT                                          {struct node *temp = mknode(PARAM_DEC,$2,NULL,NULL,yylineno); strcpy(temp->type_id,$2);strcpy(temp->type_value,"int"); }               
+          | TOK_INT IDENT                                          {struct node *temp = mknode(PARAM_DEC,$2,NULL,NULL,yylineno); strcpy(temp->type_id,$2);temp->type = TOK_INT;strcpy(temp->type_value,"int"); }               
           ;
 funcfparam_: funcfparam_ TOK_LSQUARE INTCONST TOK_RSQUARE       {$$ = mknode(PARAM_ARRAY,$1,$3,yylineno);}
             |                                                   {$$ = NULL;}

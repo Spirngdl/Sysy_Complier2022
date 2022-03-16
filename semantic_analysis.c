@@ -75,7 +75,15 @@ struct codenode *genGoto(char *label)
     strcpy(h->result.id, label);
     h->next = h->prior = h;
     return h;
-    h->in = h->out = 0;
+}
+//生成待回填指令
+struct codenode *genback(int kind)
+{
+    struct codenode *h = (struct codenode *)malloc(sizeof(struct codenode));
+    h->op = BACK;
+    h->result.kind = kind;
+    h->next = h->prior = h;
+    return h;
 }
 void print_IR(struct codenode *head)
 {
@@ -250,15 +258,6 @@ void semantic_Analysis(struct node *T)
         case BLOCK_LIST:
             block_list(T);
             break;
-        // case COMP_STM:
-        //     comp_stm(T);
-        //     break;
-        // case DEF_LIST:
-        //     def_list(T);
-        //     break;
-        // case STM_LIST:
-        //     stmt_list(T);
-        //     break;
         case IF_THEN:
             if_then(T);
             break; //控制语句都还没有处理offset和width属性
@@ -404,122 +403,8 @@ void var_decl(struct node *T) //变量声明 -- kind -- NAME --TYPE
         }
     }
 }
-void const_var_def(struct node *T)
-{
-    int rtn, num, width;
-    struct node *T0;
-    struct opn opn1, opn2, result;
-    T->code = NULL;
-    T->ptr[1]->type = CONST_INT;
-    T0 = T->ptr[1]; // T0为变量名列表子树根指针，对ID、ASSIGNOP类结点在登记到符号表，作为局部变量
-    num = 0;
-    T0->offset = T->offset;
-    T->width = 0;
-    while (T0) //处理const_list上的结点
-    {
-        num++;
-        T0->ptr[0]->type = T0->type; //类型属性向下传递
-        if (T0->ptr[1])
-            T0->ptr[1]->type = T0->type;
-        T0->ptr[0]->offset = T0->offset; //偏移量向下传递
-        if (T0->ptr[1])
-            T0->ptr[1]->offset = T0->offset + width;
-        if (T0->ptr[0]->kind == ID)
-        {
-            rtn = fillSymbolTable(T0->ptr[0]->type_id, newAlias(), LEV, T0->ptr[0]->type, 'V', T->offset + T->width); //此处偏移量未计算，暂时为0
-            if (rtn == -1)
-                semantic_error(T0->ptr[0]->pos, T0->ptr[0]->type_id, "变量重复定义");
-            else
-                T0->ptr[0]->place = rtn;
-            T->width += width;
-        }
-        else if (T0->ptr[0]->kind == TOK_ASSIGN)
-        {
-            if (T0->ptr[0]->ptr[0]->kind == ID)
-            {
-                rtn = fillSymbolTable(T0->ptr[0]->ptr[0]->type_id, newAlias(), LEV, T0->ptr[0]->type, 'V', T->offset + T->width); //此处偏移量未计算，暂时为0
-                if (rtn == -1)
-                    semantic_error(T0->ptr[0]->ptr[0]->pos, T0->ptr[0]->ptr[0]->type_id, "变量重复定义");
-                else
-                {
-                    T0->ptr[0]->place = rtn;
-                    T0->ptr[0]->ptr[1]->offset = T->offset + T->width + width;
-                    Exp(T0->ptr[0]->ptr[1]);
-                    opn1.kind = ID;
-                    strcpy(opn1.id, symbolTable.symbols[T0->ptr[0]->ptr[1]->place].alias);
-                    result.kind = ID;
-                    strcpy(result.id, symbolTable.symbols[T0->ptr[0]->place].alias);
-                    T->code = merge(3, T->code, T0->ptr[0]->ptr[1]->code, genIR(TOK_ASSIGN, opn1, opn2, result));
-                }
-                T->width += width + T0->ptr[0]->ptr[1]->width;
-            }
-        }
-        T0 = T0->ptr[1];
-    }
-    // T->ptr[0]->width = 4;
-    // T->ptr[0]->offset = T->offset; //这个变量的偏移量向下传递
-    // const_var_list(T->ptr[0]);     //处理变量说明中的标识符序列
-    // T->width = (T->ptr[0]->width) * T->ptr[0]->num;
-    // T->code = NULL;
-}
-void var_def(struct node *T)
-{
-    int rtn, num, width;
-    struct node *T0;
-    struct opn opn1, opn2, opn3, result;
-    T->code = NULL;
-    T->ptr[1]->type = INT;
-    T0 = T->ptr[1]; // T0为变量名列表子树根指针，对ID、ASSIGNOP类结点在登记到符号表，作为局部变量
-    num = 0;
-    T0->offset = T->offset;
-    T->width = 0;
-    while (T0) //处理var_list上的结点
-    {
-        num++;
-        T0->ptr[0]->type = T0->type; //类型属性向下传递
-        if (T0->ptr[1])
-            T0->ptr[1]->type = T0->type;
-        T0->ptr[0]->offset = T0->offset; //偏移量向下传递
-        if (T0->ptr[1])
-            T0->ptr[1]->offset = T0->offset + width;
-        if (T0->ptr[0]->kind == ID)
-        {
-            rtn = fillSymbolTable(T0->ptr[0]->type_id, newAlias(), LEV, T0->ptr[0]->type, 'V', T->offset + T->width); //此处偏移量未计算，暂时为0
-            if (rtn == -1)
-                semantic_error(T0->ptr[0]->pos, T0->ptr[0]->type_id, "变量重复定义");
-            else
-                T0->ptr[0]->place = rtn;
-            T->width += width;
-        }
-        else if (T0->ptr[0]->kind == TOK_ASSIGN)
-        {
-            if (T0->ptr[0]->ptr[0]->kind == ID)
-            {
-                rtn = fillSymbolTable(T0->ptr[0]->ptr[0]->type_id, newAlias(), LEV, T0->ptr[0]->type, 'V', T->offset + T->width); //此处偏移量未计算，暂时为0
-                if (rtn == -1)
-                    semantic_error(T0->ptr[0]->ptr[0]->pos, T0->ptr[0]->ptr[0]->type_id, "变量重复定义");
-                else
-                {
-                    T0->ptr[0]->place = rtn;
-                    T0->ptr[0]->ptr[1]->offset = T->offset + T->width + width;
-                    Exp(T0->ptr[0]->ptr[1]);
-                    opn1.kind = ID;
-                    strcpy(opn1.id, symbolTable.symbols[T0->ptr[0]->ptr[1]->place].alias);
-                    result.kind = ID;
-                    strcpy(result.id, symbolTable.symbols[T0->ptr[0]->place].alias);
-                    T->code = merge(3, T->code, T0->ptr[0]->ptr[1]->code, genIR(TOK_ASSIGN, opn1, opn2, result));
-                }
-                T->width += width + T0->ptr[0]->ptr[1]->width;
-            }
-        }
-        T0 = T0->ptr[1];
-    }
-    // T->ptr[0]->width = 4;
-    // T->ptr[0]->offset = T->offset; //这个变量的偏移量向下传递
-    // const_var_list(T->ptr[0]);     //处理变量说明中的标识符序列
-    // T->width = (T->ptr[0]->width) * T->ptr[0]->num;
-    // T->code = NULL;
-}
+
+
 //处理基本表达式
 void Exp(struct node *T)
 {
@@ -687,46 +572,47 @@ void relop_exp(struct node *T)
     Exp(T->ptr[1]);
 }
 //布尔表达式
-void boolExp(struct node *T)
+void boolExp(struct node *T, char *Etrue, char *Efalse) //二代
 {
     struct opn opn1, opn2, result;
     int op;
     int rtn;
+    char mi_label[20];
     if (T)
     {
         switch (T->kind)
         {
-        case INT:
-            if (T->type_id != 0)
-                T->code = genGoto(T->Etrue);
+        case INT: //常数
+            if (T->type_int != 0)
+                T->code = genGoto(Etrue);
             else
-                T->code = genGoto(T->Efalse);
+                T->code = genGoto(Efalse);
             break;
         case ID: //查符号表，获得符号表中的位置，类型送type
             rtn = searchSymbolTable(T->type_id);
             if (rtn == -1)
-                semantic_error(T->pos, T->type_id, "函数未定义，语义错误");
+                semantic_error(T->pos, T->type_id, "变量未定义，语义错误");
             if (symbolTable.symbols[rtn].flag == 'F')
-                semantic_error(T->pos, T->type_id, "不是函数名，不能进行函数调用，语义错误");
+                semantic_error(T->pos, T->type_id, "不是函数名，不能进行函数调用");
             else
             {
                 opn1.kind = ID;
-                strcpy(opn1.id, symbolTable.symbols[rtn].alias);
-                opn1.offset = symbolTable.symbols[rtn].offset;
+                strcpy(opn1.id, symbolTable.symbols[rtn].alias); //传递别名
+                opn1.offset = symbolTable.symbols[rtn].offset;   //传递偏移量
                 opn2.kind = INT;
                 opn2.const_int = 0;
                 result.kind = ID;
-                strcpy(result.id, T->Etrue);
-                T->code = genIR(NEQ, opn1, opn2, result);
-                T->code = merge(2, T->code, genGoto(T->Efalse));
+                strcpy(result.id, Etrue);
+                T->code = genIR(NEQ, opn1, opn2, result); //生成三地址代码
+                T->code = merge(2, T->code, genGoto(Efalse));
             }
             T->width = 0;
             break;
-        case RELOP: //处理关系运算表达式,2个操作数都按基本表达式处理
-            T->ptr[0]->offset = T->ptr[1]->offset = T->offset;
-            Exp(T->ptr[0]);
+        case RELOP:                                            //处理关系运算表达式,2个操作数都按基本表达式处理
+            T->ptr[0]->offset = T->ptr[1]->offset = T->offset; //传递偏移量
+            Exp(T->ptr[0]);                                    //处理左
             T->width = T->ptr[0]->width;
-            Exp(T->ptr[1]);
+            Exp(T->ptr[1]); //处理右
             if (T->width < T->ptr[1]->width)
                 T->width = T->ptr[1]->width;
             opn1.kind = ID;
@@ -736,7 +622,7 @@ void boolExp(struct node *T)
             strcpy(opn2.id, symbolTable.symbols[T->ptr[1]->place].alias);
             opn2.offset = symbolTable.symbols[T->ptr[1]->place].offset;
             result.kind = ID;
-            strcpy(result.id, T->Etrue);
+            strcpy(result.id, Etrue); // B.true
             if (strcmp(T->type_id, "<") == 0)
                 op = JLT;
             else if (strcmp(T->type_id, "<=") == 0)
@@ -749,55 +635,155 @@ void boolExp(struct node *T)
                 op = EQ;
             else if (strcmp(T->type_id, "!=") == 0)
                 op = NEQ;
-            T->code = genIR(op, opn1, opn2, result);
-            T->code = merge(4, T->ptr[0]->code, T->ptr[1]->code, T->code, genGoto(T->Efalse));
+            T->code = genIR(op, opn1, opn2, result);                                        // if ... GOTO B.true
+            T->code = merge(4, T->ptr[0]->code, T->ptr[1]->code, T->code, genGoto(Efalse)); // GOTO B.false
             break;
         case TOK_AND:
-        case TOK_OR:
-            if (T->kind == TOK_AND)
-            {
-                strcpy(T->ptr[0]->Etrue, newLabel());
-                strcpy(T->ptr[0]->Efalse, T->Efalse);
-            }
-            else
-            {
-                strcpy(T->ptr[0]->Etrue, T->Etrue);
-                strcpy(T->ptr[0]->Efalse, newLabel());
-            }
-            strcpy(T->ptr[1]->Etrue, T->Etrue);
-            strcpy(T->ptr[1]->Efalse, T->Efalse);
+            strcpy(mi_label, newLabel());
             T->ptr[0]->offset = T->ptr[1]->offset = T->offset;
-            boolExp(T->ptr[0]);
+            boolExp(T->ptr[0], mi_label, Efalse); //处理左边的表达式
+
             T->width = T->ptr[0]->width;
-            boolExp(T->ptr[1]);
+            boolExp(T->ptr[1], Etrue, Efalse); //处理右边表达式
             if (T->width < T->ptr[1]->width)
                 T->width = T->ptr[1]->width;
-            if (T->kind == TOK_AND)
-                T->code = merge(3, T->ptr[0]->code, genLabel(T->ptr[0]->Etrue), T->ptr[1]->code);
-            else
-                T->code = merge(3, T->ptr[0]->code, genLabel(T->ptr[0]->Efalse), T->ptr[1]->code);
-            break;
-
+            T->code = merge(3, T->ptr[0]->code, genLabel(mi_label), T->ptr[1]->code);
+        case TOK_OR:
+            strcpy(mi_label, newLabel());
+            T->ptr[0]->offset = T->ptr[1]->offset = T->offset;
+            boolExp(T->ptr[0], Etrue, mi_label);
+            T->width = T->ptr[0]->width;
+            boolExp(T->ptr[1], Etrue, Efalse);
+            if (T->width < T->ptr[1]->width)
+                T->width = T->ptr[1]->width;
+            T->code = merge(3, T->ptr[0]->code, genLabel(mi_label), T->ptr[1]->code);
         case UNARYEXP:
             if (T->ptr[0]->kind == TOK_NOT)
             {
-                strcpy(T->ptr[1]->Etrue, T->Efalse);
-                strcpy(T->ptr[1]->Efalse, T->Etrue);
+                boolExp(T->ptr[1], Efalse, Etrue);
             }
             else
             {
-                strcpy(T->ptr[1]->Etrue, T->Etrue);
-                strcpy(T->ptr[1]->Efalse, T->Efalse);
+                boolExp(T->ptr[1], Etrue, Efalse);
             }
-            boolExp(T->ptr[1]);
             T->width = T->ptr[1]->width;
             T->code = T->ptr[1]->code;
-            break;
         default:
             break;
         }
     }
 }
+//布尔表达式
+// void boolExp_(struct node *T)
+// {
+//     struct opn opn1, opn2, result;
+//     int op;
+//     int rtn;
+//     if (T)
+//     {
+//         switch (T->kind)
+//         {
+//         case INT:
+//             if (T->type_id != 0)
+//                 T->code = genGoto(T->Etrue);
+//             else
+//                 T->code = genGoto(T->Efalse);
+//             break;
+//         case ID: //查符号表，获得符号表中的位置，类型送type
+//             rtn = searchSymbolTable(T->type_id);
+//             if (rtn == -1)
+//                 semantic_error(T->pos, T->type_id, "函数未定义，语义错误");
+//             if (symbolTable.symbols[rtn].flag == 'F')
+//                 semantic_error(T->pos, T->type_id, "不是函数名，不能进行函数调用，语义错误");
+//             else
+//             {
+//                 opn1.kind = ID;
+//                 strcpy(opn1.id, symbolTable.symbols[rtn].alias);
+//                 opn1.offset = symbolTable.symbols[rtn].offset;
+//                 opn2.kind = INT;
+//                 opn2.const_int = 0;
+//                 result.kind = ID;
+//                 strcpy(result.id, T->Etrue);
+//                 T->code = genIR(NEQ, opn1, opn2, result);
+//                 T->code = merge(2, T->code, genGoto(T->Efalse));
+//             }
+//             T->width = 0;
+//             break;
+//         case RELOP: //处理关系运算表达式,2个操作数都按基本表达式处理
+//             T->ptr[0]->offset = T->ptr[1]->offset = T->offset;
+//             Exp(T->ptr[0]);
+//             T->width = T->ptr[0]->width;
+//             Exp(T->ptr[1]);
+//             if (T->width < T->ptr[1]->width)
+//                 T->width = T->ptr[1]->width;
+//             opn1.kind = ID;
+//             strcpy(opn1.id, symbolTable.symbols[T->ptr[0]->place].alias);
+//             opn1.offset = symbolTable.symbols[T->ptr[0]->place].offset;
+//             opn2.kind = ID;
+//             strcpy(opn2.id, symbolTable.symbols[T->ptr[1]->place].alias);
+//             opn2.offset = symbolTable.symbols[T->ptr[1]->place].offset;
+//             result.kind = ID;
+//             strcpy(result.id, T->Etrue);
+//             if (strcmp(T->type_id, "<") == 0)
+//                 op = JLT;
+//             else if (strcmp(T->type_id, "<=") == 0)
+//                 op = JLE;
+//             else if (strcmp(T->type_id, ">") == 0)
+//                 op = JGT;
+//             else if (strcmp(T->type_id, ">=") == 0)
+//                 op = JGE;
+//             else if (strcmp(T->type_id, "==") == 0)
+//                 op = EQ;
+//             else if (strcmp(T->type_id, "!=") == 0)
+//                 op = NEQ;
+//             T->code = genIR(op, opn1, opn2, result);
+//             T->code = merge(4, T->ptr[0]->code, T->ptr[1]->code, T->code, genGoto(T->Efalse));
+//             break;
+//         case TOK_AND:
+//         case TOK_OR:
+//             if (T->kind == TOK_AND)
+//             {
+//                 strcpy(T->ptr[0]->Etrue, newLabel());
+//                 strcpy(T->ptr[0]->Efalse, T->Efalse);
+//             }
+//             else
+//             {
+//                 strcpy(T->ptr[0]->Etrue, T->Etrue);
+//                 strcpy(T->ptr[0]->Efalse, newLabel());
+//             }
+//             strcpy(T->ptr[1]->Etrue, T->Etrue);
+//             strcpy(T->ptr[1]->Efalse, T->Efalse);
+//             T->ptr[0]->offset = T->ptr[1]->offset = T->offset;
+//             boolExp(T->ptr[0]);
+//             T->width = T->ptr[0]->width;
+//             boolExp(T->ptr[1]);
+//             if (T->width < T->ptr[1]->width)
+//                 T->width = T->ptr[1]->width;
+//             if (T->kind == TOK_AND)
+//                 T->code = merge(3, T->ptr[0]->code, genLabel(T->ptr[0]->Etrue), T->ptr[1]->code);
+//             else
+//                 T->code = merge(3, T->ptr[0]->code, genLabel(T->ptr[0]->Efalse), T->ptr[1]->code);
+//             break;
+//         case UNARYEXP:
+//             if (T->ptr[0]->kind == TOK_NOT)
+//             {
+//                 strcpy(T->ptr[1]->Etrue, T->Efalse);
+//                 strcpy(T->ptr[1]->Efalse, T->Etrue);
+//             }
+//             else
+//             {
+//                 strcpy(T->ptr[1]->Etrue, T->Etrue);
+//                 strcpy(T->ptr[1]->Efalse, T->Efalse);
+//             }
+//             boolExp(T->ptr[1]);
+//             T->width = T->ptr[1]->width;
+//             T->code = T->ptr[1]->code;
+//             break;
+//         default:
+//             break;
+//         }
+//     }
+// }
 //函数调用
 void func_call_exp(struct node *T)
 {
@@ -909,14 +895,6 @@ void const_var_list(struct node *T)
 
 void func_def(struct node *T) // kind type name ---params -- block
 {
-    // if (!strcmp(T->ptr[0]->type_id, "int"))
-    // {
-    //     T->ptr[1]->type = INT;
-    // }
-    // if (!strcmp(T->ptr[0]->type_id, "void"))
-    // {
-    //     T->ptr[1]->type = TOK_VOID;
-    // }
 
     //填写函数定义信息到符号表
     T->width = 0;   //函数的宽度设置为0，不会对外部变量的地址分配产生影响
@@ -948,50 +926,22 @@ void func_def(struct node *T) // kind type name ---params -- block
     }
     else
         symbolTable.symbols[rtn].paramnum = 0, T->width = 0;
-    semantic_Analysis(T->ptr[1]);  //处理函数名和参数结点部分，这里不考虑用寄存器传递参数
-    T->offset += T->ptr[1]->width; //用形参单元宽度修改函数局部变量的起始偏移量
-    T->ptr[2]->offset = T->offset;
-    strcpy(T->ptr[2]->Snext, newLabel()); //函数体语句执行结束后的位置属性
-    semantic_Analysis(T->ptr[2]);         //处理函数体结点
+    T->offset += T->width;
+    T->ptr[1]->offset = T->offset; //修改函数语句块的偏移量
+    // semantic_Analysis(T->ptr[1]);  //处理函数名和参数结点部分，这里不考虑用寄存器传递参数
+    // T->offset += T->ptr[1]->width; //用形参单元宽度修改函数局部变量的起始偏移量
+    // T->ptr[2]->offset = T->offset;
+    // strcpy(T->ptr[2]->Snext, newLabel()); //函数体语句执行结束后的位置属性
+    semantic_Analysis(T->ptr[2]); //处理函数体结点
     //计算活动记录大小,这里offset属性存放的是活动记录大小，不是偏移
-    symbolTable.symbols[T->ptr[1]->place].offset = T->offset + T->ptr[2]->width;
-    T->code = merge(3, T->ptr[1]->code, T->ptr[2]->code, genLabel(T->ptr[2]->Snext)); //函数体的代码作为函数的代码
+    symbolTable.symbols[T->ptr[1]->place].offset = T->offset + T->ptr[1]->width;
+    T->code = merge(2, T->code, T->ptr[1]->code); //函数体的代码作为函数的代码
 }
 
-void func_dec(struct node *T)
-{
-    int rtn;
-    struct opn opn1, opn2, result;
-    rtn = fillSymbolTable(T->type_id, newAlias(), LEV, T->type, 'F', 0); //函数不在数据区中分配单元，偏移量为0
-    if (rtn == -1)
-    {
-        semantic_error(T->pos, T->type_id, "函数名重复使用，可能是函数重复定义，语义错误");
-        return;
-    }
-    else
-        T->place = rtn;
-
-    result.kind = ID;
-    strcpy(result.id, T->type_id);
-    result.offset = rtn;
-    T->code = genIR(FUNCTION, opn1, opn2, result); //生成中间代码：FUNCTION 函数名
-    T->offset = DX;                                //设置形式参数在活动记录中的偏移量初值
-    if (T->ptr[0])
-    {
-        //判断是否有参数
-        T->ptr[0]->offset = T->offset;
-        semantic_Analysis(T->ptr[0]); //处理函数参数列表
-        T->width = T->ptr[0]->width;
-        symbolTable.symbols[rtn].paramnum = T->ptr[0]->num;
-        T->code = merge(2, T->code, T->ptr[0]->code); //连接函数名和参数代码序列
-    }
-    else
-        symbolTable.symbols[rtn].paramnum = 0, T->width = 0;
-}
 void param_list(struct node *T)
 {
     T->ptr[0]->offset = T->offset;
-    semantic_Analysis(T->ptr[0]);
+    semantic_Analysis(T->ptr[0]); //第一个参数
     if (T->ptr[1])
     {
         T->ptr[1]->offset = T->offset + T->ptr[0]->width;
@@ -1021,7 +971,7 @@ void param_dec(struct node *T)
     result.kind = ID;
     strcpy(result.id, symbolTable.symbols[rtn].alias);
     result.offset = T->offset;
-    T->code = genIR(PARAM, opn1, opn2, result); //生成：FUNCTION 函数名
+    T->code = genIR(PARAM, opn1, opn2, result); //生成：PARAM 参数名
 }
 void block(struct node *T)
 {
@@ -1045,13 +995,13 @@ void block_list(struct node *T)
     T->code = NULL;
     if (T->ptr[0])
     { //为跳转语句生成标号
-        if (T->ptr[0]->kind == IF_THEN || T->ptr[0]->kind == IF_THEN_ELSE || T->ptr[0]->kind == TOK_WHILE)
-        {
-            strcpy(T->ptr[0]->Snext, newLabel());
-        }
-        strcpy(T->ptr[0]->Snext, T->Snext);       // S.next属性向下传递
-        strcpy(T->ptr[0]->Sbreak, T->Sbreak);     // while语句的break
-        strcpy(T->ptr[0]->Scontinu, T->Scontinu); // continue
+        // if (T->ptr[0]->kind == IF_THEN || T->ptr[0]->kind == IF_THEN_ELSE || T->ptr[0]->kind == TOK_WHILE)
+        // {
+        //     strcpy(T->ptr[0]->Snext, newLabel());
+        // }
+        // strcpy(T->ptr[0]->Snext, T->Snext);       // S.next属性向下传递
+        // strcpy(T->ptr[0]->Sbreak, T->Sbreak);     // while语句的break
+        // strcpy(T->ptr[0]->Scontinu, T->Scontinu); // continue
         T->ptr[0]->offset = T->offset;
         semantic_Analysis(T->ptr[0]); //
         T->width += T->ptr[0]->width;
@@ -1059,80 +1009,176 @@ void block_list(struct node *T)
     }
     if (T->ptr[1])
     {
-        // 2条以上语句连接,S.next属性向下传递
-        strcpy(T->ptr[1]->Snext, T->Snext);
-        strcpy(T->ptr[1]->Sbreak, T->Sbreak);     // while语句的break
-        strcpy(T->ptr[1]->Scontinu, T->Scontinu); // continue
+        // // 2条以上语句连接,S.next属性向下传递
+        // strcpy(T->ptr[1]->Snext, T->Snext);
+        // strcpy(T->ptr[1]->Sbreak, T->Sbreak);     // while语句的break
+        // strcpy(T->ptr[1]->Scontinu, T->Scontinu); // continue
         T->ptr[1]->offset = T->offset + T->width;
         semantic_Analysis(T->ptr[1]); //处理复合语句的语句序列
-        //序列中第1条为if，if else,while,(break,continu)?时，第2条前需要标号
-        if (T->ptr[0]->kind == IF_THEN || T->ptr[0]->kind == IF_THEN_ELSE || T->ptr[0]->kind == TOK_WHILE)
-        {
-            T->code = merge(3, T->code, genLabel(T->ptr[0]->Snext), T->ptr[1]->code);
-        }
-        else
-            T->code = merge(2, T->code, T->ptr[1]->code);
+                                      //序列中第1条为if，if else,while,(break,continu)?时，第2条前需要标号
+                                      // if (T->ptr[0]->kind == IF_THEN || T->ptr[0]->kind == IF_THEN_ELSE || T->ptr[0]->kind == TOK_WHILE)
+                                      // {
+                                      //     T->code = merge(3, T->code, genLabel(T->ptr[0]->Snext), T->ptr[1]->code);
+                                      // }
+                                      // else
+        T->code = merge(2, T->code, T->ptr[1]->code);
 
         T->width += T->ptr[1]->width;
     }
 }
-
-void if_then(struct node *T)
+void if_stmt(struct node *T)
 {
-    strcpy(T->ptr[0]->Etrue, newLabel()); //设置条件语句真假转移位置
-    strcpy(T->ptr[0]->Efalse, T->Snext);
-    strcpy(T->ptr[0]->Sbreak, T->Sbreak);     // while语句的break
-    strcpy(T->ptr[0]->Scontinu, T->Scontinu); // continue
-    T->ptr[0]->offset = T->ptr[1]->offset = T->offset;
-    boolExp(T->ptr[0]);
-    T->width = T->ptr[0]->width;
-    strcpy(T->ptr[1]->Snext, T->Snext);
-    strcpy(T->ptr[1]->Sbreak, T->Sbreak);     // while语句的break
-    strcpy(T->ptr[1]->Scontinu, T->Scontinu); // continue
-    semantic_Analysis(T->ptr[1]);             // if子句
+    //两个子节点，一个判断语句，一个代码块
+    T->ptr[0]->offset = T->ptr[1]->offset = T->offset; //设置偏移量
+    char Etrue[20] = newLabel();
+    char Efalse[20] = newLabel();
+    boolExp(T->ptr[0], Etrue, Efalse); //处理判断语句
+    T->width = T->ptr[0]->width;       //传递宽度
+    semantic_Analysis(T->ptr[1]);      //处理代码块
     if (T->width < T->ptr[1]->width)
         T->width = T->ptr[1]->width;
-    T->code = merge(3, T->ptr[0]->code, genLabel(T->ptr[0]->Etrue), T->ptr[1]->code);
+    T->code = merge(4, T->ptr[0]->code, genLabel(Etrue), T->ptr[1]->code, genLabel(Efalse));
 }
-
-void if_then_else(struct node *T)
+// void if_then(struct node *T)
+// {
+//     strcpy(T->ptr[0]->Etrue, newLabel()); //设置条件语句真假转移位置
+//     strcpy(T->ptr[0]->Efalse, T->Snext);
+//     strcpy(T->ptr[0]->Sbreak, T->Sbreak);     // while语句的break
+//     strcpy(T->ptr[0]->Scontinu, T->Scontinu); // continue
+//     T->ptr[0]->offset = T->ptr[1]->offset = T->offset;
+//     boolExp(T->ptr[0]);
+//     T->width = T->ptr[0]->width;
+//     strcpy(T->ptr[1]->Snext, T->Snext);
+//     strcpy(T->ptr[1]->Sbreak, T->Sbreak);     // while语句的break
+//     strcpy(T->ptr[1]->Scontinu, T->Scontinu); // continue
+//     semantic_Analysis(T->ptr[1]);             // if子句
+//     if (T->width < T->ptr[1]->width)
+//         T->width = T->ptr[1]->width;
+//     T->code = merge(3, T->ptr[0]->code, genLabel(T->ptr[0]->Etrue), T->ptr[1]->code);
+// }
+void if_else_stmt(struct node *T)
 {
-    strcpy(T->ptr[0]->Etrue, newLabel()); //设置条件语句真假转移位置
-    strcpy(T->ptr[0]->Efalse, newLabel());
+    char Etrue[20] = newLabel();
+    char Efalse[20] = newLabel();
+    char Enext[20] = newLabel();
     T->ptr[0]->offset = T->ptr[1]->offset = T->ptr[2]->offset = T->offset;
-    boolExp(T->ptr[0]); //条件，要单独按短路代码处理
+    boolExp(T->ptr[0], Etrue, Efalse); //处理if处判断，为false则跳else
     T->width = T->ptr[0]->width;
-    strcpy(T->ptr[1]->Snext, T->Snext);
-    strcpy(T->ptr[1]->Sbreak, T->Sbreak);     // while语句的break
-    strcpy(T->ptr[1]->Scontinu, T->Scontinu); // continue
-    semantic_Analysis(T->ptr[1]);             // if子句
+    semantic_Analysis(T->ptr[1]); // if的代码块
     if (T->width < T->ptr[1]->width)
         T->width = T->ptr[1]->width;
-    strcpy(T->ptr[2]->Snext, T->Snext);
-    strcpy(T->ptr[2]->Sbreak, T->Sbreak);     // while语句的break
-    strcpy(T->ptr[2]->Scontinu, T->Scontinu); // continue
-    semantic_Analysis(T->ptr[2]);             // else子句
+    if (T->ptr[2]->kind == IF_THEN) //遇到else if情况传递Enext
+        else_if_stmt(T->ptr[2], Enext);
+    else if (T->ptr[2]->kind == IF_THEN_ELSE)
+        else_if_else_stmt(T->ptr[2], Enext);
+    else
+        semantic_Analysis(T->ptr[2]); //开始else
     if (T->width < T->ptr[2]->width)
         T->width = T->ptr[2]->width;
-    T->code = merge(6, T->ptr[0]->code, genLabel(T->ptr[0]->Etrue), T->ptr[1]->code,
-                    genGoto(T->Snext), genLabel(T->ptr[0]->Efalse), T->ptr[2]->code);
+    T->code = merge(5, T->ptr[0]->code, genLabel(Etrue), T->ptr[1]->code, genGoto(Enext), genLabel(Efalse), T->ptr[2]->code);
 }
-
-void while_dec(struct node *T)
+void else_if_stmt(struct node *T, char *Efalse) // else if的情况且无else
 {
-    strcpy(T->ptr[0]->Etrue, newLabel()); //子结点继承属性的计算
-    strcpy(T->ptr[0]->Efalse, T->Snext);
-    T->ptr[0]->offset = T->ptr[1]->offset = T->offset;
-    boolExp(T->ptr[0]); //循环条件，要单独按短路代码处理
-    T->width = T->ptr[0]->width;
-    strcpy(T->ptr[1]->Snext, newLabel());
-    strcpy(T->ptr[1]->Sbreak, T->Snext);
-    strcat(T->ptr[1]->Scontinu, T->ptr[1]->Snext);
-    semantic_Analysis(T->ptr[1]); //循环体
+    //两个子节点，一个判断语句，一个代码块
+    T->ptr[0]->offset = T->ptr[1]->offset = T->offset; //设置偏移量
+    char Etrue[20] = newLabel();
+    boolExp(T->ptr[0], Etrue, Efalse); //处理判断语句
+    T->width = T->ptr[0]->width;       //传递宽度
+    semantic_Analysis(T->ptr[1]);      //处理代码块
     if (T->width < T->ptr[1]->width)
         T->width = T->ptr[1]->width;
-    T->code = merge(5, genLabel(T->ptr[1]->Snext), T->ptr[0]->code, genLabel(T->ptr[0]->Etrue), T->ptr[1]->code, genGoto(T->ptr[1]->Snext));
+    T->code = merge(4, T->ptr[0]->code, genLabel(Etrue), T->ptr[1]->code, Efalse);
 }
+void else_if_else_stmt(struct node *T, char *Enext) // else if else情况跟if else情况相同但是Enext由上级传递
+{
+    char Etrue[20] = newLabel();
+    char Efalse[20] = newLabel();
+    T->ptr[0]->offset = T->ptr[1]->offset = T->ptr[2]->offset = T->offset;
+    boolExp(T->ptr[0], Etrue, Efalse); //处理if处判断，为false则跳else
+    T->width = T->ptr[0]->width;
+    semantic_Analysis(T->ptr[1]); // if的代码块
+    if (T->width < T->ptr[1]->width)
+        T->width = T->ptr[1]->width;
+    if (T->ptr[2]->kind == IF_THEN) //遇到else if情况传递Enext
+        else_if_stmt(T->ptr[2], Enext);
+    else if (T->ptr[2]->kind == IF_THEN_ELSE)
+        else_if_else_stmt(T->ptr[2], Enext);
+    else
+        semantic_Analysis(T->ptr[2]); //开始else
+    if (T->width < T->ptr[2]->width)
+        T->width = T->ptr[2]->width;
+    T->code = merge(5, T->ptr[0]->code, genLabel(Etrue), T->ptr[1]->code, genGoto(Enext), genLabel(Efalse), T->ptr[2]);
+}
+// void if_then_else(struct node *T)
+// {
+//     strcpy(T->ptr[0]->Etrue, newLabel()); //设置条件语句真假转移位置
+//     strcpy(T->ptr[0]->Efalse, newLabel());
+//     T->ptr[0]->offset = T->ptr[1]->offset = T->ptr[2]->offset = T->offset;
+//     boolExp(T->ptr[0]); //条件，要单独按短路代码处理
+//     T->width = T->ptr[0]->width;
+//     strcpy(T->ptr[1]->Snext, T->Snext);
+//     strcpy(T->ptr[1]->Sbreak, T->Sbreak);     // while语句的break
+//     strcpy(T->ptr[1]->Scontinu, T->Scontinu); // continue
+//     semantic_Analysis(T->ptr[1]);             // if子句
+//     if (T->width < T->ptr[1]->width)
+//         T->width = T->ptr[1]->width;
+//     strcpy(T->ptr[2]->Snext, T->Snext);
+//     strcpy(T->ptr[2]->Sbreak, T->Sbreak);     // while语句的break
+//     strcpy(T->ptr[2]->Scontinu, T->Scontinu); // continue
+//     semantic_Analysis(T->ptr[2]);             // else子句
+//     if (T->width < T->ptr[2]->width)
+//         T->width = T->ptr[2]->width;
+//     T->code = merge(6, T->ptr[0]->code, genLabel(T->ptr[0]->Etrue), T->ptr[1]->code,
+//                     genGoto(T->Snext), genLabel(T->ptr[0]->Efalse), T->ptr[2]->code);
+// }
+
+void while_stmt(struct node *T)
+{
+    char Etrue[20] = newLabel();
+    char Efalse[20] = newLabel();
+    char Enext[20] = newLabel();
+    T->ptr[0]->offset = T->ptr[1]->offset = T->offset; //偏移量
+    boolExp(T->ptr[0], Etrue, Efalse);
+    T->width = T->ptr[0]->width;
+    semantic_Analysis(T->ptr[1]); //处理循环体
+    if (T->width < T->ptr[1]->width)
+        T->width = T->ptr[1]->width;
+    T->code = merge(6, genLabel(Enext), T->ptr[0]->code, genLabel(Etrue), T->ptr[1]->code, genGoto(Enext), genLabel(Efalse)); //合并代码
+    //开始回填
+    struct codenode *h = T->code;
+    do
+    {
+        if (h->op == BACK)
+        {
+            h->op = GOTO;
+            if (h->result.kind == TOK_BREAK)
+            {
+                strcpy(h->result.id, Efalse);
+            }
+            else if (h->result.kind == TOK_CONTINUE)
+            {
+                strcpy(h->result.id, Enext);
+            }
+            
+        }
+        h = h->next;
+    } while (h != T->code);
+}
+// void while_dec(struct node *T)
+// {
+//     strcpy(T->ptr[0]->Etrue, newLabel()); //子结点继承属性的计算
+//     strcpy(T->ptr[0]->Efalse, T->Snext);
+//     T->ptr[0]->offset = T->ptr[1]->offset = T->offset;
+//     boolExp(T->ptr[0]); //循环条件，要单独按短路代码处理
+//     T->width = T->ptr[0]->width;
+//     strcpy(T->ptr[1]->Snext, newLabel());
+//     strcpy(T->ptr[1]->Sbreak, T->Snext);
+//     strcat(T->ptr[1]->Scontinu, T->ptr[1]->Snext);
+//     semantic_Analysis(T->ptr[1]); //循环体
+//     if (T->width < T->ptr[1]->width)
+//         T->width = T->ptr[1]->width;
+//     T->code = merge(5, genLabel(T->ptr[1]->Snext), T->ptr[0]->code, genLabel(T->ptr[0]->Etrue), T->ptr[1]->code, genGoto(T->ptr[1]->Snext));
+// }
 
 void return_dec(struct node *T)
 {
@@ -1169,12 +1215,12 @@ void return_dec(struct node *T)
 
 void break_stmt(struct node *T)
 {
-    T->code = genGoto(T->Sbreak);
+    T->code = genback(TOK_BREAK);
 }
 
 void continue_stmt(struct node *T)
 {
-    T->code = genGoto(T->Scontinu);
+    T->code = genback(TOK_CONTINUE);
 }
 
 void make_uid(struct codenode *head)
