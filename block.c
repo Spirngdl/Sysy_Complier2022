@@ -1,62 +1,59 @@
 #include "def.h"
 
-
-
-struct Block *newblock()
+struct Block *newblock() //创建新块
 {
     struct Block *block = (struct Block *)malloc(sizeof(struct Block));
-    block->next = NULL;
-    block->pre = NULL;
+
     block->tac_list = NULL;
     return block;
 }
-struct Block *merge_block(struct Block *head, struct Block *newnode)
+void fillblock(struct Block *node) //添加块
 {
-    head->next = newnode->next;
-    newnode->pre = head;
+    blocks.block[blocks.index] = node;
+    blocks.index++;
 }
 
 struct Block *divide_block(struct codenode *head)
 {
     struct Block *hblock = newblock();
     struct codenode *hcode = head;
-    hcode->in = 1;
+    int id = 0;
+    hcode->in = 1; //第一句是in
     while (hcode)
     {
-        if (hcode->op == GOTO)
+        if (hcode->op == GOTO || hcode->op == JLE || hcode->op == JLT || hcode->op == JGE || hcode->op == JGT || hcode->op == EQ || hcode->op == NEQ)
         {
-            hcode->out = 1;
-            hcode->next->in = 1;
+            hcode->out = 1;      // 条件跳转语句是out
+            hcode->next->in = 1; //下一句为in
             struct codenode *temp = head;
             while (temp)
             {
-                if (temp->op == LABEL)
-                    if (!strcmp(hcode->result.id, temp->result.id))
-                    {
-                        temp->in = 1;
-                        temp->prior->out = 1;
-                    }
+                if (temp->UID == hcode->result.const_int) //跳转目标语句
+                {
+                    temp->in = 1;
+                    temp->prior->out = 1;
+                }
                 temp = temp->next;
             }
         }
         hcode = hcode->next;
     }
+    hblock->id = id++; //基本块id
     hblock->tac_list = head;
-    struct Block *tblcok = hblock;
+    fillblock(hblock);
     hcode = head;
     while (hcode)
     {
         if (hcode->out)
         {
             struct Block *temp = newblock();
-            temp->tac_list = hcode->next;
-            hcode->next = NULL;
-            tblcok->next = temp;
-            temp->pre = tblcok;
-            tblcok = temp;
+            temp->id = id++;
+            temp->tac_list = hcode->next; //遇到新的in创建新块
+            fillblock(temp);
+            hcode->next = NULL; //断开
             hcode = temp->tac_list;
         }
         else
-            hcode = hcode->next;    
+            hcode = hcode->next;
     }
 }
