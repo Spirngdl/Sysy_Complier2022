@@ -1,4 +1,4 @@
-#include "def.h"
+#include "include/def.h"
 
 int searchSymbolTable(char *name)
 {
@@ -21,6 +21,7 @@ int searchSymbolTable(char *name)
     }
     return -1;
 }
+
 
 // 首先根据name查符号表，不能重复定义 重复定义返回-1
 int fillSymbolTable(char *name, char *alias, int level, int type, int flag)

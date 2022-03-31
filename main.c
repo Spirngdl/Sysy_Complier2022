@@ -1,4 +1,4 @@
-#include "def.h"
+#include "include/def.h"
 extern FILE *yyin;
 extern int yylineno;
 int main(int argc, char *argv[])
@@ -21,5 +21,7 @@ void DisplaySymbolTable(struct node *T)
     make_uid(T->code);
     change_label(T->code);
     print_IR(T->code);
+    basic_block(T->code);
+    printf("ending\n");
     // struct Block *block = divide_block(T->code);
 }

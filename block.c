@@ -1,16 +1,16 @@
-#include "def.h"
+#include "include/def.h"
 
 Block *newblock() //创建新块
 {
     Block *block = (Block *)malloc(sizeof(Block));
-
+    block->num_children = 0;
     block->tac_list = NULL;
     return block;
 }
 void newBlocks(char *name)
 {
     Blocks *temp = (Blocks *)malloc(sizeof(Blocks));
-    strcpy(temp->name, name);
+    strcpy(temp->name,name);
     temp->count = 0;
     temp->next = temp->pre = NULL;
     if (current_block == NULL)
@@ -134,6 +134,7 @@ void link_block() //到最后一句，找跳转目标
 }
 void basic_block(struct codenode *head)
 {
+    current_block = NULL;
     Block *globel = (Block *)malloc(sizeof(Block));
     struct codenode *code = head;
     while (code)

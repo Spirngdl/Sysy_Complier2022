@@ -1,4 +1,4 @@
-#include "def.h"
+#include "include/def.h"
 int LEV = 0;   //层号
 int func_size; //函数的活动记录大小
 
@@ -877,6 +877,15 @@ void make_uid(struct codenode *head)
             }
             continue;
         }
+    }
+    if (globel) //如果有全局变量语句
+    {
+        head = globel;
+        ge->next = function;
+    }
+    else
+    {
+        head = function;
     }
     temp = head;
     while (temp)

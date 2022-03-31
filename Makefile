@@ -1,7 +1,7 @@
 CFLAGS = -O0 -g
 
 all: calc_c.tab.c lex.yy.c ast.c
-	gcc -o calc $(CFLAGS) calc_c.tab.c lex.yy.c ast.c semantic_analysis.c table.c
+	gcc -o calc $(CFLAGS) ast.c block.c calc_c.tab.c lex.yy.c semantic_analysis.c table.c main.c Tac.c
 
 calc_c.tab.c: calc_c.y
 	bison -d calc_c.y

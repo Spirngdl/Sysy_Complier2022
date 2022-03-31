@@ -1,4 +1,4 @@
-#include "def.h"
+#include "include/def.h"
 // 收集错误信息
 void semantic_error(int line, char *msg1, char *msg2)
 {
@@ -87,7 +87,7 @@ void print_IR(struct codenode *head)
 {
     char opnstr1[32], opnstr2[32], resultstr[32];
     struct codenode *h = head;
-    do
+    while(h != NULL)
     {
         printf("%d: ", h->UID);
         if (h->opn1.kind == INT)
@@ -161,14 +161,14 @@ void print_IR(struct codenode *head)
                 printf("  RETURN\n");
             break;
         case END:
-            printf("  END\n");
+            printf("END\n");
             break;
         default:
             printf("not define\n");
             break;
         }
         h = h->next;
-    } while (h != head);
+    }
 }
 /* inner code generation */
 char *str_catch(char *s1, char *s2)

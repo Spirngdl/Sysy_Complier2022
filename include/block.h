@@ -5,7 +5,7 @@ struct _Blocks //分函数的基本块
 {
     Block *block[100];
     int count;
-    char *name;
+    char name[20];
     Blocks *next;
     Blocks *pre;
 };
@@ -17,7 +17,7 @@ struct _Block //最底层的基本块
     Block *children[2];
 };
 
-Blocks *current_block = NULL; //在分块时做为尾结点，结束时变头结点
+Blocks *current_block; //在分块时做为尾结点，结束时变头结点
 
 void divide_block(struct codenode *head); //判断该段代码的in和out
 Block *newblock();                        //创建新块

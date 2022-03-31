@@ -1,6 +1,6 @@
 %{
     #include<stdlib.h>
-    #include "def.h"
+    #include "include/def.h"
     #include <stdio.h>
     #include <math.h>
     extern int yylineno;

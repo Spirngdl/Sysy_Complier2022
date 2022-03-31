@@ -1,8 +1,7 @@
 %{
     #include <stdlib.h>
-    #include "calc_c.tab.h"
     #include <string.h>
-    #include "def.h"
+    #include "include/def.h"
     int yycolumn = 1;
     void yyerror(char *s,...);
     // #define YY_USER_ACTION    	yylloc.first_line=yylloc.last_line=yylineno; \
@@ -43,11 +42,12 @@ LETTER  [a-zA-Z]
 "||"        {return TOK_OR;}
 "="         {return TOK_ASSIGN;}
 "if"        {return TOK_IF;}
-"int"       {strcpy(yylval.type_id, yytext);return TOK_INT;}
-"void"      {strcpy(yylval.type_id, yytext);return TOK_VOID;}
+"else"      {return TOK_ELSE;}
+"int"       {strcpy(yylval.type_id,  yytext);return TOK_INT;}
+"void"      {strcpy(yylval.type_id,  yytext);return TOK_VOID;}
 "while"     {return TOK_WHILE;}
 "return"    {return TOK_RETURN;}
-"const"     {strcpy(yylval.type_id, yytext) ;return TOK_CONST;}
+"const"     {strcpy(yylval.type_id,  yytext) ;return TOK_CONST;}
 "break"     {return TOK_BREAK;}
 "continue"  {return TOK_CONTINUE;}
 [a-z_A-Z][a-z_A-Z0-9]*  {strcpy(yylval.type_id,yytext) ;return IDENT;}
