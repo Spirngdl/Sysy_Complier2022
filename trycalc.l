@@ -43,11 +43,11 @@ LETTER  [a-zA-Z]
 "||"        {return TOK_OR;}
 "="         {return TOK_ASSIGN;}
 "if"        {return TOK_IF;}
-"int"       {strcpy(yylval.type_id,  yytext);return TOK_INT;}
-"void"      {strcpy(yylval.type_id,  yytext);return TOK_VOID;}
+"int"       {strcpy(yylval.type_id, yytext);return TOK_INT;}
+"void"      {strcpy(yylval.type_id, yytext);return TOK_VOID;}
 "while"     {return TOK_WHILE;}
 "return"    {return TOK_RETURN;}
-"const"     {strcpy(yylval.type_id,  yytext) ;return TOK_CONST;}
+"const"     {strcpy(yylval.type_id, yytext) ;return TOK_CONST;}
 "break"     {return TOK_BREAK;}
 "continue"  {return TOK_CONTINUE;}
 [a-z_A-Z][a-z_A-Z0-9]*  {strcpy(yylval.type_id,yytext) ;return IDENT;}

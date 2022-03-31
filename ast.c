@@ -9,35 +9,23 @@ struct node *mknode(int kind, struct node *first, struct node *second, struct no
     T->pos = pos;
     return T;
 }
-struct node *mkarrnode(int kind, struct node *first, int length, int pos)
-{
-    if (first->kind == ID)
-    {
-        first->kind = kind;
-        int rtn = fillast(first->type_id, TOK_INT, ARRAY);
-        first->place = rtn;
-        first->pos = pos;
-        return first;
-    }
-    else
-    {
-        astsymbol.symbols[first->place].length[astsymbol.symbols[first->place].array_dimension] = length; //该维度的长度
-        astsymbol.symbols[first->place].array_dimension += 1;                                             //维度加1
-        return first;
-    }
-}
 struct node *mkparray(int kind, char *name, struct node *len, int pos)
 {
     struct node *temp = (struct node *)malloc(sizeof(struct node));
     temp->kind = kind;
     strcpy(temp->type_id, name);
-    int rtn = fillast(name, TOK_INT, PARAM_ARRAY);
+    int rtn = fillast(name, TOK_INT, kind);
     temp->place = rtn;
     temp->pos = pos;
-    astsymbol.symbols[rtn].length[0] = 0;
-    astsymbol.symbols[rtn].array_dimension = 1;
+    astsymbol.symbols[rtn].array_dimension = 0;
+    memset(astsymbol.symbols[rtn].length,0,sizeof(astsymbol.symbols[rtn].length));
+    if (kind == PARAM_ARRAY)
+    {
+        astsymbol.symbols[rtn].length[0] = 0;
+        astsymbol.symbols[rtn].array_dimension = 1;
+    }
     //处理维度
-    while (len != NULL)//多维
+    while (len != NULL) //多维
     {
         astsymbol.symbols[rtn].length[astsymbol.symbols[rtn].array_dimension] = len->type_int;
         astsymbol.symbols[rtn].array_dimension += 1;
