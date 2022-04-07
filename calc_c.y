@@ -1,9 +1,10 @@
 %{
     #include<stdlib.h>
-    #include "def.h"
+    #include "include/def.h"
     #include <stdio.h>
     #include <math.h>
     extern int yylineno;
+    extern FILE *yyin;
     extern char *yytext;
     int yylex(void);
     void yyerror(char* s, ...);
@@ -16,10 +17,10 @@
 };
 //非终结符
 %type <ptr> compunit decl constdecl constdef  constinitval vardecl  vardef funcdef initval eqexp
-%type <ptr>  funcfparams funcfparam block blockitem stmt exp cond lval  primaryexp 
+%type <ptr> funcfparams funcfparam block blockitem stmt exp cond lval  primaryexp 
 %type <ptr> number unaryexp unaryop funcrparams mulexp addexp relexp landexp lorexp constexp
-%type <ptr> constdecl_  constinitval_   funcfparam_ block_  initval_ vardecl_
-%type <ptr> program
+%type <ptr> constdecl_  constinitval_ block_  initval_ vardecl_ funcfparam_ constdef_ vardef_ lval_
+%type <ptr> program btype
 
 %left TOK_OR TOK_AND TOK_ADD TOK_SUB TOK_MUL TOK_DIV TOK_MODULO 
 %left TOK_LESS TOK_LESSEQ TOK_GREAT TOK_GREATEQ TOK_NOTEQ TOK_EQ 
@@ -32,11 +33,11 @@
 //relop
 %token <type_id> TOK_LESS TOK_LESSEQ TOK_GREAT TOK_GREATEQ TOK_NOTEQ TOK_EQ // < > >= <= == !=
 //TYPE
-%token <type_id> TOK_INT TOK_VOID TOK_CONST
+%token <type_id> TOK_CONST
 //标识符
 %token TOK_LPAR TOK_RPAR TOK_LBRACKET TOK_RBRACKET TOK_LSQUARE TOK_RSQUARE TOK_COMMA TOK_SEMICOLON TOK_BREAK TOK_CONTINUE
 %token TOK_ADD TOK_SUB TOK_MUL TOK_DIV TOK_ASSIGN
-%token TOK_AND TOK_OR TOK_NOT TOK_IF TOK_ELSE TOK_WHILE TOK_RETURN
+%token TOK_AND TOK_OR TOK_NOT TOK_IF TOK_ELSE TOK_WHILE TOK_RETURN TOK_INT TOK_VOID  TOK_FLOAT
 
 %%
 program: compunit                          {$$ = $1;DisplaySymbolTable($1);}
@@ -50,20 +51,26 @@ decl: constdecl                            {$$ = $1;}
     | vardecl                              {$$ = $1;}
      ;
 //常量声明
-constdecl: TOK_CONST TOK_INT constdef constdecl_ TOK_SEMICOLON  {strcpy($3->type_value,"const int");$3->type = CONST_INT;
+constdecl: TOK_CONST TOK_INT constdef constdecl_ TOK_SEMICOLON  {$3->type = CONST_INT;if($3->kind == ID)$3->kind = VAR_DECL;
                                                                 if($4 != NULL)
-                                                                {struct node * temp = mknode(VAR_DECL_LIST,$3,$4,NULL,yylineno);$$ = temp;}
+                                                                {$$ = mknode(VAR_DECL_LIST,$3,$4,NULL,yylineno);}
                                                                 else
                                                                 {$$ = $3;}}
          ;
-constdecl_: TOK_COMMA constdef constdecl_       {strcpy($2->type_value,"int");$2->type=TOK_INT;$2->kind = VAR_DEF;$$ = mknode(VAR_DECL_LIST,$2,$3,NULL,yylineno);} 
+constdecl_: TOK_COMMA constdef constdecl_       {$2->type=CONST_INT;$2->kind = VAR_DEF;$$ = mknode(VAR_DECL_LIST,$2,$3,NULL,yylineno);} 
           |                                     {$$ = NULL;}
           ;
-constdef: IDENT                                         {$$ = mknode(ID,NULL,NULL,NULL,yylineno);strcpy($$->type_id,$1);} //ID结点，标识符符号串存放结点的type_id
-        | constdef TOK_LSQUARE INTCONST TOK_RSQUARE     {//struct node *temp=mknode(INT,NULL,NULL,NULL,yylineno);temp->type_int=$3; $$=mknode(ARRAY_DEC, $1, temp, NULL,yylineno);
-                                                         $$ = mkarraynode(ARRAY_DEC,$1,$3,yylineno)}
-        | constdef TOK_ASSIGN constinitval              {$$=mknode(TOK_ASSIGN,$1,$3,NULL,yylineno);strcpy($$->type_id,"TOK_ASSIGN");}
+constdef: IDENT constdef_ TOK_ASSIGN constinitval          {struct node *temp;if($2 == NULL){temp=mknode(ID,NULL,NULL,NULL,yylineno);strcpy(temp->type_id,$1);}
+                                                             else{temp = mkparray(ARRAY_DEC,$1,$2,yylineno);temp->type = TOK_INT;strcpy(temp->type_id,$1);}
+                                                             temp->ptr[0]=$4;$$ = temp;}
         ;
+constdef_: TOK_LSQUARE INTCONST TOK_RSQUARE constdef_      {struct node * temp = mknode(TOK_INT,$4,NULL,NULL,yylineno);temp->type_int = $2;$$ =temp;}
+         |                                                 {$$ = NULL;}
+         ; 
+
+btype : TOK_INT         {$$ = mknode(TOK_INT,NULL,NULL,NULL,yylineno);}
+      | TOK_FLOAT       {$$ = mknode(TOK_FLOAT,NULL,NULL,NULL,yylineno);}
+      ;                                         
 constinitval: constexp                                                  {$$ = $1;}
             | TOK_LBRACKET TOK_RBRACKET                                 {$$ = NULL;}
             | TOK_LBRACKET constinitval constinitval_ TOK_RBRACKET      {$$ = mknode(CONSTINITVAL_LIST,$2,$3,NULL,yylineno);}
@@ -71,46 +78,55 @@ constinitval: constexp                                                  {$$ = $1
 constinitval_:TOK_COMMA constinitval constinitval_              {$$ = mknode(CONSTINITVAL_LIST,$2,$3,NULL,yylineno);}
              |                                                  {$$ = NULL;}
              ;
-vardecl: TOK_INT vardef vardecl_ TOK_SEMICOLON                   {strcpy($2->type_value,"int");$2->type = TOK_INT;$2->kind = VAR_DEF;
-                                                                 if($3 != NULL)
-                                                                        {struct node * temp = mknode(VAR_DECL_LIST,$2,$3,NULL,yylineno); $$ = temp;}
-                                                                 else{$$=$2;}
-                                                                 }
+vardecl: btype vardef vardecl_ TOK_SEMICOLON                   {$2->type = $1->kind;if($2->kind == ID)$2->kind = VAR_DECL;
+                                                               if($3 != NULL)
+                                                                 {struct node * temp = mknode(VAR_DECL_LIST,$2,$3,NULL,yylineno);temp->type = $1->kind;$$ = temp;}
+                                                               else
+                                                                 {$$=$2;}}
         ;
-vardecl_: TOK_COMMA vardef vardecl_                             {strcpy($2->type_value,"int");$2->type = TOK_INT;$2->kind = VAR_DEF;$$ = mknode(VAR_DECL_LIST,$2,$3,NULL,yylineno);}
+vardecl_: TOK_COMMA vardef vardecl_                             {$2->kind = VAR_DECL;$$ = mknode(VAR_DECL_LIST,$2,$3,NULL,yylineno);}
         |                                                       {$$ = NULL;}
         ;
 
 
-vardef: IDENT                                            {$$ = mknode(ID,NULL,NULL,NULL,yylineno);strcpy($$->type_id,$1);}//ID结点，标识符符号串存放结点的type_id
-      | vardef TOK_LSQUARE INTCONST TOK_RSQUARE          {//struct node *temp=mknode(INT,NULL,NULL,NULL,yylineno);temp->type_int=$3;$$=mknode(ARRAY_DEC, $1, temp, NULL,yylineno);
-                                                          $$ =  mkarraynode(ARRAY_DEC,$1,$3,yylineno);}
-      | vardef TOK_ASSIGN initval                        {$$ = mknode(TOK_ASSIGN,$1,$3,NULL,yylineno);strcpy($$->type_id,"TOK_ASSIGN");}
+vardef: IDENT vardef_                                       {if($2 == NULL)
+                                                               {$$ =mknode(ID,NULL,NULL,NULL,yylineno);strcpy($$->type_id,$1);}
+                                                             else
+                                                               {struct node*temp = mkparray(ARRAY_DEC,$1,$2,yylineno);strcpy(temp->type_id,$1);$$ = temp;}}
+      | IDENT vardef_ TOK_ASSIGN initval                    {struct node *temp;if($2 == NULL){temp =mknode(ID,NULL,NULL,NULL,yylineno);strcpy(temp->type_id,$1);}
+                                                             else{temp = mkparray(ARRAY_DEC,$1,$2,yylineno);strcpy(temp->type_id,$1);}
+                                                             temp->ptr[0]=$4;$$ = temp;}
       ;
+vardef_: TOK_LSQUARE constexp TOK_RSQUARE vardef_          {struct node * temp = mknode(TOK_INT,$4,NULL,NULL,yylineno);temp->type_int = const_exp($2);$$ =temp;}
+       |                                                    {$$ = NULL;}
+       ;                                             
 initval: exp                                                    {$$ = $1;}
-        | TOK_LBRACKET initval initval_ TOK_RBRACKET            {$$ = mknode(INITVAL_LIST,$2,$3,NULL,yylineno);}
+        | TOK_LBRACKET exp initval_ TOK_RBRACKET initval        {struct node *temp = mknode(EXP_LIST,$2,$3,NULL,yylineno);$$ = mknode(INITVAL_LIST,temp,$5,NULL,yylineno);}
         | TOK_LBRACKET TOK_RBRACKET                             {$$ = NULL;}
-        ;
-initval_: TOK_COMMA initval initval_                            {$$ = mknode(INITVAL_LIST,$2,$3,NULL,yylineno);}
         |                                                       {$$ = NULL;}
         ;
-funcdef: TOK_INT IDENT TOK_LPAR funcfparams TOK_RPAR block     {struct node* temp = mknode(FUNC_DEF,$4,$6,NULL,yylineno);strcpy(temp->type_id,$2);strcpy(temp->type_value,"int");
+initval_: TOK_COMMA exp initval_                                {$$ = mknode(EXP_LIST,$2,$3,NULL,yylineno);}
+        |                                                       {$$ = NULL;}
+        ;
+funcdef: TOK_INT IDENT TOK_LPAR funcfparams TOK_RPAR block     {struct node* temp = mknode(FUNC_DEF,$4,$6,NULL,yylineno);strcpy(temp->type_id,$2);
                                                                 temp->type = TOK_INT;$$ = temp;}//该结点对应一个函数定义
-       | TOK_VOID IDENT TOK_LPAR funcfparams TOK_RPAR block     {struct node* temp = mknode(FUNC_DEF,$4,$6,NULL,yylineno);strcpy(temp->type_id,$2);strcpy(temp->type_value,"void");
+       | TOK_VOID IDENT TOK_LPAR funcfparams TOK_RPAR block     {struct node* temp = mknode(FUNC_DEF,$4,$6,NULL,yylineno);strcpy(temp->type_id,$2);
                                                                 temp->type = TOK_VOID;$$ = temp;}//该结点对应一个函数定义
-       | TOK_INT IDENT TOK_LPAR TOK_RPAR block                 {struct node* temp = mknode(FUNC_DEF,$5,NULL,NULL,yylineno);strcpy(temp->type_id,$2);strcpy(temp->type_value,"int");
+       | TOK_INT IDENT TOK_LPAR TOK_RPAR block                 {struct node* temp = mknode(FUNC_DEF,NULL,$5,NULL,yylineno);strcpy(temp->type_id,$2);
                                                                 temp->type = TOK_INT;$$ = temp;}//该结点对应一个函数定义
-       | TOK_VOID IDENT TOK_LPAR TOK_RPAR block                 {struct node* temp = mknode(FUNC_DEF,$5,NULL,NULL,yylineno);strcpy(temp->type_id,$2);strcpy(temp->type_value,"void");
+       | TOK_VOID IDENT TOK_LPAR TOK_RPAR block                 {struct node* temp = mknode(FUNC_DEF,NULL,$5,NULL,yylineno);strcpy(temp->type_id,$2);
                                                                 temp->type = TOK_VOID;$$ = temp;}//该结点对应一个函数定义
         ;
 funcfparams: funcfparam TOK_COMMA funcfparams                   {$$ = mknode(PARAM_LIST,$1,$3,NULL,yylineno);}
            | funcfparam                                         {$$ = mknode(PARAM_LIST,$1,NULL,NULL,yylineno);}
            ;
-funcfparam: TOK_INT IDENT TOK_LSQUARE TOK_RSQUARE               {struct node *temp = mknode(PARAM_ARRAY,NULL,NULL,NULL,yylineno);strcpy(temp->type_id,$2);strcpy(temp->type_value,"int");temp->type = TOK_INT;
-                                                                 temp->array_dimension = 1;$$ = temp;}
-          | funcfparam TOK_LSQUARE INTCONST TOK_RSQUARE         {$$ = mkarraynode(PARAM_ARRAY,$1,$3,yylineno);}
-          | TOK_INT IDENT                                         {struct node *temp = mknode(PARAM_DEC,NULL,NULL,yylineno); strcpy(temp->type_id,$2);strcpy(temp->type_value,"int"); }               
+funcfparam: btype IDENT TOK_LSQUARE TOK_RSQUARE funcfparam_     {struct node*temp = mkparray(PARAM_ARRAY,$2,$5,yylineno);temp->type = $1->kind;strcpy(temp->type_id,$2);$$ = temp;}
+          | btype IDENT                                         {struct node*temp = mknode(PARAM_DEC,NULL,NULL,NULL,yylineno); strcpy(temp->type_id,$2);temp->type = $1->type;$$ = temp;}               
           ;
+funcfparam_: TOK_LSQUARE INTCONST TOK_RSQUARE funcfparam_      {struct node * temp = mknode(TOK_INT,NULL,NULL,NULL,yylineno);temp->type_int = $2;temp->ptr[0] = $4;$$= temp;}
+            |                                                   {$$ = NULL;}
+            ;          
+
 
 block: TOK_LBRACKET block_ TOK_RBRACKET                         {$$ = mknode(BLOCK,$2,NULL,NULL,yylineno);}
      ;
@@ -120,7 +136,7 @@ block_: blockitem block_                                        {$$ = mknode(BLO
 blockitem: decl                                 {$$ = $1;}
     | stmt                                      {$$ = $1;}
     ;
-stmt: lval TOK_ASSIGN exp TOK_SEMICOLON         {$$ = mknode(TOK_ASSIGN,$1,$3,NULL,yylineno);strcpy($$->type_id,"TOK_ASSIGN");}//$$结点type_id空置未用，正好存放运算符
+stmt: lval TOK_ASSIGN exp TOK_SEMICOLON         {$$ = mknode(TOK_ASSIGN,$1,$3,NULL,yylineno);}//$$结点type_id空置未用，正好存放运算符
     | TOK_SEMICOLON                             {$$ = NULL;}
     | exp TOK_SEMICOLON                         {$$ = $1;}
     | block                                     {$$ = $1;}
@@ -137,8 +153,11 @@ exp: addexp                                     {$$ = $1;}
 cond: lorexp                                    {$$ = $1;}
     ;
 //左值表达式
-lval: IDENT                                     {$$  = mknode(ID,NULL,NULL,NULL,yylineno);strcpy($$->type_id,$1);} 
+lval: IDENT lval_                               {$$ = mknode(ID,NULL,NULL,NULL,yylineno);strcpy($$->type_id,$1);if($2 != NULL){$$->kind = EXP_ARRAY;$$->ptr[0] = $2;}}
     ;
+lval_: TOK_LSQUARE exp TOK_RSQUARE lval_   {$$ = mknode(EXP_ARRAY,$2,$4,NULL,yylineno);}
+     |                                     {$$ = NULL;}
+     ;
 primaryexp: TOK_LPAR exp TOK_RPAR               {$$ = $2;}
           | lval                                {$$ = $1;}
           | number                              {$$ = $1;}
@@ -167,14 +186,14 @@ addexp: mulexp                                  {$$ = $1;}
       | addexp TOK_SUB addexp                   {$$ = mknode(TOK_SUB,$1,$3,NULL,yylineno);strcpy($$->type_id,"TOK_SUB");}    
       ;
 relexp: addexp                                  {$$ = $1;}
-      | relexp TOK_LESS addexp                  {$$ = mknode(RELOP,$1,$3,NULL,yylineno);strcpy($$->type_id,$2);}////词法分析关系运算符号自身值保存在$2中
-      | relexp TOK_GREAT addexp                 {$$ = mknode(RELOP,$1,$3,NULL,yylineno);strcpy($$->type_id,$2);}       
-      | relexp TOK_LESSEQ addexp                {$$ = mknode(RELOP,$1,$3,NULL,yylineno);strcpy($$->type_id,$2);}
-      | relexp TOK_GREATEQ addexp               {$$ = mknode(RELOP,$1,$3,NULL,yylineno);strcpy($$->type_id,$2);}
+      | relexp TOK_LESS addexp                  {$$ = mknode(TOK_LESS,$1,$3,NULL,yylineno);strcpy($$->type_id,$2);}////词法分析关系运算符号自身值保存在$2中
+      | relexp TOK_GREAT addexp                 {$$ = mknode(TOK_GREAT,$1,$3,NULL,yylineno);strcpy($$->type_id,$2);}       
+      | relexp TOK_LESSEQ addexp                {$$ = mknode(TOK_LESSEQ,$1,$3,NULL,yylineno);strcpy($$->type_id,$2);}
+      | relexp TOK_GREATEQ addexp               {$$ = mknode(TOK_GREATEQ,$1,$3,NULL,yylineno);strcpy($$->type_id,$2);}
       ;
 eqexp: relexp                                   {$$ = $1;}
-     | eqexp TOK_EQ relexp                      {$$ = mknode(RELOP,$1,$3,NULL,yylineno);strcpy($$->type_id,$2);}////词法分析关系运算符号自身值保存在$2中
-     | eqexp TOK_NOTEQ relexp                   {$$ = mknode(RELOP,$1,$3,NULL,yylineno);strcpy($$->type_id,$2);}////词法分析关系运算符号自身值保存在$2中
+     | eqexp TOK_EQ relexp                      {$$ = mknode(TOK_EQ,$1,$3,NULL,yylineno);strcpy($$->type_id,$2);}////词法分析关系运算符号自身值保存在$2中
+     | eqexp TOK_NOTEQ relexp                   {$$ = mknode(TOK_NOTEQ,$1,$3,NULL,yylineno);strcpy($$->type_id,$2);}////词法分析关系运算符号自身值保存在$2中
      ;
 landexp: eqexp                                  {$$ = $1;}
        | landexp TOK_AND eqexp                  {$$=mknode(TOK_AND,$1,$3,NULL,yylineno);strcpy($$->type_id,"TOK_AND");}
@@ -186,11 +205,7 @@ constexp: addexp                                {$$ = $1;}
         ;
 
 %%
-int main(){
-	yylineno=1;
-	yyparse();
-	return 0;
-	}
+
 
 #include<stdarg.h>
 void yyerror(char* s, ...)

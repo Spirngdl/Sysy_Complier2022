@@ -1,4 +1,4 @@
-#include "def.h"
+#include "include/def.h"
 struct node *mknode(int kind, struct node *first, struct node *second, struct node *third, int pos)
 {
     struct node *T = (struct node *)malloc(sizeof(struct node));
@@ -9,26 +9,61 @@ struct node *mknode(int kind, struct node *first, struct node *second, struct no
     T->pos = pos;
     return T;
 }
-
-struct node *mkarrnode(int kind, struct node *first, int length, int pos)
+struct node *mkparray(int kind, char *name, struct node *len, int pos)
 {
-    if (first->kind == ID)
+    struct node *temp = (struct node *)malloc(sizeof(struct node));
+    temp->kind = kind;
+    strcpy(temp->type_id, name);
+    int rtn = fillast(name, kind);
+    temp->place = rtn;
+    temp->pos = pos;
+    astsymbol.symbols[rtn].array_dimension = 0;
+    memset(astsymbol.symbols[rtn].length, 0, sizeof(astsymbol.symbols[rtn].length));
+    if (kind == PARAM_ARRAY)
     {
-        struct node *newnode = (struct node *)malloc(sizeof(struct node));
-        newnode->kind = kind;                     // ARRAY_DEC
-        newnode->array_dimension = 1;             //初始化维度
-        newnode->length[0] = length;              //该维度的长度
-        strcpy(newnode->type_id, first->type_id); //传递id
-        newnode->place = pos;
-        return newnode;
+        astsymbol.symbols[rtn].length[0] = 0;
+        astsymbol.symbols[rtn].array_dimension = 1;
     }
-    else
+    //处理维度
+    while (len != NULL) //多维
     {
-        first->length[first->array_dimension] = length; //该维度的长度
-        first->array_dimension += 1;                    //维度加1
-        return first;
+        astsymbol.symbols[rtn].length[astsymbol.symbols[rtn].array_dimension] = len->type_int;
+        astsymbol.symbols[rtn].array_dimension += 1;
+        len = len->ptr[0];
+    }
+    return temp;
+}
+int const_exp(struct node *T)
+{
+    int left = 0, right = 0;
+    if (T == NULL)
+        return 0;
+    if (T->kind == INT)
+        return T->type_int;
+    left = const_exp(T->ptr[0]);
+    right = const_exp(T->ptr[1]);
+    switch (T->kind)
+    {
+    case TOK_ADD:
+        return left + right;
+        break;
+    case TOK_SUB:
+        return left - right;
+        break;
+    case TOK_MUL:
+        return left * right;
+        break;
+    case TOK_DIV:
+        return left / right;
+        break;
+    case TOK_MODULO:
+        return left % right;
+        break;
+    default:
+        break;
     }
 }
+
 //对抽象语法树的先根遍历
 // void display(struct node *T, int indent)
 // {
@@ -92,7 +127,6 @@ struct node *mkarrnode(int kind, struct node *first, int length, int pos)
 //                 i++;
 //                 temp = temp->ptr[0];
 //             }
-
 //             printf("%*c%s%s\n", indent, ' ', "ID: ", temp->type_id);
 //             printf("%*c%s%d\n", indent, ' ', "length: ", i);
 //             for (int j = i - 1; j >= 0; j--)
@@ -142,7 +176,6 @@ struct node *mkarrnode(int kind, struct node *first, int length, int pos)
 //             display(T->ptr[0], indent);
 //             display(T->ptr[1], indent);
 //             break;
-
 //         case EXP_STMT:
 //             printf("%*c表达式语句: \n", indent, ' ');
 //             display(T->ptr[0], indent + 3);
@@ -246,7 +279,6 @@ struct node *mkarrnode(int kind, struct node *first, int length, int pos)
 //             printf("%*cINT: %d\n", indent, ' ', T->type_int);
 //             break;
 //         case UNARYEXP:
-
 //         case TOK_ASSIGN:
 //         case MINUSASSIGNOP:
 //         case PLUSASSIGNOP:
