@@ -43,8 +43,9 @@ LETTER  [a-zA-Z]
 "="         {return TOK_ASSIGN;}
 "if"        {return TOK_IF;}
 "else"      {return TOK_ELSE;}
-"int"       {strcpy(yylval.type_id,  yytext);return TOK_INT;}
-"void"      {strcpy(yylval.type_id,  yytext);return TOK_VOID;}
+"int"       {return TOK_INT;}
+"float"     {return TOK_FLOAT;}
+"void"      {return TOK_VOID;}
 "while"     {return TOK_WHILE;}
 "return"    {return TOK_RETURN;}
 "const"     {strcpy(yylval.type_id,  yytext) ;return TOK_CONST;}

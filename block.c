@@ -10,7 +10,7 @@ Block *newblock() //创建新块
 void newBlocks(char *name)
 {
     Blocks *temp = (Blocks *)malloc(sizeof(Blocks));
-    strcpy(temp->name,name);
+    strcpy(temp->name, name);
     temp->count = 0;
     temp->next = temp->pre = NULL;
     if (current_block == NULL)
@@ -56,7 +56,7 @@ void divide_block(struct codenode *head)
         }
         hcode = hcode->next;
     }
-    hblock->id = id++; //基本块id
+    hblock->id = id++; //基本块idf
     hblock->tac_list = head;
     fillblock(hblock);
     hcode = head;

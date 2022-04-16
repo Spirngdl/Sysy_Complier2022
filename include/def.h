@@ -14,6 +14,7 @@ enum node_kind
     ID,
     INT,
     CONST_INT,
+    CONST_FLOAT,
     CONSTINITVAL_LIST,
     INITVAL_LIST,
     INITVAL,

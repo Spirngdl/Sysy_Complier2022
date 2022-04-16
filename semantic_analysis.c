@@ -95,6 +95,7 @@ void var_decl_list(struct node *T)
 {
     if (T->ptr[0] == NULL)
         return;
+    T->ptr[0]->type = T->ptr[1]->type = T->type;//传递type TOK_INT || TOK_FLOAT
     semantic_Analysis(T->ptr[0]); //访问外部定义列表中的第一个
     //之后合并code
     T->code = T->ptr[0]->code;

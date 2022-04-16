@@ -20,7 +20,7 @@
 %type <ptr> funcfparams funcfparam block blockitem stmt exp cond lval  primaryexp 
 %type <ptr> number unaryexp unaryop funcrparams mulexp addexp relexp landexp lorexp constexp
 %type <ptr> constdecl_  constinitval_ block_  initval_ vardecl_ funcfparam_ constdef_ vardef_ lval_
-%type <ptr> program
+%type <ptr> program btype
 
 %left TOK_OR TOK_AND TOK_ADD TOK_SUB TOK_MUL TOK_DIV TOK_MODULO 
 %left TOK_LESS TOK_LESSEQ TOK_GREAT TOK_GREATEQ TOK_NOTEQ TOK_EQ 
@@ -33,11 +33,11 @@
 //relop
 %token <type_id> TOK_LESS TOK_LESSEQ TOK_GREAT TOK_GREATEQ TOK_NOTEQ TOK_EQ // < > >= <= == !=
 //TYPE
-%token <type_id> TOK_INT TOK_VOID TOK_CONST
+%token <type_id> TOK_CONST
 //标识符
 %token TOK_LPAR TOK_RPAR TOK_LBRACKET TOK_RBRACKET TOK_LSQUARE TOK_RSQUARE TOK_COMMA TOK_SEMICOLON TOK_BREAK TOK_CONTINUE
 %token TOK_ADD TOK_SUB TOK_MUL TOK_DIV TOK_ASSIGN
-%token TOK_AND TOK_OR TOK_NOT TOK_IF TOK_ELSE TOK_WHILE TOK_RETURN
+%token TOK_AND TOK_OR TOK_NOT TOK_IF TOK_ELSE TOK_WHILE TOK_RETURN TOK_INT TOK_VOID  TOK_FLOAT
 
 %%
 program: compunit                          {$$ = $1;DisplaySymbolTable($1);}
@@ -60,13 +60,17 @@ constdecl: TOK_CONST TOK_INT constdef constdecl_ TOK_SEMICOLON  {$3->type = CONS
 constdecl_: TOK_COMMA constdef constdecl_       {$2->type=CONST_INT;$2->kind = VAR_DEF;$$ = mknode(VAR_DECL_LIST,$2,$3,NULL,yylineno);} 
           |                                     {$$ = NULL;}
           ;
-constdef: IDENT constdef_ TOK_ASSIGN constinitval          {struct node *temp;if($2 == NULL){temp =mknode(ID,NULL,NULL,NULL,yylineno);strcpy(temp->type_id,$1);}
+constdef: IDENT constdef_ TOK_ASSIGN constinitval          {struct node *temp;if($2 == NULL){temp=mknode(ID,NULL,NULL,NULL,yylineno);strcpy(temp->type_id,$1);}
                                                              else{temp = mkparray(ARRAY_DEC,$1,$2,yylineno);temp->type = TOK_INT;strcpy(temp->type_id,$1);}
                                                              temp->ptr[0]=$4;$$ = temp;}
         ;
-constdef_: TOK_LSQUARE INTCONST TOK_RSQUARE constdef_      {struct node * temp = mknode(TOK_INT,$4,NULL,NULL,yylineno);temp->type_int = $2;;$$ =temp;}
+constdef_: TOK_LSQUARE INTCONST TOK_RSQUARE constdef_      {struct node * temp = mknode(TOK_INT,$4,NULL,NULL,yylineno);temp->type_int = $2;$$ =temp;}
          |                                                 {$$ = NULL;}
-         ;                                          
+         ; 
+
+btype : TOK_INT         {$$ = mknode($1,NULL,NULL,NULL,yylineno);}
+      | TOK_FLOAT       {$$ = mknode($1,NULL,NULL,NULL,yylineno);}
+      ;                                         
 constinitval: constexp                                                  {$$ = $1;}
             | TOK_LBRACKET TOK_RBRACKET                                 {$$ = NULL;}
             | TOK_LBRACKET constinitval constinitval_ TOK_RBRACKET      {$$ = mknode(CONSTINITVAL_LIST,$2,$3,NULL,yylineno);}
@@ -74,23 +78,23 @@ constinitval: constexp                                                  {$$ = $1
 constinitval_:TOK_COMMA constinitval constinitval_              {$$ = mknode(CONSTINITVAL_LIST,$2,$3,NULL,yylineno);}
              |                                                  {$$ = NULL;}
              ;
-vardecl: TOK_INT vardef vardecl_ TOK_SEMICOLON                   {$2->type = TOK_INT;if($2->kind == ID)$2->kind = VAR_DECL;
-                                                                 if($3 != NULL)
-                                                                  {struct node * temp = mknode(VAR_DECL_LIST,$2,$3,NULL,yylineno); $$ = temp;}
-                                                                 else
-                                                                 {$$=$2;} }
+vardecl: btype vardef vardecl_ TOK_SEMICOLON                   {$2->type = $1->kind;if($2->kind == ID)$2->kind = VAR_DECL;
+                                                               if($3 != NULL)
+                                                                 {struct node * temp = mknode(VAR_DECL_LIST,$2,$3,NULL,yylineno);temp->type = $1->kind;$$ = temp;}
+                                                               else
+                                                                 {$$=$2;}}
         ;
-vardecl_: TOK_COMMA vardef vardecl_                             {$2->type = TOK_INT;$2->kind = VAR_DECL;$$ = mknode(VAR_DECL_LIST,$2,$3,NULL,yylineno);}
+vardecl_: TOK_COMMA vardef vardecl_                             {$2->kind = VAR_DECL;$$ = mknode(VAR_DECL_LIST,$2,$3,NULL,yylineno);}
         |                                                       {$$ = NULL;}
         ;
 
 
 vardef: IDENT vardef_                                       {if($2 == NULL)
-                                                             {$$ =mknode(ID,NULL,NULL,NULL,yylineno);strcpy($$->type_id,$1);}
+                                                               {$$ =mknode(ID,NULL,NULL,NULL,yylineno);strcpy($$->type_id,$1);}
                                                              else
-                                                             {struct node*temp = mkparray(ARRAY_DEC,$1,$2,yylineno);temp->type = TOK_INT;strcpy(temp->type_id,$1);$$ = temp;}}
+                                                               {struct node*temp = mkparray(ARRAY_DEC,$1,$2,yylineno);strcpy(temp->type_id,$1);$$ = temp;}}
       | IDENT vardef_ TOK_ASSIGN initval                    {struct node *temp;if($2 == NULL){temp =mknode(ID,NULL,NULL,NULL,yylineno);strcpy(temp->type_id,$1);}
-                                                             else{temp = mkparray(ARRAY_DEC,$1,$2,yylineno);temp->type = TOK_INT;strcpy(temp->type_id,$1);}
+                                                             else{temp = mkparray(ARRAY_DEC,$1,$2,yylineno);strcpy(temp->type_id,$1);}
                                                              temp->ptr[0]=$4;$$ = temp;}
       ;
 vardef_:  TOK_LSQUARE INTCONST TOK_RSQUARE vardef_          {struct node * temp = mknode(TOK_INT,$4,NULL,NULL,yylineno);temp->type_int = $2;$$ =temp;}
@@ -116,8 +120,8 @@ funcdef: TOK_INT IDENT TOK_LPAR funcfparams TOK_RPAR block     {struct node* tem
 funcfparams: funcfparam TOK_COMMA funcfparams                   {$$ = mknode(PARAM_LIST,$1,$3,NULL,yylineno);}
            | funcfparam                                         {$$ = mknode(PARAM_LIST,$1,NULL,NULL,yylineno);}
            ;
-funcfparam: TOK_INT IDENT TOK_LSQUARE TOK_RSQUARE funcfparam_     {struct node*temp = mkparray(PARAM_ARRAY,$2,$5,yylineno);temp->type = TOK_INT;strcpy(temp->type_id,$2);$$ = temp;}
-          | TOK_INT IDENT                                         {struct node *temp = mknode(PARAM_DEC,NULL,NULL,NULL,yylineno); strcpy(temp->type_id,$2);temp->type = TOK_INT;$$ = temp;}               
+funcfparam: btype IDENT TOK_LSQUARE TOK_RSQUARE funcfparam_     {struct node*temp = mkparray(PARAM_ARRAY,$2,$5,yylineno);temp->type = $1->kind;strcpy(temp->type_id,$2);$$ = temp;}
+          | btype IDENT                                         {struct node*temp = mknode(PARAM_DEC,NULL,NULL,NULL,yylineno); strcpy(temp->type_id,$2);temp->type = $1->type;$$ = temp;}               
           ;
 funcfparam_: TOK_LSQUARE INTCONST TOK_RSQUARE funcfparam_      {struct node * temp = mknode(TOK_INT,NULL,NULL,NULL,yylineno);temp->type_int = $2;temp->ptr[0] = $4;$$= temp;}
             |                                                   {$$ = NULL;}
