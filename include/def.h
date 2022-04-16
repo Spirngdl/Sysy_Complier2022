@@ -124,6 +124,7 @@ struct node *mknode(int kind, struct node *first, struct node *second, struct no
 struct node *mkopnode(int kind, struct node *left, struct node *right, int pos);
 struct node *mkarrnode(int kind, struct node *first, int length, int pos);
 struct node *mkparray(int kind, char *first, struct node *len, int pos);
+
 int const_exp(struct node *T);
 /*semantic analysis*/
 void semantic_error(int line, char *msg1, char *msg2);
@@ -164,10 +165,10 @@ void var_decl_list(struct node *T);
 
 void var_decl(struct node *T);
 void array_decl(struct node *T);
-int array_index(struct node *T, int i, int offset);  //生成数组下标
-int exp_index(struct node *T, int index, int place); //处理数组引用的下标
-int mul_exp(struct node *T, char *i, int offset);    //生成乘法语句
-void else_if_stmt(struct node *T, char *Efalse);     // else if的情况且无else
+int array_index(struct node *T, int i, int offset);    //生成数组下标
+int exp_index(struct node *T, int index, int width[]); //处理数组引用的下标
+int mul_exp(struct node *T, char *i, int offset);      //生成乘法语句
+void else_if_stmt(struct node *T, char *Efalse);       // else if的情况且无else
 void if_else_stmt(struct node *T);
 void else_if_else_stmt(struct node *T, char *Enext);
 void if_stmt(struct node *T);
@@ -200,3 +201,4 @@ int find_initvalue_arr(int symbol_index, int offset);
 void arrayinit_bracker(List *value_list, struct node *T, int brace_num, int *array_offset, int width[], int dimension);
 
 void test_array();
+void push_initarray(struct node *T, struct node *newnode);

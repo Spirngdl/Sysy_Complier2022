@@ -65,7 +65,6 @@ void semantic_Analysis(struct node *T)
         case TOK_MUL:
         case TOK_DIV:
         case TOK_MODULO:
-
         case FUNC_CALL:
         case EXP_ARRAY:
             Exp(T); //处理基本表达式
@@ -182,7 +181,7 @@ void arrayinit_bracker(List *value_list, struct node *T, int brace_num, int *arr
             }
             else
             {
-                if (brace_num > 1)//大括号数量大于1
+                if (brace_num > 1) //大括号数量大于1
                 {
                     for (int i = 0; i < final_offset - *array_offset; i++) //补0
                     {
@@ -295,7 +294,7 @@ void Exp(struct node *T)
             unaryexp(T);
             break;
         case EXP_ARRAY:
-            exp_array(T);
+            rval_array(T);
             break;
         default:
             break;
@@ -338,38 +337,31 @@ void op_exp(struct node *T)
     T->place = temp_add(newTemp(), LEV, T->type, TEMP_VAR); //声明临时变量
     result.kind = ID;
     strcpy(result.id, symbolTable.symbols[T->place].alias);
-    if (T->ptr[0]->kind == LITERAL && T->ptr[1]->kind == LITERAL) //左右子树为常数
+    if (T->ptr[0]->kind == LITERAL) //左子树为常数
     {
-        result.kind = opn1.kind = LITERAL;
-        result.const_int = opn1.const_int = const_exp(T);
-        T->code = genIR(TOK_ASSIGN, opn1, opn2, result);
+        T->ptr[0]->code = NULL;
+        opn1.kind = LITERAL;
+        opn1.const_int = T->ptr[0]->type_int;
     }
     else
     {
-        if (T->ptr[0]->kind == LITERAL) //左子树为常数
-        {
-            opn1.kind = LITERAL;
-            opn1.const_int = T->ptr[0]->type_int;
-        }
-        else
-        {
-            Exp(T->ptr[0]);
-            opn1.kind = ID;
-            strcpy(opn1.id, symbolTable.symbols[T->ptr[0]->place].alias);
-        }
-        if (T->ptr[1]->kind == LITERAL)
-        {
-            opn2.kind = LITERAL;
-            opn2.const_int = T->ptr[1]->type_int;
-        }
-        else
-        {
-            Exp(T->ptr[1]);
-            opn2.kind = ID;
-            strcpy(opn2.id, symbolTable.symbols[T->ptr[1]->place].alias);
-        }
-        T->code = merge(3, T->ptr[0]->code, T->ptr[1]->code, genIR(T->kind, opn1, opn2, result));
+        Exp(T->ptr[0]);
+        opn1.kind = ID;
+        strcpy(opn1.id, symbolTable.symbols[T->ptr[0]->place].alias);
     }
+    if (T->ptr[1]->kind == LITERAL)
+    {
+        T->ptr[1]->code = NULL;
+        opn2.kind = LITERAL;
+        opn2.const_int = T->ptr[1]->type_int;
+    }
+    else
+    {
+        Exp(T->ptr[1]);
+        opn2.kind = ID;
+        strcpy(opn2.id, symbolTable.symbols[T->ptr[1]->place].alias);
+    }
+    T->code = merge(3, T->ptr[0]->code, T->ptr[1]->code, genIR(T->kind, opn1, opn2, result));
 }
 //单
 void unaryexp(struct node *T)
@@ -403,10 +395,20 @@ void assignop_exp(struct node *T)
 
             T->code = merge(2, T->ptr[0]->code, genIR(TOK_ASSIGN, opn1, opn2, result));
         }
+        else if (T->ptr[1]->kind == ID)
+        {
+            T->type = T->ptr[1]->type;
+            result.kind = ID;
+            strcpy(result.id, symbolTable.symbols[T->ptr[0]->place].alias);
+            Exp(T->ptr[1]);
+            opn1.kind = ID;
+            strcpy(opn1.id, symbolTable.symbols[T->ptr[1]->place].alias);
+            T->code = merge(2, T->ptr[0]->code, genIR(TOK_ASSIGN, opn1, opn2, result));
+        }
         else
         {
             Exp(T->ptr[1]); //处理右值
-            T->type = T->ptr[0]->type;
+            T->type = T->ptr[1]->type;
             opn1.kind = ID;
             struct codenode *lassign = T->ptr[1]->code->prior; //右值语句的最后一句
             strcpy(lassign->result.id, symbolTable.symbols[T->ptr[0]->place].alias);
@@ -414,7 +416,7 @@ void assignop_exp(struct node *T)
             T->code = merge(2, T->ptr[0]->code, T->ptr[1]->code);
         }
     }
-    else if (T->ptr[0]->kind == EXP_ARRAY)
+    else if (T->ptr[0]->kind == EXP_ARRAY) //数组作为左值
     {
         exp_array(T->ptr[0]); //处理左值
         Exp(T->ptr[1]);
@@ -443,13 +445,13 @@ void rval_array(struct node *T) //数组作为右值
     result.kind = ID;
     strcpy(result.id, symbolTable.symbols[place].alias);
     opn1.kind = ID;
-    strcpy(opn1.id, symbolTable.symbols[T->ptr[0]->place].alias); //数组名
+    strcpy(opn1.id, symbolTable.symbols[T->place].alias); //数组名
     opn2.kind = ID;
-    strcpy(opn2.id, symbolTable.symbols[T->ptr[0]->ptr[0]->place].alias); // index
+    strcpy(opn2.id, symbolTable.symbols[T->ptr[0]->place].alias); // index
     T->code = merge(2, T->code, genIR(ARRAY_EXP, opn1, opn2, result));
     T->place = place;
 }
-void exp_array(struct node *T) //数组作为左值
+void exp_array(struct node *T) //
 {
     struct opn opn1, opn2, result;
     int rtn = searchSymbolTable(T->type_id);
@@ -463,37 +465,53 @@ void exp_array(struct node *T) //数组作为左值
         T->code = NULL; //标识符不需要生成TAC
         T->type = symbolTable.symbols[rtn].type;
     }
-    T->ptr[0]->place = T->place;
-    int place = exp_index(T->ptr[0], 0, rtn); //处理下标
+    int width[10];
+    width[symbolTable.symbols[rtn].array_dimension - 1] = 1;
+    for (int i = symbolTable.symbols[rtn].array_dimension - 1; i > 0; i--)
+    {
+        width[i - 1] = width[i] * symbolTable.symbols[rtn].length[i];
+    }
+    int place = exp_index(T->ptr[0], 0, width); //处理下标
     T->code = merge(2, T->code, T->ptr[0]->code);
     T->ptr[0]->place = place;
 }
 // place 传递符号表位置 index 第几维
-int exp_index(struct node *T, int index, int place) //处理数组引用的下标
+int exp_index(struct node *T, int index, int width[]) //处理数组引用的下标
 {
     struct opn opn1, opn2, result;
-    Exp(T->ptr[0]); //处理第一个得到i1
-    int offset = 0;
-    for (int i = index + 1; i < symbolTable.symbols[place].array_dimension; i++)
+    int place;
+    int offset = width[index];
+    if (T->ptr[0]->kind == LITERAL)
     {
-        offset += symbolTable.symbols[place].length[i];
+        opn1.const_int = offset * T->ptr[0]->type_int;
+        opn1.kind = LITERAL;
+        result.kind = ID;
+        place = temp_add(newTemp(), LEV, TOK_INT, TEMP_VAR);
+        strcpy(result.id, symbolTable.symbols[place].alias);
+        T->code = merge(2, T->code, genIR(TOK_ASSIGN, opn1, opn2, result));
     }
-    if (offset > 0)
-        offset = offset * 4;
-    else
-        offset = 4;
-    // i1 * offset
-    int index_place = mul_exp(T->ptr[0], symbolTable.symbols[T->ptr[0]->place].alias, offset);
-    T->code = merge(2, T->code, T->ptr[0]->code);
+    else //是变量
+    {
+        Exp(T->ptr[0]); //处理第一个得到i1
+
+        // i1 * offset
+        place = mul_exp(T->ptr[0], symbolTable.symbols[T->ptr[0]->place].alias, offset);
+        T->code = merge(2, T->code, T->ptr[0]->code);
+    }
     if (T->ptr[1] != NULL) //处理下一个
     {
-        index_place = exp_index(T->ptr[1], index + 1, place);
-        T->code = merge(2, T->code, T->ptr[1]->code);
+        opn1.kind = ID;
+        strcpy(opn1.id, symbolTable.symbols[place].alias);
+        place = exp_index(T->ptr[1], index + 1, width);
+        opn2.kind = ID;
+        strcpy(opn2.id, symbolTable.symbols[place].alias);
+
+        place = temp_add(newTemp(), LEV, TOK_INT, TEMP_VAR);
+        strcpy(result.id, symbolTable.symbols[place].alias);
+
+        T->code = merge(3, T->code, T->ptr[1]->code, genIR(TOK_ADD, opn1, opn2, result));
     }
-    else
-    {
-        return index_place;
-    }
+    return place;
 }
 int mul_exp(struct node *T, char *i, int offset)
 {
@@ -551,7 +569,6 @@ void boolExp(struct node *T, char *Etrue, char *Efalse) //二代
         case TOK_GREATEQ:
         case TOK_EQ:
         case TOK_NOTEQ: //处理关系运算表达式,2个操作数都按基本表达式处理
-
             if (T->ptr[0]->kind == LITERAL)
             {
                 opn1.kind = INT;
@@ -565,6 +582,7 @@ void boolExp(struct node *T, char *Etrue, char *Efalse) //二代
             }
             if (T->ptr[1]->kind == LITERAL)
             {
+                T->ptr[1]->code = NULL;
                 opn2.kind = INT;
                 opn2.const_int = T->ptr[1]->type_int;
             }
@@ -905,25 +923,36 @@ void return_dec(struct node *T) //
     struct opn opn1, opn2, result;
     if (T->ptr[0]) //有返回值
     {
-        Exp(T->ptr[0]);
         num = symbolTable.index;
         do
             num--;
-        while (symbolTable.symbols[num].flag != FUNCTION);    //遇到第一个即本函数
-        if (T->ptr[0]->type != symbolTable.symbols[num].type) //类型检查
+        while (symbolTable.symbols[num].flag != FUNCTION); //遇到第一个即本函数
+        if (T->ptr[0]->kind == LITERAL)                    //如果返回值为常数
         {
-            if (T->ptr[0]->type == LITERAL && symbolTable.symbols[num].type == TOK_INT)
-            {
-            }
-            else
+            if (symbolTable.symbols[num].type != TOK_INT)
             {
                 semantic_error(T->pos, "返回值类型错误，语义错误", "");
                 T->code = NULL;
                 return;
             }
+            else
+            {
+                result.const_int = T->ptr[0]->type_int;
+                result.kind = LITERAL;
+            }
         }
-        result.kind = ID;
-        strcpy(result.id, symbolTable.symbols[T->ptr[0]->place].alias);
+        else
+        {
+            Exp(T->ptr[0]);
+            if (T->ptr[0]->type != symbolTable.symbols[num].type) //类型检查
+            {
+                semantic_error(T->pos, "返回值类型错误，语义错误", "");
+                T->code = NULL;
+                return;
+            }
+            result.kind = ID;
+            strcpy(result.id, symbolTable.symbols[T->ptr[0]->place].alias);
+        }
         T->code = merge(2, T->ptr[0]->code, genIR(TOK_RETURN, opn1, opn2, result));
     }
     else

@@ -7,16 +7,17 @@ struct node *mknode(int kind, struct node *first, struct node *second, struct no
     T->ptr[1] = second;
     T->ptr[2] = third;
     T->pos = pos;
+    T->code = NULL;
     return T;
 }
 struct node *mkparray(int kind, char *name, struct node *len, int pos)
 {
-    struct node *temp = (struct node *)malloc(sizeof(struct node));
-    temp->kind = kind;
+    struct node *temp = mknode(kind,NULL,NULL,NULL,pos);
+
     strcpy(temp->type_id, name);
     int rtn = fillast(name, kind);
     temp->place = rtn;
-    temp->pos = pos;
+
     astsymbol.symbols[rtn].array_dimension = 0;
     memset(astsymbol.symbols[rtn].length, 0, sizeof(astsymbol.symbols[rtn].length));
     if (kind == PARAM_ARRAY)
@@ -69,7 +70,7 @@ struct node *mkopnode(int kind, struct node *left, struct node *right, int pos)
         T->ptr[0] = left;
         T->ptr[1] = right;
         T->ptr[2] = NULL;
-
+        T->code = NULL;
         return T;
     }
 }
@@ -115,14 +116,14 @@ void push_initarray(struct node *T, struct node *newnode)
 }
 void push_initvalue(int i, List *node)
 {
-    ListPushBack(node, (void *)(__intptr_t)i);
+    ListPushBack(node, (void *)(intptr_t)i);
 }
 int find_initvalue_arr(int symbol_index, int offset)
 {
     void *element;
     if (ListGetAt(symbolTable.symbols[symbol_index].value, offset, &element))
     {
-        return (int)(__intptr_t)element;
+        return (int)(intptr_t)element;
     }
     else
         return 0;

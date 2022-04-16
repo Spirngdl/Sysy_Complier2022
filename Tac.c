@@ -28,7 +28,7 @@ struct codenode *merge(int num, ...)
         h2 = va_arg(ap, struct codenode *);
         if (h1 == NULL)
             h1 = h2;
-        else if (h2)
+        else if (h2 != NULL)
         {
             t1 = h1->prior;
             t2 = h2->prior;
@@ -147,6 +147,9 @@ void print_IR(struct codenode *head)
             break;
         case NEQ:
             printf("  IF %s != %s GOTO %d\n", opnstr1, opnstr2, h->result.const_int);
+            break;
+        case ARRAY_EXP:
+            printf("  %s := %s[%s]\n", resultstr, opnstr1, opnstr2);
             break;
         case ARG:
             printf("  ARG %s\n", h->result.id);
@@ -328,9 +331,9 @@ void test_array()
     List *var = symbolTable.symbols[0].value;
     void *element;
     var->first(var, false);
-    while (var->next(var,&element))
+    while (var->next(var, &element))
     {
-        int i = (int)(__intptr_t)element;
+        int i = (int)(intptr_t)element;
         printf("%d ", i);
     }
     printf("\n");
