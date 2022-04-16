@@ -87,14 +87,14 @@ void print_IR(struct codenode *head)
 {
     char opnstr1[32], opnstr2[32], resultstr[32];
     struct codenode *h = head;
-    while(h != NULL)
+    while (h != NULL)
     {
         printf("%d: ", h->UID);
-        if (h->opn1.kind == INT)
+        if (h->opn1.kind == LITERAL)
             sprintf(opnstr1, "#%d", h->opn1.const_int);
         if (h->opn1.kind == ID)
             sprintf(opnstr1, "%s", h->opn1.id);
-        if (h->opn2.kind == INT)
+        if (h->opn2.kind == LITERAL)
             sprintf(opnstr2, "#%d", h->opn2.const_int);
         if (h->opn2.kind == ID)
             sprintf(opnstr2, "%s", h->opn2.id);
@@ -115,7 +115,7 @@ void print_IR(struct codenode *head)
                                                                                   : h->op == TOK_MUL    ? '*'
                                                                                   : h->op == TOK_MODULO ? '%'
                                                                                   : h->op == TOK_NOT    ? '!'
-                                                                                                        : '\\',
+                                                                                                        : '/',
                    opnstr2);
             break;
         case FUNCTION:
@@ -203,4 +203,135 @@ char *newTemp()
     char s[10];
     snprintf(s, 10, "%d", no++);
     return str_catch("temp", s);
+}
+
+void make_uid(struct codenode *head)
+{
+    int uid = 100;
+    struct codenode *temp = head;
+    struct codenode *globel = NULL, *ge = NULL;
+    struct codenode *function = NULL, *end = NULL;
+    head->prior->next = NULL;
+    head->prior = NULL;
+    while (temp != NULL) //把所有全局变量声明移到最前面
+    {
+        struct codenode *hcode;
+        struct codenode *lcode;
+        if (temp->op == FUNCTION)
+        {
+            hcode = temp;
+            while (temp != NULL && temp->op != END)
+            {
+                temp = temp->next;
+            }
+            lcode = temp;
+            temp = temp->next;
+            lcode->next = NULL;
+            if (function == NULL)
+            {
+                function = hcode;
+                end = lcode;
+            }
+            else
+            {
+                end->next = hcode;
+                hcode->prior = end;
+                end = lcode;
+            }
+            continue;
+        }
+        else //是全局变量
+        {
+            hcode = temp;
+            while (temp != NULL && temp->next->op != FUNCTION)
+            {
+                temp = temp->next;
+            }
+            lcode = temp;
+            temp = temp->next;
+            lcode->next = NULL;
+            if (globel == NULL)
+            {
+                globel = hcode;
+                ge = lcode;
+            }
+            else
+            {
+                ge->next = hcode;
+                hcode->prior = ge;
+                ge = lcode;
+            }
+            continue;
+        }
+    }
+    if (globel) //如果有全局变量语句
+    {
+        head = globel;
+        ge->next = function;
+    }
+    else
+    {
+        head = function;
+    }
+    temp = head;
+    while (temp)
+    {
+        temp->UID = uid;
+        if (temp->op != LABEL)
+        {
+            uid++;
+        }
+        temp = temp->next;
+    }
+}
+void change_label(struct codenode *head)
+{
+    struct codenode *hcode = head;
+    while (hcode != NULL)
+    {
+        if (hcode->op == GOTO || hcode->op == JLE || hcode->op == JLT || hcode->op == JLT || hcode->op == JGE || hcode->op == JGT || hcode->op == EQ || hcode->op == NEQ)
+        {
+            struct codenode *temp = head;
+            while (temp)
+            {
+                if (temp->op == LABEL)
+                {
+                    if (!strcmp(temp->result.id, hcode->result.id))
+                    {
+                        hcode->result.const_int = temp->UID;
+                        break;
+                    }
+                }
+                temp = temp->next;
+            }
+        }
+        hcode = hcode->next;
+    }
+    hcode = head;
+    while (hcode != NULL)
+    {
+        if (hcode->op == LABEL)
+        {
+            hcode->prior->next = hcode->next;
+            hcode->next->prior = hcode->prior;
+            struct codenode *delnode = hcode;
+            hcode = hcode->next;
+            free(delnode);
+        }
+        else
+            hcode = hcode->next;
+    }
+}
+
+void test_array()
+{
+    List *var = symbolTable.symbols[0].value;
+    void *element;
+    var->first(var, false);
+    while (var->next(var,&element))
+    {
+        int i = (int)(__intptr_t)element;
+        printf("%d ", i);
+    }
+    printf("\n");
 }

@@ -18,7 +18,7 @@ struct _Block //最底层的基本块
 };
 
 Blocks *current_block; //在分块时做为尾结点，结束时变头结点
-
+Blocks*head_block;
 void divide_block(struct codenode *head); //判断该段代码的in和out
 Block *newblock();                        //创建新块
 void merge_block(Block *fa, Block *ch);   //连接

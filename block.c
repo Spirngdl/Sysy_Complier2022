@@ -56,7 +56,7 @@ void divide_block(struct codenode *head)
         }
         hcode = hcode->next;
     }
-    hblock->id = id++; //基本块idf
+    hblock->id = id++; //基本块id
     hblock->tac_list = head;
     fillblock(hblock);
     hcode = head;
@@ -81,8 +81,11 @@ void divide_block(struct codenode *head)
 }
 void merge_block(Block *fa, Block *ch)
 {
-    fa->children[fa->num_children] = ch;
-    fa->num_children++;
+    if (ch != NULL)
+    {
+        fa->children[fa->num_children] = ch;
+        fa->num_children++;
+    }
 }
 Block *find_target(int target)
 {
@@ -173,8 +176,9 @@ void basic_block(struct codenode *head)
             continue;
         }
     }
-    while (current_block->pre) //回到头指针
+    head_block = current_block;
+    while (head_block->pre) //回到头指针
     {
-        current_block = current_block->pre;
+        head_block = head_block->pre;
     }
 }
