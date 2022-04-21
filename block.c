@@ -127,7 +127,7 @@ void link_block() //到最后一句，找跳转目标
         }
         else //某个跳转语句目标语句的上一句
         {
-            if (i != current_block->count - 1) //不是最后一个块
+            if (i < current_block->count) //不是最后一个块
             {
                 tar = current_block->block[i]; //直接连接下一个块
                 merge_block(temp, tar);

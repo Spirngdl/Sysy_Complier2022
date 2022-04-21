@@ -23,8 +23,8 @@ void Driver(struct node *T)
   change_label(T->code);
   print_IR(T->code);
   basic_block(T->code);
-  // all_fun_reg(head_block);
-  //  print_vars();
+  all_fun_reg(head_block);
+  print_vars();
   printf("ending\n");
   // struct Block *block = divide_block(T->code);
 }
