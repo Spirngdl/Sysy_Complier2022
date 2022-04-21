@@ -422,8 +422,16 @@ void assignop_exp(struct node *T)
         Exp(T->ptr[1]);
         T->type = T->ptr[0]->type;
 
-        opn1.kind = ID;
-        strcpy(opn1.id, symbolTable.symbols[T->ptr[0]->ptr[0]->place].alias); // index
+        if (symbolTable.symbols[T->ptr[0]->ptr[0]->place].type == LITERAL)
+        {
+            opn1.kind = LITERAL;
+            opn1.const_int = symbolTable.symbols[T->ptr[0]->ptr[0]->place].array_dimension;
+        }
+        else
+        {
+            opn1.kind = ID;
+            strcpy(opn1.id, symbolTable.symbols[T->ptr[0]->ptr[0]->place].alias); // index
+        }
         opn2.kind = ID;
         strcpy(opn2.id, symbolTable.symbols[T->ptr[1]->place].alias); //右值一定是个变量或临时变量
 
@@ -481,14 +489,34 @@ int exp_index(struct node *T, int index, int width[]) //处理数组引用的下
     struct opn opn1, opn2, result;
     int place;
     int offset = width[index];
+
     if (T->ptr[0]->kind == LITERAL)
     {
-        opn1.const_int = offset * T->ptr[0]->type_int;
-        opn1.kind = LITERAL;
-        result.kind = ID;
-        place = temp_add(newTemp(), LEV, TOK_INT, TEMP_VAR);
-        strcpy(result.id, symbolTable.symbols[place].alias);
-        T->code = merge(2, T->code, genIR(TOK_ASSIGN, opn1, opn2, result));
+        place = temp_add(newTemp(), LEV, LITERAL, TEMP_VAR);
+        if (T->ptr[1] != NULL)
+        {
+            int temp_place = exp_index(T->ptr[1], index + 1, width);
+            if (symbolTable.symbols[temp_place].type = LITERAL)
+            {
+                result.const_int = offset * T->ptr[0]->type_int + symbolTable.symbols[temp_place].array_dimension;
+                symbolTable.symbols[place].array_dimension = result.const_int;
+            }
+            else
+            {
+                opn1.kind = LITERAL;
+                opn1.const_int = T->ptr[0]->type_int * offset;
+                opn2.kind = ID;
+                strcpy(opn2.id, symbolTable.symbols[temp_place].alias);
+                result.kind = ID;
+                strcpy(result.id, symbolTable.symbols[place].alias);
+                symbolTable.symbols[place].type = ID;
+                T->code = merge(2, T->code, genIR(TOK_ADD, opn1, opn2, result));
+            }
+        }
+        else //无下一维
+        {
+            symbolTable.symbols[place].array_dimension = T->ptr[0]->type_int * offset;
+        }
     }
     else //是变量
     {
@@ -497,32 +525,42 @@ int exp_index(struct node *T, int index, int width[]) //处理数组引用的下
         // i1 * offset
         place = mul_exp(T->ptr[0], symbolTable.symbols[T->ptr[0]->place].alias, offset);
         T->code = merge(2, T->code, T->ptr[0]->code);
-    }
-    if (T->ptr[1] != NULL) //处理下一个
-    {
-        opn1.kind = ID;
-        strcpy(opn1.id, symbolTable.symbols[place].alias);
-        place = exp_index(T->ptr[1], index + 1, width);
-        opn2.kind = ID;
-        strcpy(opn2.id, symbolTable.symbols[place].alias);
+        if (T->ptr[1] != NULL) //处理下一个
+        {
+            int temp_place = exp_index(T->ptr[1], index + 1, width);
+            if (symbolTable.symbols[temp_place].type == LITERAL)
+            {
+                opn2.kind = LITERAL;
+                opn2.const_int = symbolTable.symbols[temp_place].array_dimension;
+            }
+            else
+            {
+                opn2.kind = ID;
+                strcpy(opn2.id, symbolTable.symbols[temp_place].alias);
+            }
+            opn1.kind = ID;
+            strcpy(opn1.id, symbolTable.symbols[place].alias);
 
-        place = temp_add(newTemp(), LEV, TOK_INT, TEMP_VAR);
-        strcpy(result.id, symbolTable.symbols[place].alias);
+            place = temp_add(newTemp(), LEV, TOK_INT, TEMP_VAR);
+            strcpy(result.id, symbolTable.symbols[place].alias);
 
-        T->code = merge(3, T->code, T->ptr[1]->code, genIR(TOK_ADD, opn1, opn2, result));
+            T->code = merge(3, T->code, T->ptr[1]->code, genIR(TOK_ADD, opn1, opn2, result));
+        }
     }
+
     return place;
 }
 int mul_exp(struct node *T, char *i, int offset)
 {
     struct opn opn1, opn2, result;
-    int place = temp_add(newTemp(), LEV, TOK_INT, TEMP_VAR);
-    result.kind = ID;
-    strcpy(result.id, symbolTable.symbols[place].alias);
     opn1.kind = ID;
     strcpy(opn1.id, i);
     opn2.kind = LITERAL;
     opn2.const_int = offset;
+
+    int place = temp_add(newTemp(), LEV, TOK_INT, TEMP_VAR);
+    result.kind = ID;
+    strcpy(result.id, symbolTable.symbols[place].alias);
     T->code = merge(2, T->code, genIR(TOK_MUL, opn1, opn2, result));
     return place;
 }

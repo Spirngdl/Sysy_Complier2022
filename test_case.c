@@ -1,11 +1,9 @@
-
-int n;
-int a[10];
+int arr[2][3];
 int main()
 {
-	int s = a[0];
-	a[0] = 20;
-	a[3] = 3;
-	a[s] = s;
-	return s;
+	arr[1][1] = 3;
+	int s = 0;
+	arr[s][1] = 3;
+	arr[0][0] = 1;
+	return 0;
 }
