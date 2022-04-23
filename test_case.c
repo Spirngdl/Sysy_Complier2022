@@ -1,15 +1,11 @@
-int ifElse() {
-  int a;
-  a = 5;
-  if (a == 5) {
-    a = 25;
-  } else {
-    a = a * 2;
-  }
-  return (a);
-}
-
-
-int main() {
-  return (ifElse());
-}
+int a;
+int b;
+int main(){
+	b=0;
+	a=3;
+	while(a>0){	
+		b = b+a;
+		a = a-1;
+	}
+	return b;
+}	

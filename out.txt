@@ -1,38 +1,30 @@
-100: FUNCTION ifElse :
-101:   temp1 := #5
-102:   var2 := temp1
-103:   temp2 := #5
-104:   IF var2 == temp2 GOTO 106
-105:   GOTO 109
-106:   temp3 := #25
-107:   var2 := temp3
-108:   GOTO 112
-109:   temp4 := #2
-110:   temp5 := var2 * temp4
-111:   var2 := temp5
-112:   RETURN var2
-113: END
-114: FUNCTION main :
-115:   temp6 := CALL ifElse
-116:   RETURN temp6
-117: END
+100: FUNCTION main :
+101:   var2 := #0
+102:   var1 := #3
+103:   IF var1 > #0 GOTO 105
+104:   GOTO 108
+105:   var2 := var2 + var1
+106:   var1 := var1 - #1
+107:   GOTO 103
+108:   RETURN var2
+109: END
 
-FUNCTION ifElse:
+FUNCTION main:
 Block0:
 	USE		
-	DEF		temp1	var2	temp2	
+	DEF		var2	var1	
 	IN		
-	OUT		
+	OUT		var2	var1	
 Block1:
-	USE		
-	DEF		temp3	var2	
-	IN		
-	OUT		var2	
+	USE		var1	
+	DEF		
+	IN		var2	var1	
+	OUT		var2	var1	
 Block2:
-	USE		var2	
-	DEF		temp4	temp5	
-	IN		var2	
-	OUT		
+	USE		var2	var1	
+	DEF		
+	IN		var2	var1	
+	OUT		var2	var1	
 Block3:
 	USE		var2	
 	DEF		
@@ -40,13 +32,6 @@ Block3:
 	OUT		
 Register Assignment:
 	var2	R0
-
-FUNCTION main:
-Block0:
-	USE		
-	DEF		temp6	
-	IN		
-	OUT		
-Register Assignment:
+	var1	R1
 
 ending

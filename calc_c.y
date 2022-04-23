@@ -68,8 +68,8 @@ constdef_: TOK_LSQUARE INTCONST TOK_RSQUARE constdef_      {struct node * temp =
          |                                                 {$$ = NULL;}
          ; 
 
-btype : TOK_INT         {$$ = mknode(TOK_INT,NULL,NULL,NULL,yylineno);}
-      | TOK_FLOAT       {$$ = mknode(TOK_FLOAT,NULL,NULL,NULL,yylineno);}
+btype: TOK_INT         {$$ = mknode(TOK_INT,NULL,NULL,NULL,yylineno);}
+     | TOK_FLOAT       {$$ = mknode(TOK_FLOAT,NULL,NULL,NULL,yylineno);}
       ;                                         
 constinitval: constexp                                                  {$$ = $1;}
             | TOK_LBRACKET TOK_RBRACKET                                 {$$ = NULL;}
@@ -108,14 +108,13 @@ initval: exp                                                    {$$ = $1;}
 initval_: TOK_COMMA exp initval_                                {$$ = mknode(EXP_LIST,$2,$3,NULL,yylineno);}
         |                                                       {$$ = NULL;}
         ;
-funcdef: TOK_INT IDENT TOK_LPAR funcfparams TOK_RPAR block     {struct node* temp = mknode(FUNC_DEF,$4,$6,NULL,yylineno);strcpy(temp->type_id,$2);
+funcdef: btype IDENT TOK_LPAR funcfparams TOK_RPAR block     {struct node* temp = mknode(FUNC_DEF,$4,$6,NULL,yylineno);strcpy(temp->type_id,$2);
                                                                 temp->type = TOK_INT;$$ = temp;}//该结点对应一个函数定义
        | TOK_VOID IDENT TOK_LPAR funcfparams TOK_RPAR block     {struct node* temp = mknode(FUNC_DEF,$4,$6,NULL,yylineno);strcpy(temp->type_id,$2);
                                                                 temp->type = TOK_VOID;$$ = temp;}//该结点对应一个函数定义
-       | TOK_INT IDENT TOK_LPAR TOK_RPAR block                 {struct node* temp = mknode(FUNC_DEF,NULL,$5,NULL,yylineno);strcpy(temp->type_id,$2);
+       | btype IDENT TOK_LPAR TOK_RPAR block                 {struct node* temp = mknode(FUNC_DEF,NULL,$5,NULL,yylineno);strcpy(temp->type_id,$2);
                                                                 temp->type = TOK_INT;$$ = temp;}//该结点对应一个函数定义
-       | TOK_VOID IDENT TOK_LPAR TOK_RPAR block                 {struct node* temp = mknode(FUNC_DEF,NULL,$5,NULL,yylineno);strcpy(temp->type_id,$2);
-                                                                temp->type = TOK_VOID;$$ = temp;}//该结点对应一个函数定义
+       | TOK_VOID IDENT TOK_LPAR TOK_RPAR block                 {struct node* temp = mknode(FUNC_DEF,NULL,$5,NULL,yylineno);strcpy(temp->type_id,$2);}
         ;
 funcfparams: funcfparam TOK_COMMA funcfparams                   {$$ = mknode(PARAM_LIST,$1,$3,NULL,yylineno);}
            | funcfparam                                         {$$ = mknode(PARAM_LIST,$1,NULL,NULL,yylineno);}
