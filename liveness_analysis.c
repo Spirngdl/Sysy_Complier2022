@@ -494,13 +494,14 @@ void all_block_liveness (Block* cntr[], int num_block) {
 // 遍历所有的函数，对每一个函数进行liveness分析与寄存器分配
 void all_fun_reg (Blocks* head_fun) {
     // 每次循环处理一个函数
-    while (head_fun != NULL) {
+    Blocks* p = head_fun;
+    while (p != NULL) {
         //printf("\nFUNCTION %s:", head_fun->name);
         // 基本块间变量寄存器
-        all_block_liveness(head_fun->block, head_fun->count);
+        all_block_liveness(p->block, p->count);
         // 基本块内变量寄存器
         //all_tac_liveness(head_fun->block, head_fun->count);
-        head_fun = head_fun->next;
+        p = p->next;
     }
     printf("\n");
 }
