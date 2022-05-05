@@ -15,6 +15,8 @@
     return -1;
 }*/
 
+int var_cnt = 0;
+
 // 获取IN、OUT中的变量总数
 int get_var_num (char*** in, char*** out, int num_block) {
     int cnt = 0;
@@ -275,14 +277,53 @@ void graph_coloring (char*** in, char*** out, int num_block, int num_reg) {
     }*/
     // 获取一个着色方案
     input_color(var_list, RIG, num_var, num_reg);
-    // 打印函数名
-    printf("Register Allocation:");
-    //printf("Function %s:", current_block->name);
+    //printf("Register Allocation:");
+    /*if (num_var == 0) {
+        printf("\tno var in IN or OUT\n");
+        return;
+    }*/
+    // 对于全局的变量序列进行赋值，以便ARM生成时调用（此时仅 基本块间变量 存在）
     for (i = 0; i < num_var; i++) {
+        strcpy(vars[var_cnt].name, var_list[i]->name);
         if (var_list[i]->reg == -2) {
-            printf("\n\t%s\tSpilling", var_list[i]->name);
+            vars[var_cnt].reg = -1;
         } else {
-            printf("\n\t%s\tR%d", var_list[i]->name, var_list[i]->reg);
+            vars[var_cnt].reg = var_list[i]->reg;
+        }
+        var_cnt++;
+    }
+    // 打印 基本块间变量 寄存器分配方案
+    /*for (i = 0; i < num_var; i++) {
+        if (var_list[i]->reg == -2) {
+            printf("\t%s\tSpilling\n", var_list[i]->name);
+        } else {
+            printf("\t%s\tR%d\n", var_list[i]->name, var_list[i]->reg);
+        }
+    }*/
+    //printf("\n");
+}
+
+// 根据变量别名返回寄存器号，-1为变量溢出，-2为查找失败
+// 全局变量不在 vars[MAX_VARS] 数组中，即会查找失败
+int search_var (char* name) {
+    int i = 0;
+    for (i = 0; i < var_cnt; i++) {
+        if(strcmp(vars[i].name, name) == 0) {
+            return vars[i].reg;
+        }
+    }
+    return -2;
+}
+
+// 打印所有变量及其寄存器号
+void print_vars (void) {
+    int i = 0;
+    printf("All Vars:\n");
+    for (i = 0; i < var_cnt; i++) {
+        if (vars[i].reg == -1) {
+            printf("\t%s\tSpilling\n", vars[i].name);
+        } else {
+            printf("\t%s\tR%d\n", vars[i].name, vars[i].reg);
         }
     }
     printf("\n");

@@ -1,0 +1,2449 @@
+状态 171 冲突：1 项偏移/归约
+
+
+语法
+
+    0 $accept: program $end
+
+    1 program: compunit
+
+    2 compunit: decl compunit
+    3         | funcdef compunit
+    4         | decl
+    5         | funcdef
+
+    6 decl: constdecl
+    7     | vardecl
+
+    8 constdecl: TOK_CONST TOK_INT constdef constdecl_ TOK_SEMICOLON
+
+    9 constdecl_: TOK_COMMA constdef constdecl_
+   10           | %empty
+
+   11 constdef: IDENT constdef_ TOK_ASSIGN constinitval
+
+   12 constdef_: TOK_LSQUARE INTCONST TOK_RSQUARE constdef_
+   13          | %empty
+
+   14 btype: TOK_INT
+   15      | TOK_FLOAT
+
+   16 constinitval: constexp
+   17             | TOK_LBRACKET TOK_RBRACKET
+   18             | TOK_LBRACKET constinitval constinitval_ TOK_RBRACKET
+
+   19 constinitval_: TOK_COMMA constinitval constinitval_
+   20              | %empty
+
+   21 vardecl: btype vardef vardecl_ TOK_SEMICOLON
+
+   22 vardecl_: TOK_COMMA vardef vardecl_
+   23         | %empty
+
+   24 vardef: IDENT vardef_
+   25       | IDENT vardef_ TOK_ASSIGN initval
+
+   26 vardef_: TOK_LSQUARE constexp TOK_RSQUARE vardef_
+   27        | %empty
+
+   28 initval: exp
+   29        | TOK_LBRACKET exp initval_ TOK_RBRACKET initval
+   30        | TOK_LBRACKET TOK_RBRACKET
+   31        | %empty
+
+   32 initval_: TOK_COMMA exp initval_
+   33         | %empty
+
+   34 funcdef: btype IDENT TOK_LPAR funcfparams TOK_RPAR block
+   35        | TOK_VOID IDENT TOK_LPAR funcfparams TOK_RPAR block
+   36        | btype IDENT TOK_LPAR TOK_RPAR block
+   37        | TOK_VOID IDENT TOK_LPAR TOK_RPAR block
+
+   38 funcfparams: funcfparam TOK_COMMA funcfparams
+   39            | funcfparam
+
+   40 funcfparam: btype IDENT TOK_LSQUARE TOK_RSQUARE funcfparam_
+   41           | btype IDENT
+
+   42 funcfparam_: TOK_LSQUARE INTCONST TOK_RSQUARE funcfparam_
+   43            | %empty
+
+   44 block: TOK_LBRACKET block_ TOK_RBRACKET
+
+   45 block_: blockitem block_
+   46       | %empty
+
+   47 blockitem: decl
+   48          | stmt
+
+   49 stmt: lval TOK_ASSIGN exp TOK_SEMICOLON
+   50     | TOK_SEMICOLON
+   51     | exp TOK_SEMICOLON
+   52     | block
+   53     | TOK_IF TOK_LPAR cond TOK_RPAR stmt
+   54     | TOK_IF TOK_LPAR cond TOK_RPAR stmt TOK_ELSE stmt
+   55     | TOK_WHILE TOK_LPAR cond TOK_RPAR stmt
+   56     | TOK_BREAK TOK_SEMICOLON
+   57     | TOK_CONTINUE TOK_SEMICOLON
+   58     | TOK_RETURN TOK_SEMICOLON
+   59     | TOK_RETURN exp TOK_SEMICOLON
+
+   60 exp: addexp
+
+   61 cond: lorexp
+
+   62 lval: IDENT lval_
+
+   63 lval_: TOK_LSQUARE exp TOK_RSQUARE lval_
+   64      | %empty
+
+   65 primaryexp: TOK_LPAR exp TOK_RPAR
+   66           | lval
+   67           | number
+
+   68 number: INTCONST
+
+   69 unaryexp: primaryexp
+   70         | IDENT TOK_LPAR funcrparams TOK_RPAR
+   71         | IDENT TOK_LPAR TOK_RPAR
+   72         | unaryop unaryexp
+
+   73 unaryop: TOK_ADD
+   74        | TOK_SUB
+   75        | TOK_NOT
+
+   76 funcrparams: exp TOK_COMMA funcrparams
+   77            | exp
+
+   78 mulexp: unaryexp
+   79       | mulexp TOK_MUL unaryexp
+   80       | mulexp TOK_DIV unaryexp
+   81       | mulexp TOK_MODULO unaryexp
+
+   82 addexp: mulexp
+   83       | addexp TOK_ADD addexp
+   84       | addexp TOK_SUB addexp
+
+   85 relexp: addexp
+   86       | relexp TOK_LESS addexp
+   87       | relexp TOK_GREAT addexp
+   88       | relexp TOK_LESSEQ addexp
+   89       | relexp TOK_GREATEQ addexp
+
+   90 eqexp: relexp
+   91      | eqexp TOK_EQ relexp
+   92      | eqexp TOK_NOTEQ relexp
+
+   93 landexp: eqexp
+   94        | landexp TOK_AND eqexp
+
+   95 lorexp: landexp
+   96       | lorexp TOK_OR landexp
+
+   97 constexp: addexp
+
+
+终结语词，附有它们出现处的规则
+
+    $end (0) 0
+    error (256)
+    TOK_OR (258) 96
+    TOK_AND (259) 94
+    TOK_ADD (260) 73 83
+    TOK_SUB (261) 74 84
+    TOK_MUL (262) 79
+    TOK_DIV (263) 80
+    TOK_MODULO (264) 81
+    TOK_LESS <type_id> (265) 86
+    TOK_LESSEQ <type_id> (266) 88
+    TOK_GREAT <type_id> (267) 87
+    TOK_GREATEQ <type_id> (268) 89
+    TOK_NOTEQ <type_id> (269) 92
+    TOK_EQ <type_id> (270) 91
+    TOK_ASSIGN (271) 11 25 49
+    TOK_NOT (272) 75
+    INTCONST <type_int> (273) 12 42 68
+    IDENT <type_id> (274) 11 24 25 34 35 36 37 40 41 62 70 71
+    TOK_CONST <type_id> (275) 8
+    TOK_LPAR (276) 34 35 36 37 53 54 55 65 70 71
+    TOK_RPAR (277) 34 35 36 37 53 54 55 65 70 71
+    TOK_LBRACKET (278) 17 18 29 30 44
+    TOK_RBRACKET (279) 17 18 29 30 44
+    TOK_LSQUARE (280) 12 26 40 42 63
+    TOK_RSQUARE (281) 12 26 40 42 63
+    TOK_COMMA (282) 9 19 22 32 38 76
+    TOK_SEMICOLON (283) 8 21 49 50 51 56 57 58 59
+    TOK_BREAK (284) 56
+    TOK_CONTINUE (285) 57
+    TOK_IF (286) 53 54
+    TOK_ELSE (287) 54
+    TOK_WHILE (288) 55
+    TOK_RETURN (289) 58 59
+    TOK_INT (290) 8 14
+    TOK_VOID (291) 35 37
+    TOK_FLOAT (292) 15
+
+
+非终结语词，附有它们出现处的规则
+
+    $accept (38)
+        on left: 0
+    program <ptr> (39)
+        on left: 1
+        on right: 0
+    compunit <ptr> (40)
+        on left: 2 3 4 5
+        on right: 1 2 3
+    decl <ptr> (41)
+        on left: 6 7
+        on right: 2 4 47
+    constdecl <ptr> (42)
+        on left: 8
+        on right: 6
+    constdecl_ <ptr> (43)
+        on left: 9 10
+        on right: 8 9
+    constdef <ptr> (44)
+        on left: 11
+        on right: 8 9
+    constdef_ <ptr> (45)
+        on left: 12 13
+        on right: 11 12
+    btype <ptr> (46)
+        on left: 14 15
+        on right: 21 34 36 40 41
+    constinitval <ptr> (47)
+        on left: 16 17 18
+        on right: 11 18 19
+    constinitval_ <ptr> (48)
+        on left: 19 20
+        on right: 18 19
+    vardecl <ptr> (49)
+        on left: 21
+        on right: 7
+    vardecl_ <ptr> (50)
+        on left: 22 23
+        on right: 21 22
+    vardef <ptr> (51)
+        on left: 24 25
+        on right: 21 22
+    vardef_ <ptr> (52)
+        on left: 26 27
+        on right: 24 25 26
+    initval <ptr> (53)
+        on left: 28 29 30 31
+        on right: 25 29
+    initval_ <ptr> (54)
+        on left: 32 33
+        on right: 29 32
+    funcdef <ptr> (55)
+        on left: 34 35 36 37
+        on right: 3 5
+    funcfparams <ptr> (56)
+        on left: 38 39
+        on right: 34 35 38
+    funcfparam <ptr> (57)
+        on left: 40 41
+        on right: 38 39
+    funcfparam_ <ptr> (58)
+        on left: 42 43
+        on right: 40 42
+    block <ptr> (59)
+        on left: 44
+        on right: 34 35 36 37 52
+    block_ <ptr> (60)
+        on left: 45 46
+        on right: 44 45
+    blockitem <ptr> (61)
+        on left: 47 48
+        on right: 45
+    stmt <ptr> (62)
+        on left: 49 50 51 52 53 54 55 56 57 58 59
+        on right: 48 53 54 55
+    exp <ptr> (63)
+        on left: 60
+        on right: 28 29 32 49 51 59 63 65 76 77
+    cond <ptr> (64)
+        on left: 61
+        on right: 53 54 55
+    lval <ptr> (65)
+        on left: 62
+        on right: 49 66
+    lval_ <ptr> (66)
+        on left: 63 64
+        on right: 62 63
+    primaryexp <ptr> (67)
+        on left: 65 66 67
+        on right: 69
+    number <ptr> (68)
+        on left: 68
+        on right: 67
+    unaryexp <ptr> (69)
+        on left: 69 70 71 72
+        on right: 72 78 79 80 81
+    unaryop <ptr> (70)
+        on left: 73 74 75
+        on right: 72
+    funcrparams <ptr> (71)
+        on left: 76 77
+        on right: 70 76
+    mulexp <ptr> (72)
+        on left: 78 79 80 81
+        on right: 79 80 81 82
+    addexp <ptr> (73)
+        on left: 82 83 84
+        on right: 60 83 84 85 86 87 88 89 97
+    relexp <ptr> (74)
+        on left: 85 86 87 88 89
+        on right: 86 87 88 89 90 91 92
+    eqexp <ptr> (75)
+        on left: 90 91 92
+        on right: 91 92 93 94
+    landexp <ptr> (76)
+        on left: 93 94
+        on right: 94 95 96
+    lorexp <ptr> (77)
+        on left: 95 96
+        on right: 61 96
+    constexp <ptr> (78)
+        on left: 97
+        on right: 16 26
+
+
+状态 0
+
+    0 $accept: . program $end
+
+    TOK_CONST  偏移，并进入状态 1
+    TOK_INT    偏移，并进入状态 2
+    TOK_VOID   偏移，并进入状态 3
+    TOK_FLOAT  偏移，并进入状态 4
+
+    program    转到状态 5
+    compunit   转到状态 6
+    decl       转到状态 7
+    constdecl  转到状态 8
+    btype      转到状态 9
+    vardecl    转到状态 10
+    funcdef    转到状态 11
+
+
+状态 1
+
+    8 constdecl: TOK_CONST . TOK_INT constdef constdecl_ TOK_SEMICOLON
+
+    TOK_INT  偏移，并进入状态 12
+
+
+状态 2
+
+   14 btype: TOK_INT .
+
+    $default  使用规则 14 以归约 (btype)
+
+
+状态 3
+
+   35 funcdef: TOK_VOID . IDENT TOK_LPAR funcfparams TOK_RPAR block
+   37        | TOK_VOID . IDENT TOK_LPAR TOK_RPAR block
+
+    IDENT  偏移，并进入状态 13
+
+
+状态 4
+
+   15 btype: TOK_FLOAT .
+
+    $default  使用规则 15 以归约 (btype)
+
+
+状态 5
+
+    0 $accept: program . $end
+
+    $end  偏移，并进入状态 14
+
+
+状态 6
+
+    1 program: compunit .
+
+    $default  使用规则 1 以归约 (program)
+
+
+状态 7
+
+    2 compunit: decl . compunit
+    4         | decl .
+
+    TOK_CONST  偏移，并进入状态 1
+    TOK_INT    偏移，并进入状态 2
+    TOK_VOID   偏移，并进入状态 3
+    TOK_FLOAT  偏移，并进入状态 4
+
+    $default  使用规则 4 以归约 (compunit)
+
+    compunit   转到状态 15
+    decl       转到状态 7
+    constdecl  转到状态 8
+    btype      转到状态 9
+    vardecl    转到状态 10
+    funcdef    转到状态 11
+
+
+状态 8
+
+    6 decl: constdecl .
+
+    $default  使用规则 6 以归约 (decl)
+
+
+状态 9
+
+   21 vardecl: btype . vardef vardecl_ TOK_SEMICOLON
+   34 funcdef: btype . IDENT TOK_LPAR funcfparams TOK_RPAR block
+   36        | btype . IDENT TOK_LPAR TOK_RPAR block
+
+    IDENT  偏移，并进入状态 16
+
+    vardef  转到状态 17
+
+
+状态 10
+
+    7 decl: vardecl .
+
+    $default  使用规则 7 以归约 (decl)
+
+
+状态 11
+
+    3 compunit: funcdef . compunit
+    5         | funcdef .
+
+    TOK_CONST  偏移，并进入状态 1
+    TOK_INT    偏移，并进入状态 2
+    TOK_VOID   偏移，并进入状态 3
+    TOK_FLOAT  偏移，并进入状态 4
+
+    $default  使用规则 5 以归约 (compunit)
+
+    compunit   转到状态 18
+    decl       转到状态 7
+    constdecl  转到状态 8
+    btype      转到状态 9
+    vardecl    转到状态 10
+    funcdef    转到状态 11
+
+
+状态 12
+
+    8 constdecl: TOK_CONST TOK_INT . constdef constdecl_ TOK_SEMICOLON
+
+    IDENT  偏移，并进入状态 19
+
+    constdef  转到状态 20
+
+
+状态 13
+
+   35 funcdef: TOK_VOID IDENT . TOK_LPAR funcfparams TOK_RPAR block
+   37        | TOK_VOID IDENT . TOK_LPAR TOK_RPAR block
+
+    TOK_LPAR  偏移，并进入状态 21
+
+
+状态 14
+
+    0 $accept: program $end .
+
+    $default  接受
+
+
+状态 15
+
+    2 compunit: decl compunit .
+
+    $default  使用规则 2 以归约 (compunit)
+
+
+状态 16
+
+   24 vardef: IDENT . vardef_
+   25       | IDENT . vardef_ TOK_ASSIGN initval
+   34 funcdef: btype IDENT . TOK_LPAR funcfparams TOK_RPAR block
+   36        | btype IDENT . TOK_LPAR TOK_RPAR block
+
+    TOK_LPAR     偏移，并进入状态 22
+    TOK_LSQUARE  偏移，并进入状态 23
+
+    $default  使用规则 27 以归约 (vardef_)
+
+    vardef_  转到状态 24
+
+
+状态 17
+
+   21 vardecl: btype vardef . vardecl_ TOK_SEMICOLON
+
+    TOK_COMMA  偏移，并进入状态 25
+
+    $default  使用规则 23 以归约 (vardecl_)
+
+    vardecl_  转到状态 26
+
+
+状态 18
+
+    3 compunit: funcdef compunit .
+
+    $default  使用规则 3 以归约 (compunit)
+
+
+状态 19
+
+   11 constdef: IDENT . constdef_ TOK_ASSIGN constinitval
+
+    TOK_LSQUARE  偏移，并进入状态 27
+
+    $default  使用规则 13 以归约 (constdef_)
+
+    constdef_  转到状态 28
+
+
+状态 20
+
+    8 constdecl: TOK_CONST TOK_INT constdef . constdecl_ TOK_SEMICOLON
+
+    TOK_COMMA  偏移，并进入状态 29
+
+    $default  使用规则 10 以归约 (constdecl_)
+
+    constdecl_  转到状态 30
+
+
+状态 21
+
+   35 funcdef: TOK_VOID IDENT TOK_LPAR . funcfparams TOK_RPAR block
+   37        | TOK_VOID IDENT TOK_LPAR . TOK_RPAR block
+
+    TOK_RPAR   偏移，并进入状态 31
+    TOK_INT    偏移，并进入状态 2
+    TOK_FLOAT  偏移，并进入状态 4
+
+    btype        转到状态 32
+    funcfparams  转到状态 33
+    funcfparam   转到状态 34
+
+
+状态 22
+
+   34 funcdef: btype IDENT TOK_LPAR . funcfparams TOK_RPAR block
+   36        | btype IDENT TOK_LPAR . TOK_RPAR block
+
+    TOK_RPAR   偏移，并进入状态 35
+    TOK_INT    偏移，并进入状态 2
+    TOK_FLOAT  偏移，并进入状态 4
+
+    btype        转到状态 32
+    funcfparams  转到状态 36
+    funcfparam   转到状态 34
+
+
+状态 23
+
+   26 vardef_: TOK_LSQUARE . constexp TOK_RSQUARE vardef_
+
+    TOK_ADD   偏移，并进入状态 37
+    TOK_SUB   偏移，并进入状态 38
+    TOK_NOT   偏移，并进入状态 39
+    INTCONST  偏移，并进入状态 40
+    IDENT     偏移，并进入状态 41
+    TOK_LPAR  偏移，并进入状态 42
+
+    lval        转到状态 43
+    primaryexp  转到状态 44
+    number      转到状态 45
+    unaryexp    转到状态 46
+    unaryop     转到状态 47
+    mulexp      转到状态 48
+    addexp      转到状态 49
+    constexp    转到状态 50
+
+
+状态 24
+
+   24 vardef: IDENT vardef_ .
+   25       | IDENT vardef_ . TOK_ASSIGN initval
+
+    TOK_ASSIGN  偏移，并进入状态 51
+
+    $default  使用规则 24 以归约 (vardef)
+
+
+状态 25
+
+   22 vardecl_: TOK_COMMA . vardef vardecl_
+
+    IDENT  偏移，并进入状态 52
+
+    vardef  转到状态 53
+
+
+状态 26
+
+   21 vardecl: btype vardef vardecl_ . TOK_SEMICOLON
+
+    TOK_SEMICOLON  偏移，并进入状态 54
+
+
+状态 27
+
+   12 constdef_: TOK_LSQUARE . INTCONST TOK_RSQUARE constdef_
+
+    INTCONST  偏移，并进入状态 55
+
+
+状态 28
+
+   11 constdef: IDENT constdef_ . TOK_ASSIGN constinitval
+
+    TOK_ASSIGN  偏移，并进入状态 56
+
+
+状态 29
+
+    9 constdecl_: TOK_COMMA . constdef constdecl_
+
+    IDENT  偏移，并进入状态 19
+
+    constdef  转到状态 57
+
+
+状态 30
+
+    8 constdecl: TOK_CONST TOK_INT constdef constdecl_ . TOK_SEMICOLON
+
+    TOK_SEMICOLON  偏移，并进入状态 58
+
+
+状态 31
+
+   37 funcdef: TOK_VOID IDENT TOK_LPAR TOK_RPAR . block
+
+    TOK_LBRACKET  偏移，并进入状态 59
+
+    block  转到状态 60
+
+
+状态 32
+
+   40 funcfparam: btype . IDENT TOK_LSQUARE TOK_RSQUARE funcfparam_
+   41           | btype . IDENT
+
+    IDENT  偏移，并进入状态 61
+
+
+状态 33
+
+   35 funcdef: TOK_VOID IDENT TOK_LPAR funcfparams . TOK_RPAR block
+
+    TOK_RPAR  偏移，并进入状态 62
+
+
+状态 34
+
+   38 funcfparams: funcfparam . TOK_COMMA funcfparams
+   39            | funcfparam .
+
+    TOK_COMMA  偏移，并进入状态 63
+
+    $default  使用规则 39 以归约 (funcfparams)
+
+
+状态 35
+
+   36 funcdef: btype IDENT TOK_LPAR TOK_RPAR . block
+
+    TOK_LBRACKET  偏移，并进入状态 59
+
+    block  转到状态 64
+
+
+状态 36
+
+   34 funcdef: btype IDENT TOK_LPAR funcfparams . TOK_RPAR block
+
+    TOK_RPAR  偏移，并进入状态 65
+
+
+状态 37
+
+   73 unaryop: TOK_ADD .
+
+    $default  使用规则 73 以归约 (unaryop)
+
+
+状态 38
+
+   74 unaryop: TOK_SUB .
+
+    $default  使用规则 74 以归约 (unaryop)
+
+
+状态 39
+
+   75 unaryop: TOK_NOT .
+
+    $default  使用规则 75 以归约 (unaryop)
+
+
+状态 40
+
+   68 number: INTCONST .
+
+    $default  使用规则 68 以归约 (number)
+
+
+状态 41
+
+   62 lval: IDENT . lval_
+   70 unaryexp: IDENT . TOK_LPAR funcrparams TOK_RPAR
+   71         | IDENT . TOK_LPAR TOK_RPAR
+
+    TOK_LPAR     偏移，并进入状态 66
+    TOK_LSQUARE  偏移，并进入状态 67
+
+    $default  使用规则 64 以归约 (lval_)
+
+    lval_  转到状态 68
+
+
+状态 42
+
+   65 primaryexp: TOK_LPAR . exp TOK_RPAR
+
+    TOK_ADD   偏移，并进入状态 37
+    TOK_SUB   偏移，并进入状态 38
+    TOK_NOT   偏移，并进入状态 39
+    INTCONST  偏移，并进入状态 40
+    IDENT     偏移，并进入状态 41
+    TOK_LPAR  偏移，并进入状态 42
+
+    exp         转到状态 69
+    lval        转到状态 43
+    primaryexp  转到状态 44
+    number      转到状态 45
+    unaryexp    转到状态 46
+    unaryop     转到状态 47
+    mulexp      转到状态 48
+    addexp      转到状态 70
+
+
+状态 43
+
+   66 primaryexp: lval .
+
+    $default  使用规则 66 以归约 (primaryexp)
+
+
+状态 44
+
+   69 unaryexp: primaryexp .
+
+    $default  使用规则 69 以归约 (unaryexp)
+
+
+状态 45
+
+   67 primaryexp: number .
+
+    $default  使用规则 67 以归约 (primaryexp)
+
+
+状态 46
+
+   78 mulexp: unaryexp .
+
+    $default  使用规则 78 以归约 (mulexp)
+
+
+状态 47
+
+   72 unaryexp: unaryop . unaryexp
+
+    TOK_ADD   偏移，并进入状态 37
+    TOK_SUB   偏移，并进入状态 38
+    TOK_NOT   偏移，并进入状态 39
+    INTCONST  偏移，并进入状态 40
+    IDENT     偏移，并进入状态 41
+    TOK_LPAR  偏移，并进入状态 42
+
+    lval        转到状态 43
+    primaryexp  转到状态 44
+    number      转到状态 45
+    unaryexp    转到状态 71
+    unaryop     转到状态 47
+
+
+状态 48
+
+   79 mulexp: mulexp . TOK_MUL unaryexp
+   80       | mulexp . TOK_DIV unaryexp
+   81       | mulexp . TOK_MODULO unaryexp
+   82 addexp: mulexp .
+
+    TOK_MUL     偏移，并进入状态 72
+    TOK_DIV     偏移，并进入状态 73
+    TOK_MODULO  偏移，并进入状态 74
+
+    $default  使用规则 82 以归约 (addexp)
+
+
+状态 49
+
+   83 addexp: addexp . TOK_ADD addexp
+   84       | addexp . TOK_SUB addexp
+   97 constexp: addexp .
+
+    TOK_ADD  偏移，并进入状态 75
+    TOK_SUB  偏移，并进入状态 76
+
+    $default  使用规则 97 以归约 (constexp)
+
+
+状态 50
+
+   26 vardef_: TOK_LSQUARE constexp . TOK_RSQUARE vardef_
+
+    TOK_RSQUARE  偏移，并进入状态 77
+
+
+状态 51
+
+   25 vardef: IDENT vardef_ TOK_ASSIGN . initval
+
+    TOK_ADD       偏移，并进入状态 37
+    TOK_SUB       偏移，并进入状态 38
+    TOK_NOT       偏移，并进入状态 39
+    INTCONST      偏移，并进入状态 40
+    IDENT         偏移，并进入状态 41
+    TOK_LPAR      偏移，并进入状态 42
+    TOK_LBRACKET  偏移，并进入状态 78
+
+    $default  使用规则 31 以归约 (initval)
+
+    initval     转到状态 79
+    exp         转到状态 80
+    lval        转到状态 43
+    primaryexp  转到状态 44
+    number      转到状态 45
+    unaryexp    转到状态 46
+    unaryop     转到状态 47
+    mulexp      转到状态 48
+    addexp      转到状态 70
+
+
+状态 52
+
+   24 vardef: IDENT . vardef_
+   25       | IDENT . vardef_ TOK_ASSIGN initval
+
+    TOK_LSQUARE  偏移，并进入状态 23
+
+    $default  使用规则 27 以归约 (vardef_)
+
+    vardef_  转到状态 24
+
+
+状态 53
+
+   22 vardecl_: TOK_COMMA vardef . vardecl_
+
+    TOK_COMMA  偏移，并进入状态 25
+
+    $default  使用规则 23 以归约 (vardecl_)
+
+    vardecl_  转到状态 81
+
+
+状态 54
+
+   21 vardecl: btype vardef vardecl_ TOK_SEMICOLON .
+
+    $default  使用规则 21 以归约 (vardecl)
+
+
+状态 55
+
+   12 constdef_: TOK_LSQUARE INTCONST . TOK_RSQUARE constdef_
+
+    TOK_RSQUARE  偏移，并进入状态 82
+
+
+状态 56
+
+   11 constdef: IDENT constdef_ TOK_ASSIGN . constinitval
+
+    TOK_ADD       偏移，并进入状态 37
+    TOK_SUB       偏移，并进入状态 38
+    TOK_NOT       偏移，并进入状态 39
+    INTCONST      偏移，并进入状态 40
+    IDENT         偏移，并进入状态 41
+    TOK_LPAR      偏移，并进入状态 42
+    TOK_LBRACKET  偏移，并进入状态 83
+
+    constinitval  转到状态 84
+    lval          转到状态 43
+    primaryexp    转到状态 44
+    number        转到状态 45
+    unaryexp      转到状态 46
+    unaryop       转到状态 47
+    mulexp        转到状态 48
+    addexp        转到状态 49
+    constexp      转到状态 85
+
+
+状态 57
+
+    9 constdecl_: TOK_COMMA constdef . constdecl_
+
+    TOK_COMMA  偏移，并进入状态 29
+
+    $default  使用规则 10 以归约 (constdecl_)
+
+    constdecl_  转到状态 86
+
+
+状态 58
+
+    8 constdecl: TOK_CONST TOK_INT constdef constdecl_ TOK_SEMICOLON .
+
+    $default  使用规则 8 以归约 (constdecl)
+
+
+状态 59
+
+   44 block: TOK_LBRACKET . block_ TOK_RBRACKET
+
+    TOK_ADD        偏移，并进入状态 37
+    TOK_SUB        偏移，并进入状态 38
+    TOK_NOT        偏移，并进入状态 39
+    INTCONST       偏移，并进入状态 40
+    IDENT          偏移，并进入状态 41
+    TOK_CONST      偏移，并进入状态 1
+    TOK_LPAR       偏移，并进入状态 42
+    TOK_LBRACKET   偏移，并进入状态 59
+    TOK_SEMICOLON  偏移，并进入状态 87
+    TOK_BREAK      偏移，并进入状态 88
+    TOK_CONTINUE   偏移，并进入状态 89
+    TOK_IF         偏移，并进入状态 90
+    TOK_WHILE      偏移，并进入状态 91
+    TOK_RETURN     偏移，并进入状态 92
+    TOK_INT        偏移，并进入状态 2
+    TOK_FLOAT      偏移，并进入状态 4
+
+    $default  使用规则 46 以归约 (block_)
+
+    decl        转到状态 93
+    constdecl   转到状态 8
+    btype       转到状态 94
+    vardecl     转到状态 10
+    block       转到状态 95
+    block_      转到状态 96
+    blockitem   转到状态 97
+    stmt        转到状态 98
+    exp         转到状态 99
+    lval        转到状态 100
+    primaryexp  转到状态 44
+    number      转到状态 45
+    unaryexp    转到状态 46
+    unaryop     转到状态 47
+    mulexp      转到状态 48
+    addexp      转到状态 70
+
+
+状态 60
+
+   37 funcdef: TOK_VOID IDENT TOK_LPAR TOK_RPAR block .
+
+    $default  使用规则 37 以归约 (funcdef)
+
+
+状态 61
+
+   40 funcfparam: btype IDENT . TOK_LSQUARE TOK_RSQUARE funcfparam_
+   41           | btype IDENT .
+
+    TOK_LSQUARE  偏移，并进入状态 101
+
+    $default  使用规则 41 以归约 (funcfparam)
+
+
+状态 62
+
+   35 funcdef: TOK_VOID IDENT TOK_LPAR funcfparams TOK_RPAR . block
+
+    TOK_LBRACKET  偏移，并进入状态 59
+
+    block  转到状态 102
+
+
+状态 63
+
+   38 funcfparams: funcfparam TOK_COMMA . funcfparams
+
+    TOK_INT    偏移，并进入状态 2
+    TOK_FLOAT  偏移，并进入状态 4
+
+    btype        转到状态 32
+    funcfparams  转到状态 103
+    funcfparam   转到状态 34
+
+
+状态 64
+
+   36 funcdef: btype IDENT TOK_LPAR TOK_RPAR block .
+
+    $default  使用规则 36 以归约 (funcdef)
+
+
+状态 65
+
+   34 funcdef: btype IDENT TOK_LPAR funcfparams TOK_RPAR . block
+
+    TOK_LBRACKET  偏移，并进入状态 59
+
+    block  转到状态 104
+
+
+状态 66
+
+   70 unaryexp: IDENT TOK_LPAR . funcrparams TOK_RPAR
+   71         | IDENT TOK_LPAR . TOK_RPAR
+
+    TOK_ADD   偏移，并进入状态 37
+    TOK_SUB   偏移，并进入状态 38
+    TOK_NOT   偏移，并进入状态 39
+    INTCONST  偏移，并进入状态 40
+    IDENT     偏移，并进入状态 41
+    TOK_LPAR  偏移，并进入状态 42
+    TOK_RPAR  偏移，并进入状态 105
+
+    exp          转到状态 106
+    lval         转到状态 43
+    primaryexp   转到状态 44
+    number       转到状态 45
+    unaryexp     转到状态 46
+    unaryop      转到状态 47
+    funcrparams  转到状态 107
+    mulexp       转到状态 48
+    addexp       转到状态 70
+
+
+状态 67
+
+   63 lval_: TOK_LSQUARE . exp TOK_RSQUARE lval_
+
+    TOK_ADD   偏移，并进入状态 37
+    TOK_SUB   偏移，并进入状态 38
+    TOK_NOT   偏移，并进入状态 39
+    INTCONST  偏移，并进入状态 40
+    IDENT     偏移，并进入状态 41
+    TOK_LPAR  偏移，并进入状态 42
+
+    exp         转到状态 108
+    lval        转到状态 43
+    primaryexp  转到状态 44
+    number      转到状态 45
+    unaryexp    转到状态 46
+    unaryop     转到状态 47
+    mulexp      转到状态 48
+    addexp      转到状态 70
+
+
+状态 68
+
+   62 lval: IDENT lval_ .
+
+    $default  使用规则 62 以归约 (lval)
+
+
+状态 69
+
+   65 primaryexp: TOK_LPAR exp . TOK_RPAR
+
+    TOK_RPAR  偏移，并进入状态 109
+
+
+状态 70
+
+   60 exp: addexp .
+   83 addexp: addexp . TOK_ADD addexp
+   84       | addexp . TOK_SUB addexp
+
+    TOK_ADD  偏移，并进入状态 75
+    TOK_SUB  偏移，并进入状态 76
+
+    $default  使用规则 60 以归约 (exp)
+
+
+状态 71
+
+   72 unaryexp: unaryop unaryexp .
+
+    $default  使用规则 72 以归约 (unaryexp)
+
+
+状态 72
+
+   79 mulexp: mulexp TOK_MUL . unaryexp
+
+    TOK_ADD   偏移，并进入状态 37
+    TOK_SUB   偏移，并进入状态 38
+    TOK_NOT   偏移，并进入状态 39
+    INTCONST  偏移，并进入状态 40
+    IDENT     偏移，并进入状态 41
+    TOK_LPAR  偏移，并进入状态 42
+
+    lval        转到状态 43
+    primaryexp  转到状态 44
+    number      转到状态 45
+    unaryexp    转到状态 110
+    unaryop     转到状态 47
+
+
+状态 73
+
+   80 mulexp: mulexp TOK_DIV . unaryexp
+
+    TOK_ADD   偏移，并进入状态 37
+    TOK_SUB   偏移，并进入状态 38
+    TOK_NOT   偏移，并进入状态 39
+    INTCONST  偏移，并进入状态 40
+    IDENT     偏移，并进入状态 41
+    TOK_LPAR  偏移，并进入状态 42
+
+    lval        转到状态 43
+    primaryexp  转到状态 44
+    number      转到状态 45
+    unaryexp    转到状态 111
+    unaryop     转到状态 47
+
+
+状态 74
+
+   81 mulexp: mulexp TOK_MODULO . unaryexp
+
+    TOK_ADD   偏移，并进入状态 37
+    TOK_SUB   偏移，并进入状态 38
+    TOK_NOT   偏移，并进入状态 39
+    INTCONST  偏移，并进入状态 40
+    IDENT     偏移，并进入状态 41
+    TOK_LPAR  偏移，并进入状态 42
+
+    lval        转到状态 43
+    primaryexp  转到状态 44
+    number      转到状态 45
+    unaryexp    转到状态 112
+    unaryop     转到状态 47
+
+
+状态 75
+
+   83 addexp: addexp TOK_ADD . addexp
+
+    TOK_ADD   偏移，并进入状态 37
+    TOK_SUB   偏移，并进入状态 38
+    TOK_NOT   偏移，并进入状态 39
+    INTCONST  偏移，并进入状态 40
+    IDENT     偏移，并进入状态 41
+    TOK_LPAR  偏移，并进入状态 42
+
+    lval        转到状态 43
+    primaryexp  转到状态 44
+    number      转到状态 45
+    unaryexp    转到状态 46
+    unaryop     转到状态 47
+    mulexp      转到状态 48
+    addexp      转到状态 113
+
+
+状态 76
+
+   84 addexp: addexp TOK_SUB . addexp
+
+    TOK_ADD   偏移，并进入状态 37
+    TOK_SUB   偏移，并进入状态 38
+    TOK_NOT   偏移，并进入状态 39
+    INTCONST  偏移，并进入状态 40
+    IDENT     偏移，并进入状态 41
+    TOK_LPAR  偏移，并进入状态 42
+
+    lval        转到状态 43
+    primaryexp  转到状态 44
+    number      转到状态 45
+    unaryexp    转到状态 46
+    unaryop     转到状态 47
+    mulexp      转到状态 48
+    addexp      转到状态 114
+
+
+状态 77
+
+   26 vardef_: TOK_LSQUARE constexp TOK_RSQUARE . vardef_
+
+    TOK_LSQUARE  偏移，并进入状态 23
+
+    $default  使用规则 27 以归约 (vardef_)
+
+    vardef_  转到状态 115
+
+
+状态 78
+
+   29 initval: TOK_LBRACKET . exp initval_ TOK_RBRACKET initval
+   30        | TOK_LBRACKET . TOK_RBRACKET
+
+    TOK_ADD       偏移，并进入状态 37
+    TOK_SUB       偏移，并进入状态 38
+    TOK_NOT       偏移，并进入状态 39
+    INTCONST      偏移，并进入状态 40
+    IDENT         偏移，并进入状态 41
+    TOK_LPAR      偏移，并进入状态 42
+    TOK_RBRACKET  偏移，并进入状态 116
+
+    exp         转到状态 117
+    lval        转到状态 43
+    primaryexp  转到状态 44
+    number      转到状态 45
+    unaryexp    转到状态 46
+    unaryop     转到状态 47
+    mulexp      转到状态 48
+    addexp      转到状态 70
+
+
+状态 79
+
+   25 vardef: IDENT vardef_ TOK_ASSIGN initval .
+
+    $default  使用规则 25 以归约 (vardef)
+
+
+状态 80
+
+   28 initval: exp .
+
+    $default  使用规则 28 以归约 (initval)
+
+
+状态 81
+
+   22 vardecl_: TOK_COMMA vardef vardecl_ .
+
+    $default  使用规则 22 以归约 (vardecl_)
+
+
+状态 82
+
+   12 constdef_: TOK_LSQUARE INTCONST TOK_RSQUARE . constdef_
+
+    TOK_LSQUARE  偏移，并进入状态 27
+
+    $default  使用规则 13 以归约 (constdef_)
+
+    constdef_  转到状态 118
+
+
+状态 83
+
+   17 constinitval: TOK_LBRACKET . TOK_RBRACKET
+   18             | TOK_LBRACKET . constinitval constinitval_ TOK_RBRACKET
+
+    TOK_ADD       偏移，并进入状态 37
+    TOK_SUB       偏移，并进入状态 38
+    TOK_NOT       偏移，并进入状态 39
+    INTCONST      偏移，并进入状态 40
+    IDENT         偏移，并进入状态 41
+    TOK_LPAR      偏移，并进入状态 42
+    TOK_LBRACKET  偏移，并进入状态 83
+    TOK_RBRACKET  偏移，并进入状态 119
+
+    constinitval  转到状态 120
+    lval          转到状态 43
+    primaryexp    转到状态 44
+    number        转到状态 45
+    unaryexp      转到状态 46
+    unaryop       转到状态 47
+    mulexp        转到状态 48
+    addexp        转到状态 49
+    constexp      转到状态 85
+
+
+状态 84
+
+   11 constdef: IDENT constdef_ TOK_ASSIGN constinitval .
+
+    $default  使用规则 11 以归约 (constdef)
+
+
+状态 85
+
+   16 constinitval: constexp .
+
+    $default  使用规则 16 以归约 (constinitval)
+
+
+状态 86
+
+    9 constdecl_: TOK_COMMA constdef constdecl_ .
+
+    $default  使用规则 9 以归约 (constdecl_)
+
+
+状态 87
+
+   50 stmt: TOK_SEMICOLON .
+
+    $default  使用规则 50 以归约 (stmt)
+
+
+状态 88
+
+   56 stmt: TOK_BREAK . TOK_SEMICOLON
+
+    TOK_SEMICOLON  偏移，并进入状态 121
+
+
+状态 89
+
+   57 stmt: TOK_CONTINUE . TOK_SEMICOLON
+
+    TOK_SEMICOLON  偏移，并进入状态 122
+
+
+状态 90
+
+   53 stmt: TOK_IF . TOK_LPAR cond TOK_RPAR stmt
+   54     | TOK_IF . TOK_LPAR cond TOK_RPAR stmt TOK_ELSE stmt
+
+    TOK_LPAR  偏移，并进入状态 123
+
+
+状态 91
+
+   55 stmt: TOK_WHILE . TOK_LPAR cond TOK_RPAR stmt
+
+    TOK_LPAR  偏移，并进入状态 124
+
+
+状态 92
+
+   58 stmt: TOK_RETURN . TOK_SEMICOLON
+   59     | TOK_RETURN . exp TOK_SEMICOLON
+
+    TOK_ADD        偏移，并进入状态 37
+    TOK_SUB        偏移，并进入状态 38
+    TOK_NOT        偏移，并进入状态 39
+    INTCONST       偏移，并进入状态 40
+    IDENT          偏移，并进入状态 41
+    TOK_LPAR       偏移，并进入状态 42
+    TOK_SEMICOLON  偏移，并进入状态 125
+
+    exp         转到状态 126
+    lval        转到状态 43
+    primaryexp  转到状态 44
+    number      转到状态 45
+    unaryexp    转到状态 46
+    unaryop     转到状态 47
+    mulexp      转到状态 48
+    addexp      转到状态 70
+
+
+状态 93
+
+   47 blockitem: decl .
+
+    $default  使用规则 47 以归约 (blockitem)
+
+
+状态 94
+
+   21 vardecl: btype . vardef vardecl_ TOK_SEMICOLON
+
+    IDENT  偏移，并进入状态 52
+
+    vardef  转到状态 17
+
+
+状态 95
+
+   52 stmt: block .
+
+    $default  使用规则 52 以归约 (stmt)
+
+
+状态 96
+
+   44 block: TOK_LBRACKET block_ . TOK_RBRACKET
+
+    TOK_RBRACKET  偏移，并进入状态 127
+
+
+状态 97
+
+   45 block_: blockitem . block_
+
+    TOK_ADD        偏移，并进入状态 37
+    TOK_SUB        偏移，并进入状态 38
+    TOK_NOT        偏移，并进入状态 39
+    INTCONST       偏移，并进入状态 40
+    IDENT          偏移，并进入状态 41
+    TOK_CONST      偏移，并进入状态 1
+    TOK_LPAR       偏移，并进入状态 42
+    TOK_LBRACKET   偏移，并进入状态 59
+    TOK_SEMICOLON  偏移，并进入状态 87
+    TOK_BREAK      偏移，并进入状态 88
+    TOK_CONTINUE   偏移，并进入状态 89
+    TOK_IF         偏移，并进入状态 90
+    TOK_WHILE      偏移，并进入状态 91
+    TOK_RETURN     偏移，并进入状态 92
+    TOK_INT        偏移，并进入状态 2
+    TOK_FLOAT      偏移，并进入状态 4
+
+    $default  使用规则 46 以归约 (block_)
+
+    decl        转到状态 93
+    constdecl   转到状态 8
+    btype       转到状态 94
+    vardecl     转到状态 10
+    block       转到状态 95
+    block_      转到状态 128
+    blockitem   转到状态 97
+    stmt        转到状态 98
+    exp         转到状态 99
+    lval        转到状态 100
+    primaryexp  转到状态 44
+    number      转到状态 45
+    unaryexp    转到状态 46
+    unaryop     转到状态 47
+    mulexp      转到状态 48
+    addexp      转到状态 70
+
+
+状态 98
+
+   48 blockitem: stmt .
+
+    $default  使用规则 48 以归约 (blockitem)
+
+
+状态 99
+
+   51 stmt: exp . TOK_SEMICOLON
+
+    TOK_SEMICOLON  偏移，并进入状态 129
+
+
+状态 100
+
+   49 stmt: lval . TOK_ASSIGN exp TOK_SEMICOLON
+   66 primaryexp: lval .
+
+    TOK_ASSIGN  偏移，并进入状态 130
+
+    $default  使用规则 66 以归约 (primaryexp)
+
+
+状态 101
+
+   40 funcfparam: btype IDENT TOK_LSQUARE . TOK_RSQUARE funcfparam_
+
+    TOK_RSQUARE  偏移，并进入状态 131
+
+
+状态 102
+
+   35 funcdef: TOK_VOID IDENT TOK_LPAR funcfparams TOK_RPAR block .
+
+    $default  使用规则 35 以归约 (funcdef)
+
+
+状态 103
+
+   38 funcfparams: funcfparam TOK_COMMA funcfparams .
+
+    $default  使用规则 38 以归约 (funcfparams)
+
+
+状态 104
+
+   34 funcdef: btype IDENT TOK_LPAR funcfparams TOK_RPAR block .
+
+    $default  使用规则 34 以归约 (funcdef)
+
+
+状态 105
+
+   71 unaryexp: IDENT TOK_LPAR TOK_RPAR .
+
+    $default  使用规则 71 以归约 (unaryexp)
+
+
+状态 106
+
+   76 funcrparams: exp . TOK_COMMA funcrparams
+   77            | exp .
+
+    TOK_COMMA  偏移，并进入状态 132
+
+    $default  使用规则 77 以归约 (funcrparams)
+
+
+状态 107
+
+   70 unaryexp: IDENT TOK_LPAR funcrparams . TOK_RPAR
+
+    TOK_RPAR  偏移，并进入状态 133
+
+
+状态 108
+
+   63 lval_: TOK_LSQUARE exp . TOK_RSQUARE lval_
+
+    TOK_RSQUARE  偏移，并进入状态 134
+
+
+状态 109
+
+   65 primaryexp: TOK_LPAR exp TOK_RPAR .
+
+    $default  使用规则 65 以归约 (primaryexp)
+
+
+状态 110
+
+   79 mulexp: mulexp TOK_MUL unaryexp .
+
+    $default  使用规则 79 以归约 (mulexp)
+
+
+状态 111
+
+   80 mulexp: mulexp TOK_DIV unaryexp .
+
+    $default  使用规则 80 以归约 (mulexp)
+
+
+状态 112
+
+   81 mulexp: mulexp TOK_MODULO unaryexp .
+
+    $default  使用规则 81 以归约 (mulexp)
+
+
+状态 113
+
+   83 addexp: addexp . TOK_ADD addexp
+   83       | addexp TOK_ADD addexp .
+   84       | addexp . TOK_SUB addexp
+
+    $default  使用规则 83 以归约 (addexp)
+
+
+状态 114
+
+   83 addexp: addexp . TOK_ADD addexp
+   84       | addexp . TOK_SUB addexp
+   84       | addexp TOK_SUB addexp .
+
+    $default  使用规则 84 以归约 (addexp)
+
+
+状态 115
+
+   26 vardef_: TOK_LSQUARE constexp TOK_RSQUARE vardef_ .
+
+    $default  使用规则 26 以归约 (vardef_)
+
+
+状态 116
+
+   30 initval: TOK_LBRACKET TOK_RBRACKET .
+
+    $default  使用规则 30 以归约 (initval)
+
+
+状态 117
+
+   29 initval: TOK_LBRACKET exp . initval_ TOK_RBRACKET initval
+
+    TOK_COMMA  偏移，并进入状态 135
+
+    $default  使用规则 33 以归约 (initval_)
+
+    initval_  转到状态 136
+
+
+状态 118
+
+   12 constdef_: TOK_LSQUARE INTCONST TOK_RSQUARE constdef_ .
+
+    $default  使用规则 12 以归约 (constdef_)
+
+
+状态 119
+
+   17 constinitval: TOK_LBRACKET TOK_RBRACKET .
+
+    $default  使用规则 17 以归约 (constinitval)
+
+
+状态 120
+
+   18 constinitval: TOK_LBRACKET constinitval . constinitval_ TOK_RBRACKET
+
+    TOK_COMMA  偏移，并进入状态 137
+
+    $default  使用规则 20 以归约 (constinitval_)
+
+    constinitval_  转到状态 138
+
+
+状态 121
+
+   56 stmt: TOK_BREAK TOK_SEMICOLON .
+
+    $default  使用规则 56 以归约 (stmt)
+
+
+状态 122
+
+   57 stmt: TOK_CONTINUE TOK_SEMICOLON .
+
+    $default  使用规则 57 以归约 (stmt)
+
+
+状态 123
+
+   53 stmt: TOK_IF TOK_LPAR . cond TOK_RPAR stmt
+   54     | TOK_IF TOK_LPAR . cond TOK_RPAR stmt TOK_ELSE stmt
+
+    TOK_ADD   偏移，并进入状态 37
+    TOK_SUB   偏移，并进入状态 38
+    TOK_NOT   偏移，并进入状态 39
+    INTCONST  偏移，并进入状态 40
+    IDENT     偏移，并进入状态 41
+    TOK_LPAR  偏移，并进入状态 42
+
+    cond        转到状态 139
+    lval        转到状态 43
+    primaryexp  转到状态 44
+    number      转到状态 45
+    unaryexp    转到状态 46
+    unaryop     转到状态 47
+    mulexp      转到状态 48
+    addexp      转到状态 140
+    relexp      转到状态 141
+    eqexp       转到状态 142
+    landexp     转到状态 143
+    lorexp      转到状态 144
+
+
+状态 124
+
+   55 stmt: TOK_WHILE TOK_LPAR . cond TOK_RPAR stmt
+
+    TOK_ADD   偏移，并进入状态 37
+    TOK_SUB   偏移，并进入状态 38
+    TOK_NOT   偏移，并进入状态 39
+    INTCONST  偏移，并进入状态 40
+    IDENT     偏移，并进入状态 41
+    TOK_LPAR  偏移，并进入状态 42
+
+    cond        转到状态 145
+    lval        转到状态 43
+    primaryexp  转到状态 44
+    number      转到状态 45
+    unaryexp    转到状态 46
+    unaryop     转到状态 47
+    mulexp      转到状态 48
+    addexp      转到状态 140
+    relexp      转到状态 141
+    eqexp       转到状态 142
+    landexp     转到状态 143
+    lorexp      转到状态 144
+
+
+状态 125
+
+   58 stmt: TOK_RETURN TOK_SEMICOLON .
+
+    $default  使用规则 58 以归约 (stmt)
+
+
+状态 126
+
+   59 stmt: TOK_RETURN exp . TOK_SEMICOLON
+
+    TOK_SEMICOLON  偏移，并进入状态 146
+
+
+状态 127
+
+   44 block: TOK_LBRACKET block_ TOK_RBRACKET .
+
+    $default  使用规则 44 以归约 (block)
+
+
+状态 128
+
+   45 block_: blockitem block_ .
+
+    $default  使用规则 45 以归约 (block_)
+
+
+状态 129
+
+   51 stmt: exp TOK_SEMICOLON .
+
+    $default  使用规则 51 以归约 (stmt)
+
+
+状态 130
+
+   49 stmt: lval TOK_ASSIGN . exp TOK_SEMICOLON
+
+    TOK_ADD   偏移，并进入状态 37
+    TOK_SUB   偏移，并进入状态 38
+    TOK_NOT   偏移，并进入状态 39
+    INTCONST  偏移，并进入状态 40
+    IDENT     偏移，并进入状态 41
+    TOK_LPAR  偏移，并进入状态 42
+
+    exp         转到状态 147
+    lval        转到状态 43
+    primaryexp  转到状态 44
+    number      转到状态 45
+    unaryexp    转到状态 46
+    unaryop     转到状态 47
+    mulexp      转到状态 48
+    addexp      转到状态 70
+
+
+状态 131
+
+   40 funcfparam: btype IDENT TOK_LSQUARE TOK_RSQUARE . funcfparam_
+
+    TOK_LSQUARE  偏移，并进入状态 148
+
+    $default  使用规则 43 以归约 (funcfparam_)
+
+    funcfparam_  转到状态 149
+
+
+状态 132
+
+   76 funcrparams: exp TOK_COMMA . funcrparams
+
+    TOK_ADD   偏移，并进入状态 37
+    TOK_SUB   偏移，并进入状态 38
+    TOK_NOT   偏移，并进入状态 39
+    INTCONST  偏移，并进入状态 40
+    IDENT     偏移，并进入状态 41
+    TOK_LPAR  偏移，并进入状态 42
+
+    exp          转到状态 106
+    lval         转到状态 43
+    primaryexp   转到状态 44
+    number       转到状态 45
+    unaryexp     转到状态 46
+    unaryop      转到状态 47
+    funcrparams  转到状态 150
+    mulexp       转到状态 48
+    addexp       转到状态 70
+
+
+状态 133
+
+   70 unaryexp: IDENT TOK_LPAR funcrparams TOK_RPAR .
+
+    $default  使用规则 70 以归约 (unaryexp)
+
+
+状态 134
+
+   63 lval_: TOK_LSQUARE exp TOK_RSQUARE . lval_
+
+    TOK_LSQUARE  偏移，并进入状态 67
+
+    $default  使用规则 64 以归约 (lval_)
+
+    lval_  转到状态 151
+
+
+状态 135
+
+   32 initval_: TOK_COMMA . exp initval_
+
+    TOK_ADD   偏移，并进入状态 37
+    TOK_SUB   偏移，并进入状态 38
+    TOK_NOT   偏移，并进入状态 39
+    INTCONST  偏移，并进入状态 40
+    IDENT     偏移，并进入状态 41
+    TOK_LPAR  偏移，并进入状态 42
+
+    exp         转到状态 152
+    lval        转到状态 43
+    primaryexp  转到状态 44
+    number      转到状态 45
+    unaryexp    转到状态 46
+    unaryop     转到状态 47
+    mulexp      转到状态 48
+    addexp      转到状态 70
+
+
+状态 136
+
+   29 initval: TOK_LBRACKET exp initval_ . TOK_RBRACKET initval
+
+    TOK_RBRACKET  偏移，并进入状态 153
+
+
+状态 137
+
+   19 constinitval_: TOK_COMMA . constinitval constinitval_
+
+    TOK_ADD       偏移，并进入状态 37
+    TOK_SUB       偏移，并进入状态 38
+    TOK_NOT       偏移，并进入状态 39
+    INTCONST      偏移，并进入状态 40
+    IDENT         偏移，并进入状态 41
+    TOK_LPAR      偏移，并进入状态 42
+    TOK_LBRACKET  偏移，并进入状态 83
+
+    constinitval  转到状态 154
+    lval          转到状态 43
+    primaryexp    转到状态 44
+    number        转到状态 45
+    unaryexp      转到状态 46
+    unaryop       转到状态 47
+    mulexp        转到状态 48
+    addexp        转到状态 49
+    constexp      转到状态 85
+
+
+状态 138
+
+   18 constinitval: TOK_LBRACKET constinitval constinitval_ . TOK_RBRACKET
+
+    TOK_RBRACKET  偏移，并进入状态 155
+
+
+状态 139
+
+   53 stmt: TOK_IF TOK_LPAR cond . TOK_RPAR stmt
+   54     | TOK_IF TOK_LPAR cond . TOK_RPAR stmt TOK_ELSE stmt
+
+    TOK_RPAR  偏移，并进入状态 156
+
+
+状态 140
+
+   83 addexp: addexp . TOK_ADD addexp
+   84       | addexp . TOK_SUB addexp
+   85 relexp: addexp .
+
+    TOK_ADD  偏移，并进入状态 75
+    TOK_SUB  偏移，并进入状态 76
+
+    $default  使用规则 85 以归约 (relexp)
+
+
+状态 141
+
+   86 relexp: relexp . TOK_LESS addexp
+   87       | relexp . TOK_GREAT addexp
+   88       | relexp . TOK_LESSEQ addexp
+   89       | relexp . TOK_GREATEQ addexp
+   90 eqexp: relexp .
+
+    TOK_LESS     偏移，并进入状态 157
+    TOK_LESSEQ   偏移，并进入状态 158
+    TOK_GREAT    偏移，并进入状态 159
+    TOK_GREATEQ  偏移，并进入状态 160
+
+    $default  使用规则 90 以归约 (eqexp)
+
+
+状态 142
+
+   91 eqexp: eqexp . TOK_EQ relexp
+   92      | eqexp . TOK_NOTEQ relexp
+   93 landexp: eqexp .
+
+    TOK_NOTEQ  偏移，并进入状态 161
+    TOK_EQ     偏移，并进入状态 162
+
+    $default  使用规则 93 以归约 (landexp)
+
+
+状态 143
+
+   94 landexp: landexp . TOK_AND eqexp
+   95 lorexp: landexp .
+
+    TOK_AND  偏移，并进入状态 163
+
+    $default  使用规则 95 以归约 (lorexp)
+
+
+状态 144
+
+   61 cond: lorexp .
+   96 lorexp: lorexp . TOK_OR landexp
+
+    TOK_OR  偏移，并进入状态 164
+
+    $default  使用规则 61 以归约 (cond)
+
+
+状态 145
+
+   55 stmt: TOK_WHILE TOK_LPAR cond . TOK_RPAR stmt
+
+    TOK_RPAR  偏移，并进入状态 165
+
+
+状态 146
+
+   59 stmt: TOK_RETURN exp TOK_SEMICOLON .
+
+    $default  使用规则 59 以归约 (stmt)
+
+
+状态 147
+
+   49 stmt: lval TOK_ASSIGN exp . TOK_SEMICOLON
+
+    TOK_SEMICOLON  偏移，并进入状态 166
+
+
+状态 148
+
+   42 funcfparam_: TOK_LSQUARE . INTCONST TOK_RSQUARE funcfparam_
+
+    INTCONST  偏移，并进入状态 167
+
+
+状态 149
+
+   40 funcfparam: btype IDENT TOK_LSQUARE TOK_RSQUARE funcfparam_ .
+
+    $default  使用规则 40 以归约 (funcfparam)
+
+
+状态 150
+
+   76 funcrparams: exp TOK_COMMA funcrparams .
+
+    $default  使用规则 76 以归约 (funcrparams)
+
+
+状态 151
+
+   63 lval_: TOK_LSQUARE exp TOK_RSQUARE lval_ .
+
+    $default  使用规则 63 以归约 (lval_)
+
+
+状态 152
+
+   32 initval_: TOK_COMMA exp . initval_
+
+    TOK_COMMA  偏移，并进入状态 135
+
+    $default  使用规则 33 以归约 (initval_)
+
+    initval_  转到状态 168
+
+
+状态 153
+
+   29 initval: TOK_LBRACKET exp initval_ TOK_RBRACKET . initval
+
+    TOK_ADD       偏移，并进入状态 37
+    TOK_SUB       偏移，并进入状态 38
+    TOK_NOT       偏移，并进入状态 39
+    INTCONST      偏移，并进入状态 40
+    IDENT         偏移，并进入状态 41
+    TOK_LPAR      偏移，并进入状态 42
+    TOK_LBRACKET  偏移，并进入状态 78
+
+    $default  使用规则 31 以归约 (initval)
+
+    initval     转到状态 169
+    exp         转到状态 80
+    lval        转到状态 43
+    primaryexp  转到状态 44
+    number      转到状态 45
+    unaryexp    转到状态 46
+    unaryop     转到状态 47
+    mulexp      转到状态 48
+    addexp      转到状态 70
+
+
+状态 154
+
+   19 constinitval_: TOK_COMMA constinitval . constinitval_
+
+    TOK_COMMA  偏移，并进入状态 137
+
+    $default  使用规则 20 以归约 (constinitval_)
+
+    constinitval_  转到状态 170
+
+
+状态 155
+
+   18 constinitval: TOK_LBRACKET constinitval constinitval_ TOK_RBRACKET .
+
+    $default  使用规则 18 以归约 (constinitval)
+
+
+状态 156
+
+   53 stmt: TOK_IF TOK_LPAR cond TOK_RPAR . stmt
+   54     | TOK_IF TOK_LPAR cond TOK_RPAR . stmt TOK_ELSE stmt
+
+    TOK_ADD        偏移，并进入状态 37
+    TOK_SUB        偏移，并进入状态 38
+    TOK_NOT        偏移，并进入状态 39
+    INTCONST       偏移，并进入状态 40
+    IDENT          偏移，并进入状态 41
+    TOK_LPAR       偏移，并进入状态 42
+    TOK_LBRACKET   偏移，并进入状态 59
+    TOK_SEMICOLON  偏移，并进入状态 87
+    TOK_BREAK      偏移，并进入状态 88
+    TOK_CONTINUE   偏移，并进入状态 89
+    TOK_IF         偏移，并进入状态 90
+    TOK_WHILE      偏移，并进入状态 91
+    TOK_RETURN     偏移，并进入状态 92
+
+    block       转到状态 95
+    stmt        转到状态 171
+    exp         转到状态 99
+    lval        转到状态 100
+    primaryexp  转到状态 44
+    number      转到状态 45
+    unaryexp    转到状态 46
+    unaryop     转到状态 47
+    mulexp      转到状态 48
+    addexp      转到状态 70
+
+
+状态 157
+
+   86 relexp: relexp TOK_LESS . addexp
+
+    TOK_ADD   偏移，并进入状态 37
+    TOK_SUB   偏移，并进入状态 38
+    TOK_NOT   偏移，并进入状态 39
+    INTCONST  偏移，并进入状态 40
+    IDENT     偏移，并进入状态 41
+    TOK_LPAR  偏移，并进入状态 42
+
+    lval        转到状态 43
+    primaryexp  转到状态 44
+    number      转到状态 45
+    unaryexp    转到状态 46
+    unaryop     转到状态 47
+    mulexp      转到状态 48
+    addexp      转到状态 172
+
+
+状态 158
+
+   88 relexp: relexp TOK_LESSEQ . addexp
+
+    TOK_ADD   偏移，并进入状态 37
+    TOK_SUB   偏移，并进入状态 38
+    TOK_NOT   偏移，并进入状态 39
+    INTCONST  偏移，并进入状态 40
+    IDENT     偏移，并进入状态 41
+    TOK_LPAR  偏移，并进入状态 42
+
+    lval        转到状态 43
+    primaryexp  转到状态 44
+    number      转到状态 45
+    unaryexp    转到状态 46
+    unaryop     转到状态 47
+    mulexp      转到状态 48
+    addexp      转到状态 173
+
+
+状态 159
+
+   87 relexp: relexp TOK_GREAT . addexp
+
+    TOK_ADD   偏移，并进入状态 37
+    TOK_SUB   偏移，并进入状态 38
+    TOK_NOT   偏移，并进入状态 39
+    INTCONST  偏移，并进入状态 40
+    IDENT     偏移，并进入状态 41
+    TOK_LPAR  偏移，并进入状态 42
+
+    lval        转到状态 43
+    primaryexp  转到状态 44
+    number      转到状态 45
+    unaryexp    转到状态 46
+    unaryop     转到状态 47
+    mulexp      转到状态 48
+    addexp      转到状态 174
+
+
+状态 160
+
+   89 relexp: relexp TOK_GREATEQ . addexp
+
+    TOK_ADD   偏移，并进入状态 37
+    TOK_SUB   偏移，并进入状态 38
+    TOK_NOT   偏移，并进入状态 39
+    INTCONST  偏移，并进入状态 40
+    IDENT     偏移，并进入状态 41
+    TOK_LPAR  偏移，并进入状态 42
+
+    lval        转到状态 43
+    primaryexp  转到状态 44
+    number      转到状态 45
+    unaryexp    转到状态 46
+    unaryop     转到状态 47
+    mulexp      转到状态 48
+    addexp      转到状态 175
+
+
+状态 161
+
+   92 eqexp: eqexp TOK_NOTEQ . relexp
+
+    TOK_ADD   偏移，并进入状态 37
+    TOK_SUB   偏移，并进入状态 38
+    TOK_NOT   偏移，并进入状态 39
+    INTCONST  偏移，并进入状态 40
+    IDENT     偏移，并进入状态 41
+    TOK_LPAR  偏移，并进入状态 42
+
+    lval        转到状态 43
+    primaryexp  转到状态 44
+    number      转到状态 45
+    unaryexp    转到状态 46
+    unaryop     转到状态 47
+    mulexp      转到状态 48
+    addexp      转到状态 140
+    relexp      转到状态 176
+
+
+状态 162
+
+   91 eqexp: eqexp TOK_EQ . relexp
+
+    TOK_ADD   偏移，并进入状态 37
+    TOK_SUB   偏移，并进入状态 38
+    TOK_NOT   偏移，并进入状态 39
+    INTCONST  偏移，并进入状态 40
+    IDENT     偏移，并进入状态 41
+    TOK_LPAR  偏移，并进入状态 42
+
+    lval        转到状态 43
+    primaryexp  转到状态 44
+    number      转到状态 45
+    unaryexp    转到状态 46
+    unaryop     转到状态 47
+    mulexp      转到状态 48
+    addexp      转到状态 140
+    relexp      转到状态 177
+
+
+状态 163
+
+   94 landexp: landexp TOK_AND . eqexp
+
+    TOK_ADD   偏移，并进入状态 37
+    TOK_SUB   偏移，并进入状态 38
+    TOK_NOT   偏移，并进入状态 39
+    INTCONST  偏移，并进入状态 40
+    IDENT     偏移，并进入状态 41
+    TOK_LPAR  偏移，并进入状态 42
+
+    lval        转到状态 43
+    primaryexp  转到状态 44
+    number      转到状态 45
+    unaryexp    转到状态 46
+    unaryop     转到状态 47
+    mulexp      转到状态 48
+    addexp      转到状态 140
+    relexp      转到状态 141
+    eqexp       转到状态 178
+
+
+状态 164
+
+   96 lorexp: lorexp TOK_OR . landexp
+
+    TOK_ADD   偏移，并进入状态 37
+    TOK_SUB   偏移，并进入状态 38
+    TOK_NOT   偏移，并进入状态 39
+    INTCONST  偏移，并进入状态 40
+    IDENT     偏移，并进入状态 41
+    TOK_LPAR  偏移，并进入状态 42
+
+    lval        转到状态 43
+    primaryexp  转到状态 44
+    number      转到状态 45
+    unaryexp    转到状态 46
+    unaryop     转到状态 47
+    mulexp      转到状态 48
+    addexp      转到状态 140
+    relexp      转到状态 141
+    eqexp       转到状态 142
+    landexp     转到状态 179
+
+
+状态 165
+
+   55 stmt: TOK_WHILE TOK_LPAR cond TOK_RPAR . stmt
+
+    TOK_ADD        偏移，并进入状态 37
+    TOK_SUB        偏移，并进入状态 38
+    TOK_NOT        偏移，并进入状态 39
+    INTCONST       偏移，并进入状态 40
+    IDENT          偏移，并进入状态 41
+    TOK_LPAR       偏移，并进入状态 42
+    TOK_LBRACKET   偏移，并进入状态 59
+    TOK_SEMICOLON  偏移，并进入状态 87
+    TOK_BREAK      偏移，并进入状态 88
+    TOK_CONTINUE   偏移，并进入状态 89
+    TOK_IF         偏移，并进入状态 90
+    TOK_WHILE      偏移，并进入状态 91
+    TOK_RETURN     偏移，并进入状态 92
+
+    block       转到状态 95
+    stmt        转到状态 180
+    exp         转到状态 99
+    lval        转到状态 100
+    primaryexp  转到状态 44
+    number      转到状态 45
+    unaryexp    转到状态 46
+    unaryop     转到状态 47
+    mulexp      转到状态 48
+    addexp      转到状态 70
+
+
+状态 166
+
+   49 stmt: lval TOK_ASSIGN exp TOK_SEMICOLON .
+
+    $default  使用规则 49 以归约 (stmt)
+
+
+状态 167
+
+   42 funcfparam_: TOK_LSQUARE INTCONST . TOK_RSQUARE funcfparam_
+
+    TOK_RSQUARE  偏移，并进入状态 181
+
+
+状态 168
+
+   32 initval_: TOK_COMMA exp initval_ .
+
+    $default  使用规则 32 以归约 (initval_)
+
+
+状态 169
+
+   29 initval: TOK_LBRACKET exp initval_ TOK_RBRACKET initval .
+
+    $default  使用规则 29 以归约 (initval)
+
+
+状态 170
+
+   19 constinitval_: TOK_COMMA constinitval constinitval_ .
+
+    $default  使用规则 19 以归约 (constinitval_)
+
+
+状态 171
+
+   53 stmt: TOK_IF TOK_LPAR cond TOK_RPAR stmt .
+   54     | TOK_IF TOK_LPAR cond TOK_RPAR stmt . TOK_ELSE stmt
+
+    TOK_ELSE  偏移，并进入状态 182
+
+    TOK_ELSE  [使用规则 53 以归约 (stmt)]
+    $default  使用规则 53 以归约 (stmt)
+
+
+状态 172
+
+   83 addexp: addexp . TOK_ADD addexp
+   84       | addexp . TOK_SUB addexp
+   86 relexp: relexp TOK_LESS addexp .
+
+    TOK_ADD  偏移，并进入状态 75
+    TOK_SUB  偏移，并进入状态 76
+
+    $default  使用规则 86 以归约 (relexp)
+
+
+状态 173
+
+   83 addexp: addexp . TOK_ADD addexp
+   84       | addexp . TOK_SUB addexp
+   88 relexp: relexp TOK_LESSEQ addexp .
+
+    TOK_ADD  偏移，并进入状态 75
+    TOK_SUB  偏移，并进入状态 76
+
+    $default  使用规则 88 以归约 (relexp)
+
+
+状态 174
+
+   83 addexp: addexp . TOK_ADD addexp
+   84       | addexp . TOK_SUB addexp
+   87 relexp: relexp TOK_GREAT addexp .
+
+    TOK_ADD  偏移，并进入状态 75
+    TOK_SUB  偏移，并进入状态 76
+
+    $default  使用规则 87 以归约 (relexp)
+
+
+状态 175
+
+   83 addexp: addexp . TOK_ADD addexp
+   84       | addexp . TOK_SUB addexp
+   89 relexp: relexp TOK_GREATEQ addexp .
+
+    TOK_ADD  偏移，并进入状态 75
+    TOK_SUB  偏移，并进入状态 76
+
+    $default  使用规则 89 以归约 (relexp)
+
+
+状态 176
+
+   86 relexp: relexp . TOK_LESS addexp
+   87       | relexp . TOK_GREAT addexp
+   88       | relexp . TOK_LESSEQ addexp
+   89       | relexp . TOK_GREATEQ addexp
+   92 eqexp: eqexp TOK_NOTEQ relexp .
+
+    TOK_LESS     偏移，并进入状态 157
+    TOK_LESSEQ   偏移，并进入状态 158
+    TOK_GREAT    偏移，并进入状态 159
+    TOK_GREATEQ  偏移，并进入状态 160
+
+    $default  使用规则 92 以归约 (eqexp)
+
+
+状态 177
+
+   86 relexp: relexp . TOK_LESS addexp
+   87       | relexp . TOK_GREAT addexp
+   88       | relexp . TOK_LESSEQ addexp
+   89       | relexp . TOK_GREATEQ addexp
+   91 eqexp: eqexp TOK_EQ relexp .
+
+    TOK_LESS     偏移，并进入状态 157
+    TOK_LESSEQ   偏移，并进入状态 158
+    TOK_GREAT    偏移，并进入状态 159
+    TOK_GREATEQ  偏移，并进入状态 160
+
+    $default  使用规则 91 以归约 (eqexp)
+
+
+状态 178
+
+   91 eqexp: eqexp . TOK_EQ relexp
+   92      | eqexp . TOK_NOTEQ relexp
+   94 landexp: landexp TOK_AND eqexp .
+
+    TOK_NOTEQ  偏移，并进入状态 161
+    TOK_EQ     偏移，并进入状态 162
+
+    $default  使用规则 94 以归约 (landexp)
+
+
+状态 179
+
+   94 landexp: landexp . TOK_AND eqexp
+   96 lorexp: lorexp TOK_OR landexp .
+
+    TOK_AND  偏移，并进入状态 163
+
+    $default  使用规则 96 以归约 (lorexp)
+
+
+状态 180
+
+   55 stmt: TOK_WHILE TOK_LPAR cond TOK_RPAR stmt .
+
+    $default  使用规则 55 以归约 (stmt)
+
+
+状态 181
+
+   42 funcfparam_: TOK_LSQUARE INTCONST TOK_RSQUARE . funcfparam_
+
+    TOK_LSQUARE  偏移，并进入状态 148
+
+    $default  使用规则 43 以归约 (funcfparam_)
+
+    funcfparam_  转到状态 183
+
+
+状态 182
+
+   54 stmt: TOK_IF TOK_LPAR cond TOK_RPAR stmt TOK_ELSE . stmt
+
+    TOK_ADD        偏移，并进入状态 37
+    TOK_SUB        偏移，并进入状态 38
+    TOK_NOT        偏移，并进入状态 39
+    INTCONST       偏移，并进入状态 40
+    IDENT          偏移，并进入状态 41
+    TOK_LPAR       偏移，并进入状态 42
+    TOK_LBRACKET   偏移，并进入状态 59
+    TOK_SEMICOLON  偏移，并进入状态 87
+    TOK_BREAK      偏移，并进入状态 88
+    TOK_CONTINUE   偏移，并进入状态 89
+    TOK_IF         偏移，并进入状态 90
+    TOK_WHILE      偏移，并进入状态 91
+    TOK_RETURN     偏移，并进入状态 92
+
+    block       转到状态 95
+    stmt        转到状态 184
+    exp         转到状态 99
+    lval        转到状态 100
+    primaryexp  转到状态 44
+    number      转到状态 45
+    unaryexp    转到状态 46
+    unaryop     转到状态 47
+    mulexp      转到状态 48
+    addexp      转到状态 70
+
+
+状态 183
+
+   42 funcfparam_: TOK_LSQUARE INTCONST TOK_RSQUARE funcfparam_ .
+
+    $default  使用规则 42 以归约 (funcfparam_)
+
+
+状态 184
+
+   54 stmt: TOK_IF TOK_LPAR cond TOK_RPAR stmt TOK_ELSE stmt .
+
+    $default  使用规则 54 以归约 (stmt)

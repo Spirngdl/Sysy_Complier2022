@@ -184,12 +184,21 @@ void var_decl(struct node *T) //变量声明 -- kind -- NAME --TYPE
         T->place = rtn;    //用place记录在符号表中的位置
     if (T->ptr[0] != NULL) //赋值
     {
-        Exp(T->ptr[0]);
-        opn1.kind = ID;
-        strcpy(opn1.id, symbolTable.symbols[T->ptr[0]->place].alias); //赋上别名
-        result.kind = ID;
-        strcpy(result.id, symbolTable.symbols[T->place].alias);                              //赋上别名
-        T->code = merge(3, T->code, T->ptr[0]->code, genIR(TOK_ASSIGN, opn1, opn2, result)); //合并三地址代码
+        if (T->ptr[0]->kind != INT)
+        {
+            Exp(T->ptr[0]);
+            struct codenode *lassign = T->ptr[0]->code->prior; //右值语句的最后一句
+            strcpy(lassign->result.id, symbolTable.symbols[T->place].alias);
+            T->code = merge(2, T->code, T->ptr[0]->code);
+        }
+        else
+        {
+            opn1.kind = INT;
+            opn1.const_int = T->ptr[0]->type_int;
+            result.kind = ID;
+            strcpy(result.id, symbolTable.symbols[T->place].alias);                              //赋上别名
+            T->code = merge(2, T->code, genIR(TOK_ASSIGN, opn1, opn2, result)); //合并三地址代码
+        }
     }
 }
 
@@ -271,21 +280,33 @@ void int_exp(struct node *T)
 void op_exp(struct node *T)
 {
     struct opn opn1, opn2, result;
-    Exp(T->ptr[0]);
-    Exp(T->ptr[1]);
     //下面的类型属性计算，没有考虑错误处理情况
     T->type = TOK_INT;
     T->place = temp_add(newTemp(), LEV, T->type, TEMP_VAR);
-
-    opn1.kind = ID;
-    strcpy(opn1.id, symbolTable.symbols[T->ptr[0]->place].alias);
-
-    opn2.kind = ID;
-    strcpy(opn2.id, symbolTable.symbols[T->ptr[1]->place].alias);
-
     result.kind = ID;
     strcpy(result.id, symbolTable.symbols[T->place].alias);
-
+    if (T->ptr[0]->kind != INT)
+    {
+        Exp(T->ptr[0]);
+        opn1.kind = ID;
+        strcpy(opn1.id, symbolTable.symbols[T->ptr[0]->place].alias);
+    }
+    else
+    {
+        opn1.kind = INT;
+        opn1.const_int = T->ptr[0]->type_int;
+    }
+    if (T->ptr[1]->kind != INT)
+    {
+        Exp(T->ptr[1]);
+        opn2.kind = ID;
+        strcpy(opn2.id, symbolTable.symbols[T->ptr[1]->place].alias);
+    }
+    else
+    {
+        opn2.kind = INT;
+        opn2.const_int = T->ptr[1]->type_int;
+    }
     T->code = merge(3, T->ptr[0]->code, T->ptr[1]->code, genIR(T->kind, opn1, opn2, result));
 }
 //单
@@ -311,15 +332,26 @@ void assignop_exp(struct node *T)
     if (T->ptr[0]->kind == ID)
     {
         Exp(T->ptr[0]); //处理左值，例中仅为变量
-        Exp(T->ptr[1]);
-        T->type = T->ptr[0]->type;
+        if (T->ptr[1]->kind != INT)
+        {
 
-        opn1.kind = ID;
-        strcpy(opn1.id, symbolTable.symbols[T->ptr[1]->place].alias); //右值一定是个变量或临时变量
-        result.kind = ID;
-        strcpy(result.id, symbolTable.symbols[T->ptr[0]->place].alias);
+            Exp(T->ptr[1]); //处理右值
+            T->type = T->ptr[0]->type;
+            opn1.kind = ID;
+            struct codenode *lassign = T->ptr[1]->code->prior; //右值语句的最后一句
+            strcpy(lassign->result.id, symbolTable.symbols[T->ptr[0]->place].alias);
+            // strcpy(opn1.id, symbolTable.symbols[T->ptr[1]->place].alias); //右值一定是个变量或临时变量
+            T->code = merge(2, T->ptr[0]->code, T->ptr[1]->code);
+        }
+        else
+        {
+            opn1.kind = INT;
+            opn1.const_int = T->ptr[1]->type_int;
+            result.kind = ID;
+            strcpy(result.id, symbolTable.symbols[T->ptr[0]->place].alias);
 
-        T->code = merge(3, T->ptr[0]->code, T->ptr[1]->code, genIR(TOK_ASSIGN, opn1, opn2, result));
+            T->code = merge(2, T->ptr[0]->code, genIR(TOK_ASSIGN, opn1, opn2, result));
+        }
     }
     else if (T->ptr[0]->kind == EXP_ARRAY)
     {
@@ -341,6 +373,20 @@ void assignop_exp(struct node *T)
     {
         semantic_error(T->pos, "", "赋值语句没有左值，语义错误");
     }
+}
+void rval_array(struct node *T)
+{
+    exp_array(T);
+    struct opn opn1, opn2, result;
+    int place = temp_add(newTemp(), LEV, TOK_INT, TEMP_VAR);
+    result.kind = ID;
+    strcpy(result.id, symbolTable.symbols[place].alias);
+    opn1.kind = ID;
+    strcpy(opn1.id, symbolTable.symbols[T->ptr[0]->place].alias); //数组名
+    opn2.kind = ID;
+    strcpy(opn2.id, symbolTable.symbols[T->ptr[0]->ptr[0]->place].alias); // index
+    T->code = merge(2, T->code, genIR(ARRAY_EXP, opn1, opn2, result));
+    T->place = place;
 }
 void exp_array(struct node *T) //数组引用
 {
@@ -443,13 +489,30 @@ void boolExp(struct node *T, char *Etrue, char *Efalse) //二代
         case TOK_LESSEQ:
         case TOK_GREATEQ:
         case TOK_EQ:
-        case TOK_NOTEQ:     //处理关系运算表达式,2个操作数都按基本表达式处理
-            Exp(T->ptr[0]); //处理左
-            Exp(T->ptr[1]); //处理右
-            opn1.kind = ID;
-            strcpy(opn1.id, symbolTable.symbols[T->ptr[0]->place].alias);
-            opn2.kind = ID;
-            strcpy(opn2.id, symbolTable.symbols[T->ptr[1]->place].alias);
+        case TOK_NOTEQ: //处理关系运算表达式,2个操作数都按基本表达式处理
+
+            if (T->ptr[0]->kind != INT)
+            {
+                Exp(T->ptr[0]); //处理左
+                opn1.kind = ID;
+                strcpy(opn1.id, symbolTable.symbols[T->ptr[0]->place].alias);
+            }
+            else
+            {
+                opn1.kind = INT;
+                opn1.const_int = T->ptr[0]->type_int;
+            }
+            if (T->ptr[1]->kind != INT)
+            {
+                Exp(T->ptr[1]); //处理右
+                opn2.kind = ID;
+                strcpy(opn2.id, symbolTable.symbols[T->ptr[1]->place].alias);
+            }
+            else
+            {
+                opn2.kind = INT;
+                opn2.const_int = T->ptr[1]->type_int;
+            }
             result.kind = ID;
             strcpy(result.id, Etrue); // B.true
             if (strcmp(T->type_id, "<") == 0)
@@ -709,7 +772,7 @@ void if_else_stmt(struct node *T)
         else_if_else_stmt(T->ptr[2], Enext);
     else
         semantic_Analysis(T->ptr[2]); //开始else
-    T->code = merge(7, T->ptr[0]->code, genLabel(Etrue), T->ptr[1]->code, genGoto(Enext), genLabel(Efalse), T->ptr[2]->code,genLabel(Enext));
+    T->code = merge(7, T->ptr[0]->code, genLabel(Etrue), T->ptr[1]->code, genGoto(Enext), genLabel(Efalse), T->ptr[2]->code, genLabel(Enext));
 }
 void else_if_stmt(struct node *T, char *Efalse) // else if的情况且无else
 {
@@ -818,4 +881,3 @@ void continue_stmt(struct node *T)
 {
     T->code = genback(TOK_CONTINUE);
 }
-
