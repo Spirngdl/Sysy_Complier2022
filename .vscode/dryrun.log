@@ -1,0 +1,5 @@
+make.exe --dry-run --keep-going --print-directory
+make.exe: Entering directory 'd:/Code/youhua'
+gcc -o calc.exe -O0 -g ast.c block.c calc_c.tab.c lex.yy.c semantic_analysis.c table.c main.c Tac.c graph_coloring.c liveness_analysis.c list.c optimize/cDag.c
+make.exe: Leaving directory 'd:/Code/youhua'
+ 
