@@ -100,12 +100,31 @@ void print_IR(struct codenode *head)
             // printf("\n......dd = %f", h->opn1.const_float);
         }
         if (h->opn2.kind == LITERAL)
+        {
             sprintf(opnstr2, "#%d", h->opn2.const_int);
+        }
         if (h->opn2.kind == ID)
+        {
             sprintf(opnstr2, "%s", h->opn2.id);
+        }
         if (h->opn2.kind == FLOAT_LITERAL)
+        {
             sprintf(opnstr2, "#%f", h->opn2.const_float);
-        sprintf(resultstr, "%s", h->result.id);
+        }
+
+        if (h->result.kind == LITERAL)
+        {
+            sprintf(resultstr, "#%d", h->result.const_int);
+        }
+        if (h->result.kind == FLOAT_LITERAL)
+        {
+            sprintf(resultstr, "#%f", h->result.const_float);
+        }
+        if (h->result.kind == ID)
+        {
+            sprintf(resultstr, "%s", h->result.id);
+        }
+
         switch (h->op)
         {
         case TOK_ASSIGN:
@@ -118,6 +137,7 @@ void print_IR(struct codenode *head)
         case TOK_MUL:
         case TOK_SUB:
         case TOK_DIV:
+        case TOK_MODULO:
             printf("  %s := %s %c %s\n", resultstr, opnstr1, h->op == TOK_ADD ? '+' : h->op == TOK_SUB  ? '-'
                                                                                   : h->op == TOK_MUL    ? '*'
                                                                                   : h->op == TOK_MODULO ? '%'
@@ -159,7 +179,7 @@ void print_IR(struct codenode *head)
             printf("  %s := %s[%s]\n", resultstr, opnstr1, opnstr2);
             break;
         case ARG:
-            printf("  ARG %s\n", h->result.id);
+            printf("  ARG %s\n", resultstr);
             break;
         case CALL:
             printf("  %s := CALL %s\n", resultstr, opnstr1);

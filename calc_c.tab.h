@@ -34,8 +34,8 @@
 /* Undocumented macros, especially those whose name start with YY_,
    are private implementation details.  Do not rely on them.  */
 
-#ifndef YY_YY_CALC_TAB_H_INCLUDED
-# define YY_YY_CALC_TAB_H_INCLUDED
+#ifndef YY_YY_CALC_C_TAB_H_INCLUDED
+# define YY_YY_CALC_C_TAB_H_INCLUDED
 /* Debug traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 0
@@ -66,25 +66,24 @@ extern int yydebug;
     TOK_NOT = 272,
     INTCONST = 273,
     IDENT = 274,
-    FLOAT = 275,
-    TOK_CONST = 276,
-    TOK_LPAR = 277,
-    TOK_RPAR = 278,
-    TOK_LBRACKET = 279,
-    TOK_RBRACKET = 280,
-    TOK_LSQUARE = 281,
-    TOK_RSQUARE = 282,
-    TOK_COMMA = 283,
-    TOK_SEMICOLON = 284,
-    TOK_BREAK = 285,
-    TOK_CONTINUE = 286,
-    TOK_IF = 287,
-    TOK_ELSE = 288,
-    TOK_WHILE = 289,
-    TOK_RETURN = 290,
-    TOK_INT = 291,
-    TOK_VOID = 292,
-    TOK_FLOAT = 293
+    TOK_CONST = 275,
+    TOK_LPAR = 276,
+    TOK_RPAR = 277,
+    TOK_LBRACKET = 278,
+    TOK_RBRACKET = 279,
+    TOK_LSQUARE = 280,
+    TOK_RSQUARE = 281,
+    TOK_COMMA = 282,
+    TOK_SEMICOLON = 283,
+    TOK_BREAK = 284,
+    TOK_CONTINUE = 285,
+    TOK_IF = 286,
+    TOK_ELSE = 287,
+    TOK_WHILE = 288,
+    TOK_RETURN = 289,
+    TOK_INT = 290,
+    TOK_VOID = 291,
+    TOK_FLOAT = 292
   };
 #endif
 
@@ -92,14 +91,13 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 13 "calc.y"
+#line 13 "calc_c.y"
 
     int         type_int;
-    float       type_float;
     struct node * ptr;
     char        type_id[32];
 
-#line 103 "calc.tab.h"
+#line 101 "calc_c.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -112,4 +110,4 @@ extern YYSTYPE yylval;
 
 int yyparse (void);
 
-#endif /* !YY_YY_CALC_TAB_H_INCLUDED  */
+#endif /* !YY_YY_CALC_C_TAB_H_INCLUDED  */

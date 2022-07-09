@@ -60,25 +60,25 @@ struct node *mkopnode(int kind, struct node *left, struct node *right, int pos)
         switch (kind)
         {
         case TOK_ADD:
-            if (T->type == LITERAL)
+            if (T->kind == LITERAL)
                 T->type_int = lval + rval;
             else
                 T->type_float = lval + rval;
             break;
         case TOK_SUB:
-            if (T->type == LITERAL)
+            if (T->kind == LITERAL)
                 T->type_int = lval - rval;
             else
                 T->type_float = lval - rval;
             break;
         case TOK_DIV:
-            if (T->type == LITERAL)
+            if (T->kind == LITERAL)
                 T->type_int = lval / rval;
             else
                 T->type_float = lval / rval;
             break;
         case TOK_MUL:
-            if (T->type == LITERAL)
+            if (T->kind == LITERAL)
                 T->type_int = lval * rval;
             else
                 T->type_float = lval * rval;
@@ -86,7 +86,7 @@ struct node *mkopnode(int kind, struct node *left, struct node *right, int pos)
         case TOK_MODULO:
             lint = lval;
             rint = rval;
-            if (T->type == LITERAL)
+            if (T->kind == LITERAL)
                 T->type_int = lint % rint;
             else
                 T->type_float = lint % rint;

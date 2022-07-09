@@ -20,7 +20,7 @@ FLOAT  ([0-9]*\.[0-9]+)|([0-9]+\.)
 %%
 
 {DIGIT}+    {yylval.type_int = atoi(yytext); ;return INTCONST;}
-{FLOAT}+    {yylval.type_float = atof(yytext);return FLOAT}
+{FLOAT}+    {yylval.type_float = atof(yytext);return FLOAT;}
 [+]         {return TOK_ADD;}
 [-]         {return TOK_SUB;}
 [*]         {return TOK_MUL;}

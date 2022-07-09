@@ -784,17 +784,21 @@ void dag_optimize(Blocks *blocks)
             result = genOptimizedCode(dag);
             if (dag->functionrec != NULL)
             {
-                dag->functionrec->next = result;
-                dag->functionrec->prior = result->prior;
-                result->prior = dag->functionrec;
-                result = dag->functionrec;
+                // dag->functionrec->next = result;
+                // dag->functionrec->prior = result->prior;
+                // result->prior = dag->functionrec;
+                // result = dag->functionrec;
+                dag->functionrec->next = dag->functionrec->prior = dag->functionrec;
+                result = merge(2, dag->functionrec, result);
             }
             if (dag->endfunction != NULL)
             {
-                result->prior->next = dag->endfunction;
-                dag->endfunction->prior = result->prior;
-                dag->endfunction->next = result;
-                result->prior = dag->endfunction;
+                // result->prior->next = dag->endfunction;
+                // dag->endfunction->prior = result->prior;
+                // dag->endfunction->next = result;
+                // result->prior = dag->endfunction;
+                dag->endfunction->prior = dag->endfunction->next = dag->endfunction;
+                result = merge(2, result, dag->endfunction);
             }
             if (result->next != NULL)
             {

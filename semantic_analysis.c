@@ -28,6 +28,9 @@ void semantic_Analysis(struct node *T)
         case PARAM_DEC:
             param_dec(T);
             break;
+        case PARAM_ARRAY:
+            param_array(T);
+            break;
         case PARAM_LIST:
             param_list(T);
             break;
@@ -53,7 +56,7 @@ void semantic_Analysis(struct node *T)
             break_stmt(T);
             break;
         case TOK_CONTINUE:
-            continue_stmt;
+            continue_stmt(T);
             break;
         case ID:
         case LITERAL:
@@ -91,6 +94,11 @@ void compunit_list(struct node *T)
         T->code = merge(2, T->code, T->ptr[1]->code);
     }
 }
+/**
+ * @brief 变量定义列表
+ *
+ * @param T
+ */
 void var_decl_list(struct node *T)
 {
     if (T->ptr[0] == NULL)
@@ -107,13 +115,21 @@ void var_decl_list(struct node *T)
         T->code = merge(2, T->code, T->ptr[1]->code);
     }
 }
+/**
+ * @brief 数组声明
+ * 姑且先保持原符号表的处理，但复制一个备份到数组符号表中
+ * @param T
+ */
 void array_decl(struct node *T)
 {
-    int rtn, num;
+    int rtn, num, arr_rtn;
     int array_dimension = astsymbol.symbols[T->place].array_dimension;
     int length[10];
+    char *Alias = newAlias();
     memcpy(length, astsymbol.symbols[T->place].length, array_dimension * sizeof(int)); //数组复制
-    rtn = fillSymbolTable(T->type_id, newAlias(), LEV, T->type, ARRAY);                //符号表
+    rtn = fillSymbolTable(T->type_id, Alias, LEV, T->type, ARRAY);                     //符号表
+    arr_rtn = fillArrayTable(T->type_id, Alias, LEV, T->type);                         //往数组符号表填东西
+
     if (rtn == -1)
         semantic_error(T->pos, T->type_id, "变量重复定义");
     else
@@ -121,9 +137,10 @@ void array_decl(struct node *T)
         List *value_list = ListInit();
         T->place = rtn; //用place记录在符号表中的位置
         symbolTable.symbols[rtn].array_dimension = array_dimension;
+        arrayTalbe.symbols[arr_rtn].array_demension = array_dimension;                       //存放数组维度到数组符号表中
         memcpy(symbolTable.symbols[T->place].length, length, array_dimension * sizeof(int)); //数组复制
-
-        if (T->ptr[0] != NULL) //数组初始化
+        memcpy(arrayTalbe.symbols[arr_rtn].length, length, array_dimension * sizeof(int));   //
+        if (T->ptr[0] != NULL)                                                               //数组初始化 初始值
         {
             int temp_width[10], width = 1;
             int array_offset = 0;
@@ -134,14 +151,19 @@ void array_decl(struct node *T)
                 width *= length[i];
                 temp_width[i] = width;
             }
-            if (LEV == 0) //全局变量
+            if (LEV == 0) //全局变量 把大括号里的值存到表中
             {
                 initarray = initarray->ptr[0];
                 arrayinit_bracker(value_list, initarray, brace_num, &array_offset, temp_width, array_dimension);
                 symbolTable.symbols[rtn].value = value_list;
+                arrayTalbe.symbols[arr_rtn].value = value_list;
             }
-            else //局部变量
+            else // TODO:局部变量 暂时打算跟全局一样的处理 主要不一样的处理是要记录大小，用来开辟函数栈空间
             {
+                initarray = initarray->ptr[0];
+                arrayinit_bracker(value_list, initarray, brace_num, &array_offset, temp_width, array_dimension);
+                symbolTable.symbols[rtn].value = value_list;
+                arrayTalbe.symbols[arr_rtn].value = value_list;
             }
         }
     }
@@ -409,7 +431,7 @@ void id_exp(struct node *T)
 void int_exp(struct node *T)
 {
     struct opn opn1, opn2, result;
-    T->place = temp_add(newTemp(), LEV, T->type, TEMP_VAR); //为整常量生成一个临时变量
+    T->place = temp_add(newTemp(), LEV, T->kind, TEMP_VAR); //为整常量生成一个临时变量
     T->type = T->kind;
     opn1.kind = T->kind;
     opn1.kind = T->kind;
@@ -574,9 +596,9 @@ void assignop_exp(struct node *T)
     else if (T->ptr[0]->kind == EXP_ARRAY) //数组作为左值
     {
         exp_array(T->ptr[0]); //处理左值
-        Exp(T->ptr[1]);
         T->type = T->ptr[0]->type;
 
+        //处理下标
         if (symbolTable.symbols[T->ptr[0]->ptr[0]->place].type == LITERAL)
         {
             opn1.kind = LITERAL;
@@ -587,8 +609,18 @@ void assignop_exp(struct node *T)
             opn1.kind = ID;
             strcpy(opn1.id, symbolTable.symbols[T->ptr[0]->ptr[0]->place].alias); // index
         }
-        opn2.kind = ID;
-        strcpy(opn2.id, symbolTable.symbols[T->ptr[1]->place].alias); //右值一定是个变量或临时变量
+        //对右值做个简单优化
+        if (T->ptr[1]->kind == LITERAL)
+        {
+            opn2.kind = LITERAL;
+            opn2.const_int = T->ptr[1]->type_int;
+        }
+        else
+        {
+            Exp(T->ptr[1]);
+            opn2.kind = ID;
+            strcpy(opn2.id, symbolTable.symbols[T->ptr[1]->place].alias); //右值一定是个变量或临时变量
+        }
 
         result.kind = ID;
         strcpy(result.id, symbolTable.symbols[T->ptr[0]->place].alias);
@@ -823,17 +855,20 @@ void boolExp(struct node *T, char *Etrue, char *Efalse) //二代
             boolExp(T->ptr[0], mi_label, Efalse); //处理左边的表达式
             boolExp(T->ptr[1], Etrue, Efalse);    //处理右边表达式
             T->code = merge(3, T->ptr[0]->code, genLabel(mi_label), T->ptr[1]->code);
+            break;
         case TOK_OR:
             strcpy(mi_label, newLabel());
             boolExp(T->ptr[0], Etrue, mi_label);
             boolExp(T->ptr[1], Etrue, Efalse);
             T->code = merge(3, T->ptr[0]->code, genLabel(mi_label), T->ptr[1]->code);
+            break;
         case UNARYEXP:
             if (T->ptr[0]->kind == TOK_NOT)
                 boolExp(T->ptr[1], Efalse, Etrue);
             else
                 boolExp(T->ptr[1], Etrue, Efalse);
             T->code = T->ptr[1]->code;
+            break;
         default:
             break;
         }
@@ -845,7 +880,7 @@ void func_call_exp(struct node *T)
     int rtn;
     struct node *T0;
     struct opn opn1, opn2, result;
-    rtn = searchSymbolTable(T->type_id);
+    rtn = searchFuncTable(T->type_id);
     if (rtn == -1)
     {
         semantic_error(T->pos, T->type_id, "函数未定义，语义错误");
@@ -871,8 +906,21 @@ void func_call_exp(struct node *T)
     T0 = T->ptr[0];
     while (T0)
     {
-        result.kind = ID;
-        strcpy(result.id, symbolTable.symbols[T0->ptr[0]->place].alias);
+        if (T0->ptr[0]->kind == LITERAL)
+        {
+            result.kind = LITERAL;
+            result.const_int = T0->ptr[0]->type_int;
+        }
+        else if (T0->ptr[0]->kind == FLOAT_LITERAL)
+        {
+            result.kind = FLOAT_LITERAL;
+            result.const_float = T0->ptr[0]->type_float;
+        }
+        else
+        {
+            result.kind = ID;
+            strcpy(result.id, symbolTable.symbols[T0->ptr[0]->place].alias);
+        }
         T->code = merge(2, T->code, genIR(ARG, opn1, opn2, result));
         T0 = T0->ptr[1];
     }
@@ -893,7 +941,10 @@ int match_param(int i, struct node *T)
     for (j = 1; j < num; j++)
     {
         type1 = symbolTable.symbols[i + j].type; //形参类型
+
         type2 = T->ptr[0]->type;
+        if (type2 == LITERAL)
+            type2 = TOK_INT;
         if (type1 != type2)
         {
             semantic_error(T->pos, "", "参数类型不匹配");
@@ -911,8 +962,15 @@ int match_param(int i, struct node *T)
 //参数列表
 void args_exp(struct node *T)
 {
-    Exp(T->ptr[0]);
-    T->code = T->ptr[0]->code;
+    if (T->ptr[0]->kind == LITERAL || T->ptr[0]->kind == FLOAT_LITERAL) //如果为常数，暂时不进行任何操作
+    {
+    }
+    else
+    {
+        Exp(T->ptr[0]);
+        T->code = T->ptr[0]->code;
+    }
+
     if (T->ptr[1])
     {
         args_exp(T->ptr[1]);
@@ -1012,8 +1070,12 @@ void block(struct node *T)
     LEV++; //设置层号加1，并且保存该层局部变量在符号表中的起始位置在symbol_scope_TX
     symbol_scope_TX.TX[symbol_scope_TX.top++] = symbolTable.index;
     T->code = NULL;
-    semantic_Analysis(T->ptr[0]);
-    T->code = T->ptr[0]->code;
+    //多一层判断，可能块可以为空
+    if (T->ptr[0] != NULL)
+    {
+        semantic_Analysis(T->ptr[0]);
+        T->code = T->ptr[0]->code;
+    }
     // print_symbol();                                                  //c在退出一个符合语句前显示的符号表
     LEV--;                                                         //出复合语句，层号减1
     symbolTable.index = symbol_scope_TX.TX[--symbol_scope_TX.top]; //删除该作用域中的符号
@@ -1056,7 +1118,7 @@ void if_else_stmt(struct node *T)
     semantic_Analysis(T->ptr[1]);      // if的代码块
     if (T->ptr[2]->kind == IF_THEN)    //遇到else if情况传递Enext
         else_if_stmt(T->ptr[2], Enext);
-    else if (T->ptr[2]->kind == IF_THEN_ELSE)
+    else if (T->ptr[2]->kind == IF_THEN_ELSE) //多层if else
         else_if_else_stmt(T->ptr[2], Enext);
     else
         semantic_Analysis(T->ptr[2]); //开始else
@@ -1089,7 +1151,7 @@ void else_if_else_stmt(struct node *T, char *Enext) // else if else情况跟if e
     else
         semantic_Analysis(T->ptr[2]); //开始else
 
-    T->code = merge(5, T->ptr[0]->code, genLabel(Etrue), T->ptr[1]->code, genGoto(Enext), genLabel(Efalse), T->ptr[2]);
+    T->code = merge(6, T->ptr[0]->code, genLabel(Etrue), T->ptr[1]->code, genGoto(Enext), genLabel(Efalse), T->ptr[2]->code);
 }
 
 void while_stmt(struct node *T)
@@ -1150,9 +1212,25 @@ void return_dec(struct node *T) //
                 result.kind = LITERAL;
             }
         }
+        else if (T->ptr[0]->kind == FLOAT_LITERAL)
+        {
+            if (symbolTable.symbols[num].type != TOK_FLOAT)
+            {
+                semantic_error(T->pos, "返回值类型错误，语义错误", "");
+                T->code = NULL;
+                return;
+            }
+            else
+            {
+                result.const_float = T->ptr[0]->type_float;
+                result.kind = FLOAT_LITERAL;
+            }
+        }
         else
         {
             Exp(T->ptr[0]);
+            int type = T->ptr[0]->type;
+            int func_type = symbolTable.symbols[num].type;
             if (T->ptr[0]->type != symbolTable.symbols[num].type) //类型检查
             {
                 semantic_error(T->pos, "返回值类型错误，语义错误", "");
