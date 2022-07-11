@@ -1,3 +1,14 @@
+/**
+ * @file def.h
+ * @author 尹相豪 (you@domain.com)
+ * @brief 定义语法树节点结构，三地址代码结构，枚举语法树节点类型，枚举三地址代码类型。但是有些类型是枚举在calc_c.tab.h中。
+ * @version 0.1
+ * @date 2022-07-11
+ *
+ * @copyright Copyright (c) 2022
+ *
+ */
+
 #ifndef DEF_H_
 #define DEF_H_
 
@@ -11,6 +22,7 @@
 #include "reg.h"
 #include "symtable.h"
 #include "list.h"
+#include "Optimize.h"
 // #define DD
 enum node_kind
 {
@@ -202,6 +214,7 @@ void block_list(struct node *T);
 int match_param(int i, struct node *T);
 
 void make_uid(struct codenode *head);
+void make_uid_block(Blocks *block);
 void change_label(struct codenode *head);
 
 void rval_array(struct node *T);

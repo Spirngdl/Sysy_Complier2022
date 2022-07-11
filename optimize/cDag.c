@@ -154,20 +154,24 @@ DAGnode *find_value_num(DAG *dag, int value, int l, int r, int t)
     }
     return NULL;
 }
-//判断带有附加标识符symbol的结点是否表示一个字面常量
+//判断带有附加标识符symbol的结点是否表示一个字面常量 如果是,顺便把值上移
 bool isLiteralNode(DAG *dag, char *symbol)
 {
     DAGnode *n = findnode_symbol(dag, symbol);
     if (n == NULL)
         return false;
-    if (n->left != -1 && n->right == -1 && n->tri == -1)
+    if (n->left != -1 && n->right == -1 && n->tri == -1) //如果只存在左子节点，且左子节点为LITERAL
     {
         void *node;
         dag->nodes->get_at(dag->nodes, n->left, &node);
         if (((DAGnode *)node)->kind == LITERAL)
+        {
+            //都查了，干脆直接把值搞上来
+            n->v_num = ((DAGnode *)node)->v_num;
             return true;
+        }
     }
-    if (n->right != -1 && n->left == -1 && n->tri == -1)
+    if (n->right != -1 && n->left == -1 && n->tri == -1) //如果只存在右子节点，且右子节点为LITERAL
     {
         void *node;
         dag->nodes->get_at(dag->nodes, n->right, &node);
@@ -204,7 +208,10 @@ int findnode_depend_on(DAG *dag, DAGnode *n, int vector[])
     {
         DAGnode *node = (DAGnode *)elem;
         if (node->left == index || node->right == index || node->tri == index)
-            vector[sum++] = i;
+        {
+            vector[sum] = i;
+            sum++;
+        }
         i++;
     }
     return sum;
@@ -217,10 +224,20 @@ int readquad(DAG *dag, struct codenode *T)
         return 0;
     }
     //跳转指令不处理
-    if (T->op == GOTO || T->op == JLE || T->op == JLT || T->op == JGE || T->op == JGT || T->op == EQ || T->op == NEQ)
+    if (T->op == GOTO || T->op == JLE || T->op == JLT || T->op == JGE || T->op == JGT || T->op == EQ || T->op == NEQ || T->op == TOK_RETURN)
     {
-        dag->jumperRec = T;
-        T->prior = NULL;
+        if (dag->jumperRec == NULL)
+        {
+            T->prior = T;
+            dag->jumperRec = T;
+        }
+        else
+        {
+            dag->jumperRec->next = T;
+            dag->jumperRec->prior = T;
+            T->prior = dag->jumperRec;
+        }
+
         return 0;
     }
     if (T->op == FUNCTION)
@@ -287,6 +304,7 @@ int readquad0(DAG *dag, struct codenode *T) // 0型暂时不考虑数组
                 n1 = create_dagnode();
                 n1->left = indexn2, n1->right = -1, n1->tri = -1;
                 n1->v_num = T->op;
+                n1->kind = T->op; //用kind来存储op比较好点应该
                 addSymbol(n1, T->result.id);
                 // TODO: 添加节点
                 //  nodes.emplace_back(n1);
@@ -336,8 +354,71 @@ int readquad2(DAG *dag, struct codenode *T)
 {
     bool n2Literal = false, n3Literal = false;
     DAGnode *n1 = NULL, *n2 = NULL, *n3 = NULL;
-    if (T->opn1.kind == LITERAL && T->opn2.kind == LITERAL) //应该不存在
+    int val = 0, val1 = 0, val2 = 0;
+    if (T->opn1.kind == LITERAL)
     {
+        n2Literal = true;
+        val1 = T->opn1.const_int; //直接把值赋上来
+    }
+    else if (T->opn1.kind == ID)
+        if (isLiteralNode(dag, T->opn1.id))
+        {
+            n2Literal = true;
+            n2 = findnode_symbol(dag, T->opn1.id);
+            val1 = n2->v_num;
+        }
+
+    if (T->opn2.kind == LITERAL)
+    {
+        n3Literal = true;
+        val2 = T->opn2.const_int;
+    }
+    else if (T->opn2.kind == ID)
+        if (isLiteralNode(dag, T->opn2.id))
+        {
+            n2Literal = true;
+            n3 = findnode_symbol(dag, T->opn2.id);
+            val2 = n3->v_num;
+        }
+
+    if (n2Literal && n3Literal)
+    {
+        if (T->op == TOK_ADD)
+            val = val1 + val2;
+        else if (T->op == TOK_SUB)
+            val = val1 - val2;
+        else if (T->op == TOK_MUL)
+            val = val1 * val2;
+        else if (T->op == TOK_DIV)
+            val = val1 / val2;
+        else if (T->op == TOK_MODULO)
+            val = val1 % val2;
+        //查看是否存在
+        DAGnode *n = find_value_num(dag, val, -1, -1, -1);
+        if (n == NULL)
+        {
+            n = create_dagnode();
+            n->v_num = val;
+            n->kind = LITERAL;
+            n->left = n->right = n->tri = -1;
+            dag->nodes->push_back(dag->nodes, n);
+        }
+        int indexn = findNode(dag, n->ID);
+        n1 = findNode_OP_value(dag, TOK_ASSIGN, indexn, -1, -1);
+        if (n1 != NULL && !n1->isKilled)
+        {
+            removeSymbol(dag, T->result.id);
+            addSymbol(n1, T->result.id);
+        }
+        else
+        {
+            n1 = create_dagnode();
+            n1->left = indexn, n1->right = -1, n1->tri = -1;
+            n1->kind = n1->v_num = TOK_ASSIGN;
+            removeSymbol(dag, T->result.id);
+            addSymbol(n1, T->result.id);
+            dag->nodes->push_back(dag->nodes, n1);
+        }
     }
     else
     {
@@ -677,7 +758,7 @@ struct codenode *genOptimizedCode(DAG *dag)
             {
                 DAGnode *node = (DAGnode *)sym_elem;
                 int leaf[500];
-                int self = findNode(dag, node->ID);
+                int self = findNode(dag, cur->ID);
                 int num = findnode_depend_on(dag, node, leaf);
                 for (int i = 0; i < num; i++)
                 {
@@ -778,7 +859,6 @@ void dag_optimize(Blocks *blocks)
             while (tcode != NULL)
             {
                 readquad(dag, tcode);
-
                 tcode = tcode->next;
             }
             result = genOptimizedCode(dag);
@@ -790,6 +870,18 @@ void dag_optimize(Blocks *blocks)
                 // result = dag->functionrec;
                 dag->functionrec->next = dag->functionrec->prior = dag->functionrec;
                 result = merge(2, dag->functionrec, result);
+            }
+            if (dag->jumperRec != NULL)
+            {
+                if (dag->jumperRec->prior != dag->jumperRec)
+                {
+                    dag->jumperRec->next->next = dag->jumperRec;
+                }
+                else
+                {
+                    dag->jumperRec->next = dag->jumperRec;
+                }
+                result = merge(2, result, dag->jumperRec);
             }
             if (dag->endfunction != NULL)
             {

@@ -1,3 +1,14 @@
+/**
+ * @file symtable.h
+ * @author your name (you@domain.com)
+ * @brief 符号表头文件
+ * @version 0.1
+ * @date 2022-07-11
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
+
 #ifndef SYMTABLE_H_
 #define SYMTABLE_H_
 #include "list.h"
@@ -41,7 +52,7 @@ struct symboltable
     struct symbol symbols[MAXLENGTH];
     int index;
 } symbolTable;
-
+//用来给数组的。
 struct arraysymtalbe
 {
     arraysymbol symbols[MAXLENGTH];
@@ -56,7 +67,8 @@ struct symbol_scope_begin
 
 int searchSymbolTable(char *name);
 int searchFuncTable(char *name); //用来查找函数的 目前只在函数调用时候查找一下
-int search_alias(char *alias);
+
+int search_alias(char *alias);//通过别名查找符号表，一般是在后端调用了，因为三地址代码中存储的变量的ID就是别名
 int fillast(char *name, char flag); //用来处理临时符号表
 int fillSymbolTable(char *name, char *alias, int level, int type, int flag);
 int fillSymbolTable_(char *name, char *alias, int level, int type, char flag, int offset);

@@ -352,7 +352,65 @@ void change_label(struct codenode *head)
             hcode = hcode->next;
     }
 }
-
+/**
+ * @brief 对产生的流图重新编写UID，主要是因为dag优化后，好像全乱了，但是考虑到流图的前后结点属性
+ * 应该可以做到对GOTO 和IF GOTO 目标的重写。
+ *
+ * @param block 基本块头
+ */
+void make_uid_block(Blocks *block)
+{
+    int UID = 100;
+    //首先遍历基本块 先把所有语句重写一下UID，然后再想怎么改写
+    Blocks *cur_blocks = block;
+    while (cur_blocks != NULL)
+    {
+        for (int i = 0; i < cur_blocks->count; i++)
+        {
+            struct codenode *tcode = cur_blocks->block[i]->tac_list;
+            while (tcode != NULL)
+            {
+                tcode->UID = UID++;
+                tcode = tcode->next;
+            }
+        }
+        cur_blocks = cur_blocks->next;
+    }
+    //修改GOTO语句 感觉好影响效率
+    cur_blocks = block;
+    while (cur_blocks != NULL)
+    {
+        for (int i = 0; i < cur_blocks->count; i++)
+        {
+            struct codenode *tcode = cur_blocks->block[i]->tac_list;
+            int num_chi = cur_blocks->block[i]->num_children;
+            if (num_chi == 1) //子结点块只有一个，一般是只有GOTO或者没有GOTO
+            {
+                while (tcode != NULL)
+                {
+                    if (tcode->op == GOTO)
+                    {
+                        int target = cur_blocks->block[i]->children[0]->tac_list->UID; //拿到子节点块的第一句的UID
+                        tcode->result.const_int = target;
+                    }
+                    tcode = tcode->next;
+                }
+            }
+            else if (num_chi == 2) // 子节点块有两个，一般是遇到了IF
+            {
+                while (tcode->op == GOTO) //少一点判断
+                {
+                    int target = cur_blocks->block[i]->children[1]->tac_list->UID;
+                    tcode->result.const_int = target;
+                    tcode = tcode->prior; //回到上一句
+                    target = cur_blocks->block[i]->children[0]->tac_list->UID;
+                    tcode->result.const_int = target;
+                }
+            }
+        }
+        cur_blocks = cur_blocks->next;
+    }
+}
 void test_array()
 {
     List *var = symbolTable.symbols[0].value;
@@ -360,7 +418,7 @@ void test_array()
     var->first(var, false);
     while (var->next(var, &element))
     {
-        int i = (int)(intptr_t)element;
+        int i = (int)(long long)element;
         printf("%d ", i);
     }
     printf("\n");

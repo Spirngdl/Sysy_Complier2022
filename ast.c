@@ -1,3 +1,13 @@
+/**
+ * @file ast.c
+ * @author your name (you@domain.com)
+ * @brief 定义对抽象语法树生成相关的函数。
+ * @version 0.1
+ * @date 2022-07-11
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
 #include "include/def.h"
 struct node *mknode(int kind, struct node *first, struct node *second, struct node *third, int pos)
 {
@@ -148,14 +158,15 @@ void push_initarray(struct node *T, struct node *newnode)
 }
 void push_initvalue(int i, List *node)
 {
-    ListPushBack(node, (void *)(intptr_t)i);
+    ListPushBack(node, (void *)(long long)i);
+    return;
 }
 int find_initvalue_arr(int symbol_index, int offset)
 {
     void *element;
     if (ListGetAt(symbolTable.symbols[symbol_index].value, offset, &element))
     {
-        return (int)(intptr_t)element;
+        return (int)(long long)element;
     }
     else
         return 0;

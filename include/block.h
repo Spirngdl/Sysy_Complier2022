@@ -1,3 +1,13 @@
+/**
+ * @file block.h
+ * @author your name (you@domain.com)
+ * @brief 用来划分基本块的
+ * @version 0.1
+ * @date 2022-07-11
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
 #ifndef BLOCK_H_
 #define BLOKC_H_
 //基本块

@@ -1,3 +1,13 @@
+/**
+ * @file block.c
+ * @author your name (you@domain.com)
+ * @brief 划分基本块相关函数。
+ * @version 0.1
+ * @date 2022-07-11
+ *
+ * @copyright Copyright (c) 2022
+ *
+ */
 #include "include/def.h"
 
 Block *newblock() //创建新块

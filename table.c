@@ -1,5 +1,5 @@
 #include "include/def.h"
-#define DU
+// #define DU
 int searchSymbolTable(char *name)
 {
     int i;
@@ -33,6 +33,12 @@ int searchFuncTable(char *name)
     }
     return -1;
 }
+/**
+ * @brief 通过别名查找符号表，一般是在后端调用了，因为三地址代码中存储的变量的ID就是别名
+ *
+ * @param alias 别名
+ * @return 变量在符号表数组中的位置.失败返回-1
+ */
 int search_alias(char *alias)
 {
     int i;

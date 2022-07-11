@@ -1,4 +1,13 @@
-
+/**
+ * @file reg.h
+ * @author your name (you@domain.com)
+ * @brief 
+ * @version 0.1
+ * @date 2022-07-11
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
 
 #define MAX_REG 12  // 最大寄存器数
 #define MAX_VARS 1024 // 最大变量数
