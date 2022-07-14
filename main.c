@@ -24,13 +24,14 @@ void Driver(struct node *T)
   change_label(T->code);
   print_IR(T->code);
   basic_block(T->code);
-  // all_fun_reg(head_block);
+  all_fun_reg(head_block);
   // print_vars();
   check_immes(head_block);
   for (int i = 0; i < head_block->count; i++)
   {
     print_IR(head_block->block[i]->tac_list);
   }
+  arminterface(head_block);
   printf("optimize\n");
   dag_optimize(head_block);
   // all_fun(head_block);
@@ -39,9 +40,6 @@ void Driver(struct node *T)
   {
     print_IR(head_block->block[i]->tac_list);
   }
-  // print_IR(head_block->block[0]->tac_list);
-  // print_IR(head_block->block[1]->tac_list);
-  // print_IR(head_block->block[2]->tac_list);
   printf("ending\n");
   // struct Block *block = divide_block(T->code);
 }

@@ -9,7 +9,7 @@
  *
  */
 
-#include "../include/def.h"
+#include "../include/Optimize.h"
 /**
  * @brief 查找List中是否有常数value
  *
@@ -32,6 +32,46 @@ bool find_literal(List *list, int vlaue)
 int comp(const void *a, const void *b)
 {
     return *(int *)a - *(int *)b;
+}
+/**
+ * @brief 在循环不变运算中，查看符号表中是否有
+ *
+ * @param table
+ * @param name
+ * @return int 失败返回-1
+ */
+int search_var_loop(var_table *table, char *name)
+{
+    int count = table->count;
+    for (int i = 0; i < count; i++)
+    {
+        if (strcmp(table->table[i].name, name))
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+/**
+ * @brief 添加变量
+ *
+ * @param table
+ * @param name
+ * @param uid
+ */
+void add_var_loop(var_table *table, char *name, int uid)
+{
+    int i = search_var_loop(table, name);
+    if (i == -1) //如果此前没有定值
+    {
+        strcpy(table->table[table->count].name, name);
+        table->table[table->count].ass_uid = uid;
+        table->table[table->count++].is_multi = false;
+    }
+    else //已经被定过值了
+    {
+        table->table[i].is_multi = true;
+    }
 }
 /**
  * @brief 获取必经节点要对该函数内所有基本块遍历，然后拿到的是所有基本块的必经节点集合
@@ -181,12 +221,23 @@ List *get_loop(Blocks *fun_block, int back_edge[][2], int count)
     }
     return result;
 }
-
+/**
+ * @brief 查找循环不变运算
+ *
+ * @param fun_block
+ * @param loop
+ */
 void find_invariants(Blocks *fun_block, List *loop)
 {
-    int flag[100]; //先定义一个标记数组
+    //先定义一个标记数组
+    int flag[100];
+
     memset(flag, 0, sizeof(flag));
-    int blocks[100], count = 0, changed = 1;
+    //整个简易符号表
+    var_table *table = (var_table *)malloc(sizeof(var_table));
+    table->count = 0;
+    int blocks[100], count = 0, changed = 1, base_count = 0;
+    int base_id[100] = {0};
     struct codenode *hcode = NULL;
     void *elem;
     loop->first(loop, false);
@@ -196,12 +247,12 @@ void find_invariants(Blocks *fun_block, List *loop)
     }
     //排序一下吧
     qsort(blocks, count, sizeof(int), comp);
-    //先初步遍历一遍块
+    //先初步遍历一遍块 ,顺变记录一下各个变量的定值语句在哪
     for (int i = 0; i < count; i++)
     {
         //获取三地址代码
         hcode = fun_block->block[blocks[i]]->tac_list;
-        int base_id = hcode->UID;
+        base_id[i] = hcode->UID + base_count;
         //如果每个运算为常数 则标记
         while (hcode)
         {
@@ -211,8 +262,9 @@ void find_invariants(Blocks *fun_block, List *loop)
             case TOK_ASSIGN:
                 if (hcode->opn1.kind == LITERAL || hcode->opn1.kind == FLOAT_LITERAL)
                 {
-                    flag[hcode->UID - base_id] = 1; //标记
+                    flag[hcode->UID - base_id[i]] = 1; //标记
                 }
+                add_var_loop(table, hcode->result.id, hcode->UID - base_id[i]); //记录该变量的定值 相对UID
                 break;
             //五个运算
             case TOK_ADD:
@@ -222,37 +274,181 @@ void find_invariants(Blocks *fun_block, List *loop)
             case TOK_MODULO:
                 if ((hcode->opn1.kind == LITERAL || hcode->opn1.kind == FLOAT_LITERAL) && (hcode->opn2.kind == LITERAL || hcode->opn2.kind == FLOAT_LITERAL))
                 {
-                    flag[hcode->UID - base_id] = 1;
+                    flag[hcode->UID - base_id[i]] = 1;
                 }
-
+                add_var_loop(table, hcode->result.id, hcode->UID); //记录该变量的定值相对UID
                 break;
             //两个数组
             case ARRAY_ASSIGN: //右值
             case ARRAY_EXP:    //下标
                 if (hcode->opn2.kind == LITERAL || hcode->opn2.kind == FLOAT_LITERAL)
                 {
-                    flag[hcode->UID - base_id] = 1;
+                    flag[hcode->UID - base_id[i]] = 1;
                 }
+                add_var_loop(table, hcode->result.id, hcode->UID); //记录该变量的定值相对UID
                 break;
             default:
                 break;
             }
+            base_count++;
             hcode = hcode->next;
         }
     }
+    //疯狂遍历，找到循环不变表达式
     while (changed)
     {
+        changed = 0;
         for (int i = 0; i < count; i++)
         {
             hcode = fun_block->block[blocks[i]]->tac_list;
             while (hcode)
             {
-                //运算对象是常数，或者定值点是常数，或者只有一个到达定值点并且该点的代码已经被标记
-                //就是找opn1 和 opn2 如果opn1和opn2的赋值语句都在外面就标记，就是循环内没有他们的赋值
-                //opn1 和 opn2 的赋值已经被标记
-                //
+                /**
+                 * 运算对象是常数，或者定值点是常数，或者只有一个到达定值点并且该点的代码已经被标记
+                 * 就是找opn1 和 opn2 如果opn1和opn2的赋值语句都在外面就标记，就是循环内没有他们的赋值
+                 * opn1 和 opn2 的赋值只有一个且已经被标记
+                 * 我的实现
+                 * 找个容器，存变量的定值在哪 整个简易符号表吗
+                 * 赋值在外面的  标记这个变量
+                 * 赋值被标记的 标记这个变量
+                 * 如果两个变量都被标记 标记这个代码
+                 */
+                if (flag[hcode->UID - base_id[i]] == 0) //如果未被标记
+                {
+                    int flag1 = 0, flag2 = 0;
+                    int ass_uid = 0; //定值语句的uid
+                    int index = 0;
+                    switch (hcode->op)
+                    {
+                    case TOK_ASSIGN:
+                        flag2 = 1;
+                        if (hcode->opn1.kind == ID)
+                        {
+                            //查找定值语句
+                            index = search_var_loop(table, hcode->opn1.id);
+                            if (index == -1) //没找到，表示定值语句在外头
+                                flag1 = 1;
+                            else //找到了
+                            {
+                                if (table->table[index].is_multi == 0) //没有多次定值
+                                {
+                                    ass_uid = table->table[index].ass_uid;
+                                    if (flag[ass_uid] == 1) //定值语句被标记
+                                    {
+                                        flag1 = 1;
+                                    }
+                                }
+                            }
+                        }
+                        else if (hcode->opn1.kind == LITERAL || hcode->opn1.kind == FLOAT_LITERAL)
+                            flag1 = 1;
+                        if (flag1 + flag2 == 2)
+                        {
+                            flag[hcode->UID - base_id[i]] = 1; //标记这个语句
+                            changed = 1;
+                        }
+                        break;
+                        //五个运算
+                    case TOK_ADD:
+                    case TOK_SUB:
+                    case TOK_MUL:
+                    case TOK_DIV:
+                    case TOK_MODULO:
+                        //判断第一个
+                        if (hcode->opn1.kind == ID)
+                        {
+                            //查找定值语句
+                            index = search_var_loop(table, hcode->opn1.id);
+                            if (index == -1) //没找到，表示定值语句在外头
+                                flag1 = 1;
+                            else //找到了
+                            {
+                                if (table->table[index].is_multi == 0) //没有多次定值
+                                {
+                                    ass_uid = table->table[index].ass_uid;
+                                    if (flag[ass_uid] == 1) //定值语句被标记
+                                    {
+                                        flag1 = 1;
+                                    }
+                                }
+                            }
+                        }
+                        else if (hcode->opn1.kind == LITERAL || hcode->opn1.kind == FLOAT_LITERAL)
+                            flag1 = 1;
+                        //判断第二个
+                        if (hcode->opn2.kind == ID)
+                        {
+                            //查找定值语句
+                            index = search_var_loop(table, hcode->opn2.id);
+                            if (index == -1) //没找到，表示定值语句在外头
+                                flag2 = 1;
+                            else //找到了
+                            {
+                                if (table->table[index].is_multi == 0) //没有多次定值
+                                {
+                                    ass_uid = table->table[index].ass_uid;
+                                    if (flag[ass_uid] == 1) //定值语句被标记
+                                    {
+                                        flag1 = 1;
+                                    }
+                                }
+                            }
+                        }
+                        else if (hcode->opn2.kind == LITERAL || hcode->opn2.kind == FLOAT_LITERAL)
+                            flag1 = 1;
+                        //两个变量都被标记
+                        if (flag1 + flag2 == 2)
+                        {
+                            flag[hcode->UID - base_id[i]] = 1; //标记这个语句
+                            changed = 1;
+                        }
+                        break;
+                    case ARRAY_ASSIGN: //右值
+                    case ARRAY_EXP:    //下标
+                        flag1 = 1;
+                        if (hcode->opn2.kind == ID)
+                        {
+                            index = search_var_loop(table, hcode->opn2.id);
+                            if (index == -1) //没找到
+                                flag2 = 1;
+                            else
+                            {
+                                if (table->table[index].is_multi == 0) //没有多次定值
+                                {
+                                    ass_uid = table->table[index].ass_uid;
+                                    if (flag[ass_uid] == 1) //定值语句被标记
+                                    {
+                                        flag2 = 1;
+                                    }
+                                }
+                            }
+                        }
+                        else if (hcode->opn2.kind == LITERAL || hcode->opn2.kind == FLOAT_LITERAL)
+                        {
+                            flag2 = 1;
+                        }
+                        if (flag1 + flag2 == 2)
+                        {
+                            flag[hcode->UID - base_id[i]] = 1; //标记这个语句
+                            changed = 1;
+                        }
+                    default:
+                        break;
+                    }
+                }
                 hcode = hcode->next;
             }
         }
     }
+}
+//判断能否外提
+void check_invariants(Blocks *fun_block)
+{
+    /**
+     * 满足三点
+     * 1.这条语句所在的节点是所有出口的必经节点（应该只有一个出口吧）
+     * 2.result在循环中没有其他定值语句 (这个应该在前面做比较好吧)
+     * 3.循环中所有对result的引用，只有这条语句中对于result的定值能够到达 (这个到达，怎么判，)
+     *
+     */
 }

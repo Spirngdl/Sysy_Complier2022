@@ -40,6 +40,23 @@ void one_const_array(struct codenode *const_array);
 void one_const_var(struct codenode *const_var);
 
 //循环优化
+//简易符号表
+typedef struct Var_Ass_
+{
+    char name[32]; //变量名
+    int ass_uid;   //赋值的语句的UID
+    bool is_multi; //是否有多个定值语句
+
+} var_assign;
+//表
+typedef struct var_ass_table_
+{
+    var_assign table[100];
+    int count;
+} var_table;
+int search_var_loop(var_table *table, char *name);
+void add_var_loop(var_table *table, char *name, int uid);
+
 // TODO: 先找循环
 //获取该基本块的前驱
 //在划分基本块时实现

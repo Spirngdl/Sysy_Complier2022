@@ -533,11 +533,13 @@ void check_immes(Blocks *blocks)
     struct codenode *result = NULL;
     char *temp_name = NULL;
     int val = 0;
+    int base_id = 0;
     while (cur_blocks != NULL) //遍历所有基本块
     {
         for (int i = 0; i < cur_blocks->count; i++)
         {
             struct codenode *tcode = cur_blocks->block[i]->tac_list;
+            base_id = tcode->UID;
             while (tcode) //遍历三地址代码
             {
                 switch (tcode->op)
@@ -549,6 +551,10 @@ void check_immes(Blocks *blocks)
                         if (check_imme(val) == -1) //非法立即数
                         {
                             genLDR(val, tcode, 1);
+                            if (tcode->UID = base_id) //该语句是当前基本块的头部
+                            {
+                                cur_blocks->block[i]->tac_list = cur_blocks->block[i]->tac_list->prior;
+                            }
                         }
                     }
                     break;
@@ -571,6 +577,10 @@ void check_immes(Blocks *blocks)
                         if (check_imme(val) == -1)
                         {
                             genLDR(val, tcode, 1);
+                            if (tcode->UID = base_id) //该语句是当前基本块的头部
+                            {
+                                cur_blocks->block[i]->tac_list = cur_blocks->block[i]->tac_list->prior;
+                            }
                         }
                     }
                     if (tcode->opn2.kind == LITERAL)
@@ -579,6 +589,10 @@ void check_immes(Blocks *blocks)
                         if (check_imme(val) == -1)
                         {
                             genLDR(val, tcode, 2);
+                            if (tcode->UID = base_id) //该语句是当前基本块的头部
+                            {
+                                cur_blocks->block[i]->tac_list = cur_blocks->block[i]->tac_list->prior;
+                            }
                         }
                     }
                     break;
