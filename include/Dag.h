@@ -4,9 +4,9 @@
  * @brief dag用
  * @version 0.1
  * @date 2022-07-11
- * 
+ *
  * @copyright Copyright (c) 2022
- * 
+ *
  */
 #ifndef DAG_H_
 #define DAG_H_
@@ -81,5 +81,8 @@ bool isActivenNode(DAGnode *n);                                      //判断结
 //由dag结点变三地址
 struct codenode *to_code(DAG *dag, DAGnode *n); //暂时不考虑是不是活跃变量
 bool isFutileSet(DAGnode *n, int active[]);     // 判断结点 n 是否代表一个无用赋值语句（形如 T = N ，其中 T 为非活跃变量）
+bool isFutileASSIGN(DAG *dag, DAGnode *n);      //暂时用来判断一个赋值语句是否无用
 void dag_optimize(Blocks *blocks);              // dag优化接口
+
+
 #endif

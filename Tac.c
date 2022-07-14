@@ -42,6 +42,35 @@ struct codenode *merge(int num, ...)
     return h1;
 }
 
+//生成一条TOK_LDR代码
+struct codenode *genLDR(int val, struct codenode *t, int flag)
+{
+    struct codenode *h = (struct codenode *)malloc(sizeof(struct codenode));
+    char *name = newTemp();
+    h->op = TOK_LDR;
+    h->opn1.kind = LITERAL;
+    h->opn1.const_int = val;
+    h->result.kind = ID;
+    strcpy(h->result.id, name);
+    if (t->prior != NULL)
+    {
+        t->prior->next = h;
+    }
+    h->prior = t->prior;
+    h->next = t;
+    t->prior = h;
+    if (flag == 1)
+    {
+        t->opn1.kind = ID;
+        strcpy(t->opn1.id, name);
+    }
+    else if (flag == 2)
+    {
+        t->opn2.kind = ID;
+        strcpy(t->opn2.id, name);
+    }
+    return h;
+}
 //生成一条TAC代码的结点组成的双向循环链表，返回头指针
 struct codenode *genIR(int op, struct opn opn1, struct opn opn2, struct opn result)
 {
@@ -130,6 +159,9 @@ void print_IR(struct codenode *head)
         case TOK_ASSIGN:
             printf("  %s := %s\n", resultstr, opnstr1);
             break;
+        case TOK_LDR:
+            printf("  %s := %s\n", resultstr, opnstr1);
+            break;
         case ARRAY_ASSIGN:
             printf("  %s[%s] := %s\n", resultstr, opnstr1, opnstr2);
             break;
@@ -190,6 +222,7 @@ void print_IR(struct codenode *head)
             else
                 printf("  RETURN\n");
             break;
+
         case END:
             printf("END\n");
             break;
@@ -235,9 +268,10 @@ char *newTemp()
     return str_catch("temp", s);
 }
 
-void make_uid(struct codenode *head)
+void make_uid(struct codenode **head_ptr)
 {
     int uid = 100;
+    struct codenode *head = *head_ptr;
     struct codenode *temp = head;
     struct codenode *globel = NULL, *ge = NULL;
     struct codenode *function = NULL, *end = NULL;
@@ -273,7 +307,7 @@ void make_uid(struct codenode *head)
         else //是全局变量
         {
             hcode = temp;
-            while (temp != NULL && temp->next->op != FUNCTION)
+            while (temp != NULL && temp->next != NULL && temp->next->op != FUNCTION)
             {
                 temp = temp->next;
             }
@@ -296,14 +330,14 @@ void make_uid(struct codenode *head)
     }
     if (globel) //如果有全局变量语句
     {
-        head = globel;
+        *head_ptr = globel;
         ge->next = function;
     }
     else
     {
-        head = function;
+        *head_ptr = function;
     }
-    temp = head;
+    temp = *head_ptr;
     while (temp)
     {
         temp->UID = uid;
@@ -422,4 +456,138 @@ void test_array()
         printf("%d ", i);
     }
     printf("\n");
+}
+//用于判断合法立即数
+int op_mask[16] = {0, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1};
+int op_unmask[16] = {0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4};
+int count_mask[16] = {0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4};
+/**
+ * @brief 用于判断合法立即数
+ *
+ * @param imme
+ * @return int 0表示合法，-1 表示不合法
+ */
+int check_imme(int imme)
+{
+    int tmp;
+    int count1 = 0;
+    int first = 0, firstflag = 0;
+    int last = 0, lastflag = 0;
+    for (int i = 0; i < 8; i++)
+    {
+        // printf(" the %d time enter\n", i);
+        tmp = (imme & (0x0000000f << 4 * i));
+        tmp = tmp >> (i * 4);
+        if (!firstflag && tmp)
+        {
+            first = i * 4 + op_mask[tmp];
+            firstflag = 1;
+            // printf("first 1 is %d\n", first);
+        }
+        count1 += count_mask[tmp];
+        if (tmp)
+        {
+            last = i * 4 + op_unmask[tmp];
+            // printf("%d      last is %d\n", i, last);
+            int dif = last - first;
+            if (dif == 8)
+            {
+                // the num is started from 1
+                if ((first % 2) == 0)
+                {
+                    // printf("the first 1 at odd number!\n");
+                    return -1;
+                }
+            }
+            if (dif > 8 && dif < 25)
+            {
+                // printf("not fair!\n");
+                return -1;
+            }
+            else if (dif >= 25)
+            {
+                int high8 = (imme & 0xff000000);
+                imme = imme << 8;
+                imme |= (high8 >> 24);
+                firstflag = 0;
+                i = -1;
+                count1 = 0;
+            }
+        }
+    }
+    if (count1 > 8)
+    {
+        // printf("too much 1!\n");
+        return -1;
+    }
+    return 0;
+}
+/**
+ * @brief 遍历所有基本块，遍历所有三地址代码，查看使用的立即数是否合法
+ *
+ * @param blocks
+ */
+void check_immes(Blocks *blocks)
+{
+    Blocks *cur_blocks = blocks;
+    struct codenode *result = NULL;
+    char *temp_name = NULL;
+    int val = 0;
+    while (cur_blocks != NULL) //遍历所有基本块
+    {
+        for (int i = 0; i < cur_blocks->count; i++)
+        {
+            struct codenode *tcode = cur_blocks->block[i]->tac_list;
+            while (tcode) //遍历三地址代码
+            {
+                switch (tcode->op)
+                {
+                case TOK_ASSIGN:
+                    if (tcode->opn1.kind == LITERAL)
+                    {
+                        val = tcode->opn1.const_int;
+                        if (check_imme(val) == -1) //非法立即数
+                        {
+                            genLDR(val, tcode, 1);
+                        }
+                    }
+                    break;
+                case TOK_ADD:
+                case TOK_SUB:
+                case TOK_MUL:
+                case TOK_DIV:
+                case TOK_MODULO:
+                case ARRAY_ASSIGN:
+                case ARRAY_EXP:
+                case JLE: //条件跳转要不要判断
+                case JLT:
+                case JGE:
+                case JGT:
+                case EQ:
+                case NEQ:
+                    if (tcode->opn1.kind == LITERAL)
+                    {
+                        val = tcode->opn1.const_int;
+                        if (check_imme(val) == -1)
+                        {
+                            genLDR(val, tcode, 1);
+                        }
+                    }
+                    if (tcode->opn2.kind == LITERAL)
+                    {
+                        val = tcode->opn2.const_int;
+                        if (check_imme(val) == -1)
+                        {
+                            genLDR(val, tcode, 2);
+                        }
+                    }
+                    break;
+                default:
+                    break;
+                }
+                tcode = tcode->next;
+            }
+        }
+        cur_blocks = cur_blocks->next;
+    }
 }

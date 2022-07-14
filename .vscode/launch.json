@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/calc.exe",
-            "args": ["${workspaceFolder}/test_case.c"],
+            "args": ["${workspaceFolder}/Test/test_case.c"],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],

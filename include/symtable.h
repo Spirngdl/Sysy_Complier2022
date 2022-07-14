@@ -11,7 +11,7 @@
 
 #ifndef SYMTABLE_H_
 #define SYMTABLE_H_
-#include "list.h"
+#include "../Common/list.h"
 #define MAXLENGTH 1000 //定义符号表的大小
 struct symbol
 {                   //这里只列出了一个符号表项的部分属性，没考虑属性间的互斥

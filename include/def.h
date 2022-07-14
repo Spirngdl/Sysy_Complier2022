@@ -21,12 +21,13 @@
 #include "liveness.h"
 #include "reg.h"
 #include "symtable.h"
-#include "list.h"
+#include "../Common/list.h"
 #include "Optimize.h"
+#include "../Common/hash_set.h"
 // #define DD
 enum node_kind
 {
-
+    TOK_LDR = 2022,
     VAR_DECL,
     VAR_DECL_LIST,
     COMPUNIT_LIST,
@@ -213,7 +214,7 @@ void block(struct node *T);
 void block_list(struct node *T);
 int match_param(int i, struct node *T);
 
-void make_uid(struct codenode *head);
+void make_uid(struct codenode **head);
 void make_uid_block(Blocks *block);
 void change_label(struct codenode *head);
 
@@ -226,4 +227,9 @@ void arrayinit_bracker(List *value_list, struct node *T, int brace_num, int *arr
 void test_array();
 void push_initarray(struct node *T, struct node *newnode);
 
+
+
+
+int check_imme(int imme);
+void check_immes(Blocks *blocks);
 #endif

@@ -13,7 +13,7 @@
 Block *newblock() //创建新块
 {
     Block *block = (Block *)malloc(sizeof(Block));
-    block->num_children = 0;
+    block->num_children = block->num_pre = 0;
     block->tac_list = NULL;
     return block;
 }
@@ -93,8 +93,12 @@ void merge_block(Block *fa, Block *ch)
 {
     if (ch != NULL)
     {
+        //后继
         fa->children[fa->num_children] = ch;
         fa->num_children++;
+        //前驱
+        ch->pre_list[ch->num_pre] = fa->id;
+        ch->num_pre++;
     }
 }
 Block *find_target(int target)

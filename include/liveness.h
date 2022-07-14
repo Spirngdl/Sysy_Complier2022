@@ -1,3 +1,6 @@
+#ifndef LIVENESS_H_
+#define LIVENESS_H_
+
 #define MAX_VAR 64 // 假设一个基本块中的变量最多有64个
 
 // 获取一个基本块中三地址代码的数量
@@ -32,3 +35,5 @@ void all_block_liveness (Block* cntr[], int num_block);
 
 // 遍历所有的函数，对每一个函数进行liveness分析与寄存器分配
 void all_fun_reg (Blocks* head_fun);
+
+#endif

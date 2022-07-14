@@ -21,7 +21,7 @@
  *   IN THE SOFTWARE.
  */
 
-#include "include/list.h"
+#include "list.h"
 
 /*===========================================================================*
  *                        The container private data                         *

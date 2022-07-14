@@ -20,12 +20,17 @@ void Driver(struct node *T)
   // T->offset = 0; // 外部变量在数据区的偏移量
   semantic_Analysis(T);
   // test_array();
-  make_uid(T->code);
+  make_uid(&(T->code));
   change_label(T->code);
   print_IR(T->code);
   basic_block(T->code);
-  all_fun_reg(head_block);
+  // all_fun_reg(head_block);
   // print_vars();
+  check_immes(head_block);
+  for (int i = 0; i < head_block->count; i++)
+  {
+    print_IR(head_block->block[i]->tac_list);
+  }
   printf("optimize\n");
   dag_optimize(head_block);
   // all_fun(head_block);

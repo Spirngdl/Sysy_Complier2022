@@ -35,6 +35,8 @@ void addSymbol(DAGnode *node, char *target)
     void *element;
     List *list = node->symList;
     ListFirst(list, false);
+    // char *name = (char *)malloc(sizeof(char) * 10);
+    // strcpy(name, target);
     while (list->next(list, &element))
     {
         if (strcmp(target, (char *)element) == 0)
@@ -135,7 +137,7 @@ DAGnode *findNode_OP_value(DAG *dag, int op, int l, int r, int t)
     while (nodelist->next(nodelist, &node))
     {
         DAGnode *dagnode = (DAGnode *)node;
-        if (dagnode->v_num == op && dagnode->left == l && dagnode->right == r && dagnode->tri == t) //通过语句op和子节点
+        if (dagnode->kind == op && dagnode->left == l && dagnode->right == r && dagnode->tri == t) //通过语句op和子节点
             return dagnode;
     }
     return NULL;
@@ -285,6 +287,7 @@ int readquad0(DAG *dag, struct codenode *T) // 0型暂时不考虑数组
             {
                 n2 = create_dagnode();
                 n2->left = -1, n2->right = -1, n2->tri = -1;
+                n2->kind = ID;
                 strcpy(n2->v_id, T->opn1.id);
                 //暂存该结点，
                 // TODO:
@@ -308,7 +311,6 @@ int readquad0(DAG *dag, struct codenode *T) // 0型暂时不考虑数组
                 addSymbol(n1, T->result.id);
                 // TODO: 添加节点
                 //  nodes.emplace_back(n1);
-                dag->nodes->push_back(dag->nodes, n2);
                 dag->nodes->push_back(dag->nodes, n1);
                 //  result.emplace_back(nodes.size() - 1);
             }
@@ -337,6 +339,7 @@ int readquad0(DAG *dag, struct codenode *T) // 0型暂时不考虑数组
             n1 = create_dagnode();
             n1->left = indexn2, n1->right = -1, n1->tri = -1;
             n1->v_num = T->op;
+            n1->kind = T->op;
             addSymbol(n1, T->result.id);
             // TODO: 添加节点
             //  nodes.emplace_back(n1);
@@ -494,7 +497,7 @@ int readquad2(DAG *dag, struct codenode *T)
         {
             n1 = create_dagnode();
             n1->left = indexn2, n1->right = indexn3, n1->tri = -1;
-            n1->v_num = T->op;
+            n1->kind = T->op;
             // TODO: 判断T.kind FAR 是数组相关
             //         if (E.op == "FAR")
             // n1->arrOptSerial = (this->arrOptSerial)++;
@@ -624,8 +627,8 @@ struct codenode *to_code(DAG *dag, DAGnode *n)
             strcpy(opn2.id, (char *)elem);
         }
     }
-    //对于非叶子结点v_num中保存OP
-    struct codenode *e = genIR(n->v_num, opn1, opn2, result);
+    //对于非叶子结点v_num中保存OP 可能用kind保存比较好
+    struct codenode *e = genIR(n->kind, opn1, opn2, result);
 
     opn1.kind = ID;
     opn2.kind = 0;
@@ -643,6 +646,32 @@ struct codenode *to_code(DAG *dag, DAGnode *n)
     }
 
     return e;
+}
+/**
+ * @brief 暂时用来判断是否无用赋值
+ *
+ * @param dag
+ * @param n
+ * @return true 是无用的
+ * @return false
+ */
+bool isFutileASSIGN(DAG *dag, DAGnode *n)
+{
+    //如果一个语句是赋值语句，且子节点是叶子节点，那么如果它的symlist为空时，判断为无用。
+    if (n->kind == TOK_ASSIGN)
+    {
+        int left = n->left;
+        void *elem = NULL;
+        dag->nodes->get_at(dag->nodes, left, &elem);
+        if (isLeaf((DAGnode *)elem))
+        {
+            if (n->symList->size(n->symList) == 0)
+            {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 //生成优化后的代码
 struct codenode *genOptimizedCode(DAG *dag)
@@ -673,6 +702,25 @@ struct codenode *genOptimizedCode(DAG *dag)
     // }
 
     //清楚不活跃的标识符，为标识符为空的节点新增一个 si 标识符
+    dag->nodes->first(dag->nodes, false);
+    while (dag->nodes->next(dag->nodes, &elem))
+    {
+        DAGnode *temp_node = (DAGnode *)elem;
+        // if(ARRAY)
+        // continue;
+        // TODO: 判断sym是否在活跃变量内，如果不是，删除
+
+        //为不是叶节点的节点添加临时变量
+        if (!isLeaf(temp_node) && temp_node->symList->size(temp_node->symList) == 0)
+        {
+            // char temp_name[33];
+            // strcpy(temp_name,newTemp());
+            char *temp_name = (char *)malloc(sizeof(char) * 6);
+            strcpy(temp_name, newTemp());
+            addSymbol(temp_node, temp_name);
+            temp_name = NULL;
+        }
+    }
     size_t symSerial = 0;
     // TODO: 啦啦啦
     //  for (auto &&node : nodes)
@@ -718,8 +766,8 @@ struct codenode *genOptimizedCode(DAG *dag)
         bool isr = isRoot(dag, cur_dagnode);
         if (isr)
             root_list->push_back(root_list, cur_dagnode);
-        // TODO: 姑且先认为叶结点和symlist为空的结点无用
-        if (isLeaf(cur_dagnode) || cur_dagnode->symList->size(cur_dagnode->symList) == 0 /*|| isFutileSet(node)*/) //记录各结点是否被访问过，叶子和无用的赋值初始化就认为是访问过的，即不生成代码
+        // TODO: 姑且先认为叶结点和赋值语句下symlist为空的结点无用
+        if (isLeaf(cur_dagnode) || isFutileASSIGN(dag, cur_dagnode) /*|| isFutileSet(node)*/) //记录各结点是否被访问过，叶子和无用的赋值初始化就认为是访问过的，即不生成代码
         {
             cur_dagnode->isvisited = 1;
         }

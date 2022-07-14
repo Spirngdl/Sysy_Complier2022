@@ -12,7 +12,7 @@
 #ifndef OPTIMIZE_H_
 #define OPTIMIZE_H_
 #include "def.h"
-
+#include "../Common/hash_set.h"
 //常量传播
 /**
  * @brief 通过循环，以基本块为基本单位进行优化
@@ -20,7 +20,6 @@
  * @param head_fun
  */
 void all_fun(Blocks *head_fun);
-
 /**
  * @brief 寻找块内常量，逐个进行优化处理
  *
@@ -33,12 +32,27 @@ void one_block(Block *cntr);
  * @param const_array
  */
 void one_const_array(struct codenode *const_array);
-
 /**
  * @brief 对某一普通变量进行块内常量传播
  *
  * @param const_var
  */
 void one_const_var(struct codenode *const_var);
+
+//循环优化
+// TODO: 先找循环
+//获取该基本块的前驱
+//在划分基本块时实现
+//获取该基本块的必经节点
+
+void get_dom_node(Blocks *fun_block, HashSet *dom_set[]);
+//获取回边
+int get_back_edge(Blocks *fun_block, HashSet *dom_set[], int back_edge[][2]);
+//找回边对应的自然循环
+List *get_loop(Blocks *fun_block, int back_edge[][2], int count);
+//找只有一个基本块的循环
+
+//对单个循环体查找循环不变量
+void find_invariants(Blocks *fun_block, List *loop);
 
 #endif

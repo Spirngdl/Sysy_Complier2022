@@ -8,7 +8,8 @@
  * @copyright Copyright (c) 2022
  * 
  */
-
+#ifndef REG_H_
+#define REG_H_
 #define MAX_REG 12  // 最大寄存器数
 #define MAX_VARS 1024 // 最大变量数
 
@@ -53,3 +54,5 @@ int search_var (char* name);
 
 // 打印所有变量及其寄存器号
 void print_vars (void);
+
+#endif
