@@ -27,6 +27,8 @@ void Driver(struct node *T)
   all_fun_reg(head_block);
   // print_vars();
   check_immes(head_block);
+  make_uid_block(head_block);
+
   for (int i = 0; i < head_block->count; i++)
   {
     print_IR(head_block->block[i]->tac_list);
@@ -35,7 +37,6 @@ void Driver(struct node *T)
   printf("optimize\n");
   dag_optimize(head_block);
   // all_fun(head_block);
-  make_uid_block(head_block);
   for (int i = 0; i < head_block->count; i++)
   {
     print_IR(head_block->block[i]->tac_list);

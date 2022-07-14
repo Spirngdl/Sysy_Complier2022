@@ -551,7 +551,7 @@ void check_immes(Blocks *blocks)
                         if (check_imme(val) == -1) //非法立即数
                         {
                             genLDR(val, tcode, 1);
-                            if (tcode->UID = base_id) //该语句是当前基本块的头部
+                            if (tcode->UID == base_id) //该语句是当前基本块的头部
                             {
                                 cur_blocks->block[i]->tac_list = cur_blocks->block[i]->tac_list->prior;
                             }
@@ -577,7 +577,7 @@ void check_immes(Blocks *blocks)
                         if (check_imme(val) == -1)
                         {
                             genLDR(val, tcode, 1);
-                            if (tcode->UID = base_id) //该语句是当前基本块的头部
+                            if (tcode->UID == base_id) //该语句是当前基本块的头部
                             {
                                 cur_blocks->block[i]->tac_list = cur_blocks->block[i]->tac_list->prior;
                             }
@@ -589,7 +589,7 @@ void check_immes(Blocks *blocks)
                         if (check_imme(val) == -1)
                         {
                             genLDR(val, tcode, 2);
-                            if (tcode->UID = base_id) //该语句是当前基本块的头部
+                            if (tcode->UID == base_id) //该语句是当前基本块的头部
                             {
                                 cur_blocks->block[i]->tac_list = cur_blocks->block[i]->tac_list->prior;
                             }
