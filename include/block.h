@@ -10,6 +10,7 @@
  */
 #ifndef BLOCK_H_
 #define BLOKC_H_
+#include "def.h"
 //基本块
 typedef struct _Blocks Blocks;
 typedef struct _Block Block;

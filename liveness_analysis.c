@@ -1,5 +1,7 @@
 #include "include/def.h"
 
+char*** out_live; // 用于接口函数查找某一基本块的活跃变量
+
 // 根据变量别名去查询符号表中的位置i（此时，符号表仅存全局变量）
 /*int search_alias(char *alias)
 {
@@ -334,17 +336,17 @@ void one_block_tac_liveness (Block* cntr, char* block_in[], char* block_out[]) {
     char*** use = (char***)malloc(sizeof(char**) * num_tac);
     char*** def = (char***)malloc(sizeof(char**) * num_tac);
     char*** in = (char***)malloc(sizeof(char**) * num_tac);
-    char*** out = (char***)malloc(sizeof(char**) * num_tac);
+    out_live = (char***)malloc(sizeof(char**) * num_tac);
     for (i = 0; i < num_tac; i++) {
         use[i] = (char**)malloc(sizeof(char*) * MAX_VAR);
         def[i] = (char**)malloc(sizeof(char*) * MAX_VAR);
         in[i] = (char**)malloc(sizeof(char*) * MAX_VAR);
-        out[i] = (char**)malloc(sizeof(char*) * MAX_VAR);
+        out_live[i] = (char**)malloc(sizeof(char*) * MAX_VAR);
         for (j = 0; j < MAX_VAR; j++) {
             use[i][j] = NULL;
             def[i][j] = NULL;
             in[i][j] = NULL;
-            out[i][j] = NULL;
+            out_live[i][j] = NULL;
         }
     }
     // 处理基本块的结构，使之可兼容块间函数
@@ -362,9 +364,9 @@ void one_block_tac_liveness (Block* cntr, char* block_in[], char* block_out[]) {
         flag = 0;
         for (i = num_tac - 1; i >= 0; i--) {
             if ( i < num_tac - 1) {
-                one_block_out(out[i], in[i + 1], NULL, MAX_VAR, 1);
+                one_block_out(out_live[i], in[i + 1], NULL, MAX_VAR, 1);
             }
-            one_block_in(use[i], def[i], in[i], out[i], MAX_VAR, &flag);
+            one_block_in(use[i], def[i], in[i], out_live[i], MAX_VAR, &flag);
         }
     }
     /*for (i = 0; i < num_tac; i++) {
@@ -378,14 +380,14 @@ void one_block_tac_liveness (Block* cntr, char* block_in[], char* block_out[]) {
                 in[i][j] = (char*)malloc(sizeof(char) * 32);
                 strcpy(in[i][j], "");
             }
-            if (out[i][j] == NULL) {
-                out[i][j] = (char*)malloc(sizeof(char) * 32);
-                strcpy(out[i][j], "");
+            if (out_live[i][j] == NULL) {
+                out_live[i][j] = (char*)malloc(sizeof(char) * 32);
+                strcpy(out_live[i][j], "");
             }
         }
     }
     // 此时分配寄存器未考虑块间变量占用的问题
-    graph_coloring(in, out, num_tac, MAX_REG);
+    graph_coloring(in, out_live, num_tac, MAX_REG);
 }
 
 // 根据算法进行liveness分析
@@ -422,7 +424,7 @@ void all_block_liveness (Block* cntr[], int num_block) {
         // 执行liveness算法
         for (i = num_block - 1; i >= 0; i--) {
             /*if (cntr[i]->num_child = 0) {
-                do nothing;
+              do nothing;
             }*/
             if (cntr[i]->num_children == 1) {
                 in1 = cntr[i]->children[0]->id;
@@ -486,9 +488,9 @@ void all_block_liveness (Block* cntr[], int num_block) {
     // 基本块内变量寄存器
     // 传入一个函数的基本块以及in、out，分别对每个基本块进行处理，每次循环得到一个基本块的寄存器分配情况
     // 结果存于vars[MAX_VARS]中
-    for (i = 0; i < num_block; i++) {
+    /*for (i = 0; i < num_block; i++) {
         one_block_tac_liveness(cntr[i], in[i], out[i]);
-    }
+    }*/
 }
 
 // 遍历所有的函数，对每一个函数进行liveness分析与寄存器分配
@@ -503,4 +505,19 @@ void all_fun_reg (Blocks* head_fun) {
         head_fun = head_fun->next;
     }
     printf("\n");
+}
+
+// block_num -> 基本块序号，char* temp[] -> 存入该基本块OUT活跃变量
+// 返回值为数组中的变量个数
+int search_out (int block_num, char* temp[]) {
+    int cnt = 0, i = 0;
+    for (i = 0; i < MAX_REG; i++) {
+        if(strcmp(out_live[block_num][i], "") == 0) {
+            break;
+        } else {
+            strcpy(temp[i], out_live[block_num][i]);
+            cnt++;
+        }
+    }
+    return cnt;
 }

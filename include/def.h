@@ -25,6 +25,7 @@
 // #include "Optimize.h"
 #include "../Common/hash_set.h"
 #include "../toARM/toArm.h"
+#include "Dag.h"
 // #define DD
 enum node_kind
 {

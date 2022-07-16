@@ -440,6 +440,8 @@ void find_invariants(Blocks *fun_block, List *loop)
             }
         }
     }
+
+
 }
 //判断能否外提
 void check_invariants(Blocks *fun_block)
@@ -447,8 +449,15 @@ void check_invariants(Blocks *fun_block)
     /**
      * 满足三点
      * 1.这条语句所在的节点是所有出口的必经节点（应该只有一个出口吧）
+     * 要找出口节点，
      * 2.result在循环中没有其他定值语句 (这个应该在前面做比较好吧)
-     * 3.循环中所有对result的引用，只有这条语句中对于result的定值能够到达 (这个到达，怎么判，)
-     *
+     *  因为有可能存在一个是赋常数，一个是常数引用
+     * 3.循环中所有对result的引用，只有这条语句中对于result的定值能够到达 (这个到达，怎么判，) 必经节点集吗，也不是，
+     *      因为有可能循环外有对result的定值，
+     * 我的实现
+     * 第一个就拿必经节点集，查找一下 怎么找出口节点
+     * 第二个,在前面也算做了吧，看看ismulti
+     * 第三个，要找对result的引用， 
      */
+
 }
