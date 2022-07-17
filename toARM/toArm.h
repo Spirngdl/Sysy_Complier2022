@@ -50,11 +50,16 @@ struct armcode_
     armoper oper3; //用来移位的
     struct armcode_ *next;
     struct armcode_ *pre;
+    short int reg[14];
+    int num;
 };
 
 #define R0 0
 #define R1 1
 #define R2 2
+#define R4 4
+#define R5 5
+
 
 void arminterface();
 void translate(armcode *newnode, struct codenode *p, armop armop);

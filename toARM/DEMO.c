@@ -4,6 +4,8 @@ char *Reg[16];
 
 char *Oper[5] = {"MOV", "ADD", "SUB", "MUL", "LDR"};
 
+bool MULFLAG = false;
+
 armcode *initnewnode(armcode *newnode)
 {
     memset(newnode, 0, sizeof(struct armcode_));
@@ -26,7 +28,7 @@ void translate(armcode *newnode, struct codenode *p, armop armop)
             armcode *movcode = (armcode *)malloc(sizeof(struct armcode_));
             initnewnode(movcode);
             movcode->op = MOV;
-            movcode->result.value = R0;
+            movcode->result.value = R4;
             movcode->oper1.type = IMME;
             movcode->oper1.value = p->opn1.const_int;
 
@@ -36,7 +38,7 @@ void translate(armcode *newnode, struct codenode *p, armop armop)
             newnode->pre = movcode;
 
             newnode->oper1.type = REG;
-            newnode->oper1.value = R0;
+            newnode->oper1.value = R4;
             if (p->opn2.kind == LITERAL)
             {
                 // printf("ADD R%d ,R0 ,#%d\n", rn0, p->opn2.const_int);
@@ -70,9 +72,30 @@ void translate(armcode *newnode, struct codenode *p, armop armop)
         {
             if ((rn1 = search_var(p->opn1.id)) > 0)
             {
-                Reg[rn1] = p->opn1.id;
-                newnode->oper1.type = REG;
-                newnode->oper1.value = rn1;
+                if (MULFLAG && rn0 == rn1)
+                {
+                    MULFLAG = false;
+                    armcode *movcode = (armcode *)malloc(sizeof(struct armcode_));
+                    initnewnode(movcode);
+                    movcode->op = MOV;
+                    movcode->result.value = R4;
+                    movcode->oper1.type = REG;
+                    movcode->oper1.value = rn1;
+
+                    newnode->pre->next = movcode;
+                    movcode->pre = newnode->pre;
+                    movcode->next = newnode;
+                    newnode->pre = movcode;
+
+                    newnode->oper1.type = REG;
+                    newnode->oper1.value = R4;
+                }
+                else
+                {
+                    Reg[rn1] = p->opn1.id;
+                    newnode->oper1.type = REG;
+                    newnode->oper1.value = rn1;
+                }
 
                 if (p->opn2.kind == LITERAL)
                 {
@@ -119,7 +142,6 @@ void translate(armcode *newnode, struct codenode *p, armop armop)
         }
     }
 }
-
 
 armcode *translatearm(Blocks *blocks)
 {
@@ -209,6 +231,7 @@ armcode *translatearm(Blocks *blocks)
                     break;
 
                 case TOK_MUL:
+                    MULFLAG = true;
                     translate(newnode, p, MUL);
                     break;
 
@@ -221,7 +244,6 @@ armcode *translatearm(Blocks *blocks)
                 }
                 p = p->next;
             }
-           
         }
         cur_blocks = cur_blocks->next;
     }
