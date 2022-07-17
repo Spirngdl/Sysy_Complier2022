@@ -3,5 +3,6 @@ calc_c.output
 out.txt
 
 calc.exe
-
+set_test.c
+a.exe
 a.asm

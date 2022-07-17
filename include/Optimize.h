@@ -51,7 +51,7 @@ typedef struct Var_Ass_
 //表
 typedef struct var_ass_table_
 {
-    var_assign table[100];
+    var_assign table[1000];
     int count;
 } var_table;
 int search_var_loop(var_table *table, char *name);
@@ -70,6 +70,6 @@ List *get_loop(Blocks *fun_block, int back_edge[][2], int count);
 //找只有一个基本块的循环
 
 //对单个循环体查找循环不变量
-void find_invariants(Blocks *fun_block, List *loop);
+void find_invariants(Blocks *fun_block, List *loop, HashSet *dom_set[]);
 
 #endif

@@ -52,6 +52,24 @@ int search_var_loop(var_table *table, char *name)
     }
     return -1;
 }
+//二分查找
+int binarySearch(int a[], int n, int key)
+{
+    int low = 0;
+    int high = n - 1;
+    while (low <= high)
+    {
+        int mid = (low + high) / 2;
+        int midVal = a[mid];
+        if (midVal < key)
+            low = mid + 1;
+        else if (midVal > key)
+            high = mid - 1;
+        else
+            return mid;
+    }
+    return -1;
+}
 /**
  * @brief 添加变量
  *
@@ -222,18 +240,49 @@ List *get_loop(Blocks *fun_block, int back_edge[][2], int count)
     return result;
 }
 /**
- * @brief 查找循环不变运算
+ * @brief 检查loop中对x的使用是否都只能有本句话的定值到达。防止的是这种情况：
+ * x=3;while(){y=x;...x=2;}
+ * 这种情况你把x=2提外面了，那第一次的y=x就不对了
+ * 所以check就从入口开始按图遍历loop，碰到x的def就返回，碰到x的use则返回false
  *
- * @param fun_block
- * @param loop
+ * @return int
  */
-void find_invariants(Blocks *fun_block, List *loop)
+int check3(Blocks *fun_block, List *loop, Block *enter, char *name)
+{
+    //从入口开始遍历，按图遍历
+    HashSet *vis = HashSetInit(); // visited
+    int stack[100];
+    int top = 0;
+    stack[top++] = enter->id;
+    while (top != 0)
+    {
+        int x = stack[top--];
+        if (HashSetFind(vis, (void *)(intptr_t)x) == true) //如果该块访问过
+            continue;
+        struct codenode *tcode = fun_block->block[x]->tac_list;
+        while (tcode != NULL)
+        {
+            if (tcode->op == TOK_ASSIGN || tcode->op == TOK_ADD || tcode->op == TOK_SUB || tcode->op == TOK_MUL || tcode->op == TOK_DIV || tcode->op == EXP_ARRAY)
+            {
+                if(strcmp(name,tcode->result.id))
+                    break;
+            }
+        }
+    }
+}
+/**
+ * @brief 查找循环不变运算
+ * TODO: 要求每个操作数不能是全局变量（？？为啥）
+ * @param fun_block
+ * @param loop 单个循环体
+ */
+void find_invariants(Blocks *fun_block, List *loop, HashSet *dom_set[])
 {
     //先定义一个标记数组
-    int flag[100];
+    int flag[1000];
 
     memset(flag, 0, sizeof(flag));
-    //整个简易符号表
+    //整个简易符号表 其中记录了变量名和定值点的UID
     var_table *table = (var_table *)malloc(sizeof(var_table));
     table->count = 0;
     int blocks[100], count = 0, changed = 1, base_count = 0;
@@ -245,7 +294,7 @@ void find_invariants(Blocks *fun_block, List *loop)
     {
         blocks[count++] = *(int *)elem;
     }
-    //排序一下吧
+    //排序一下吧 count = size
     qsort(blocks, count, sizeof(int), comp);
     //先初步遍历一遍块 ,顺变记录一下各个变量的定值语句在哪
     for (int i = 0; i < count; i++)
@@ -440,11 +489,87 @@ void find_invariants(Blocks *fun_block, List *loop)
             }
         }
     }
+    //判断能否进行外提
+    /**
+     * 满足三点
+     * 1.这条语句所在的节点是所有出口的必经节点（应该只有一个出口吧）
+     * 要找出口节点，
+     * 2.result在循环中没有其他定值语句 (这个应该在前面做比较好吧)
+     *  因为有可能存在一个是赋常数，一个是常数引用
+     * 3.循环中所有对result的引用，只有这条语句中对于result的定值能够到达 (这个到达，怎么判，) 必经节点集吗，也不是，
+     *      因为有可能循环外有对result的定值，
+     * 我的实现
+     * 第一个就拿必经节点集，查找一下 怎么找出口节点
+     * 第二个,在前面也算做了吧，看看ismulti
+     * 第三个，要找对result的引用，检查loop中对x的使用是否都只能有本句话的定值到达。防止的是这种情况：
+     * x=3;while(){y=x;...x=2;}
+     * 这种情况你把x=2提外面了，那第一次的y=x就不对了
+     * 所以check就从入口开始按图遍历loop，碰到x的def就返回，碰到x的use则返回false
+     *
+     */
+    //查找出口节点
+    // 遍历所有块，看他们的子节点在不在循环内，有不在的就是出口节点
+    int out[10], out_count = 0;
+    for (int i = 0; i < count; i++)
+    {
+        int index = blocks[i];
+        for (int j = 0; j < fun_block->block[index]->num_children; j++)
+        {
+            int children_id = fun_block->block[index]->children[j]->id;
+            if (binarySearch(blocks, count, children_id) == -1) //如果有不在里面的
+            {
+                out[out_count++] = index;
+                break;
+            }
+        }
+    }
+    //拿到所有出口节点的必经节点的交集
+    HashSet *out_dom = NULL;
+    if (out_count == 1)
+    {
+        out_dom = dom_set[out[0]];
+    }
+    else if (out_count == 2)
+    {
+        out_dom = HashSetIntersect(dom_set[out[0]], dom_set[out[1]]);
+    }
+    else
+        for (int i = 1; i < out_count; i++)
+        {
+            out_dom = dom_set[out[0]];
+            out_dom = HashSetIntersect(out_dom, dom_set[out[i]]);
+        }
 
-
+    //遍历所有被标记语句
+    for (int i = 0; i < count; i++)
+    {
+        //获取三地址代码
+        hcode = fun_block->block[blocks[i]]->tac_list;
+        while (hcode)
+        {
+            if (flag[hcode->UID - base_id[i]] == 1) // 如果该语句被标记
+            {
+                //先看在不在出口节点的必经节点
+                if (!HashSetFind(out_dom, (void *)(intptr_t)i))
+                {                                      //如果不在
+                    flag[hcode->UID - base_id[i]] = 0; //先改标记
+                    break;
+                }
+                //看下有没有重复定值
+                int var_index = search_var_loop(table, hcode->result.id);
+                if (table->table[var_index].is_multi == 1)
+                { //如果重复定值
+                    flag[hcode->UID - base_id[i]] = 0;
+                    break;
+                }
+                //找对result的引用
+            }
+            hcode = hcode->next;
+        }
+    }
 }
 //判断能否外提
-void check_invariants(Blocks *fun_block)
+void check_invariants(Blocks *fun_block, List *loop)
 {
     /**
      * 满足三点
@@ -457,7 +582,10 @@ void check_invariants(Blocks *fun_block)
      * 我的实现
      * 第一个就拿必经节点集，查找一下 怎么找出口节点
      * 第二个,在前面也算做了吧，看看ismulti
-     * 第三个，要找对result的引用， 
+     * 第三个，要找对result的引用，
+     *
      */
-
+    //查找出口节点
+    // 遍历所有块，看他们的子节点在不在循环内，有不在的就是出口节点
+    int out[10];
 }
