@@ -22,7 +22,7 @@
 #include "reg.h"
 #include "symtable.h"
 #include "../Common/list.h"
-// #include "Optimize.h"
+#include "Optimize.h"
 #include "../Common/hash_set.h"
 #include "../toARM/toArm.h"
 #include "Dag.h"

@@ -2,6 +2,7 @@
 calc_c.output
 out.txt
 
+launch.json
 calc.exe
 set_test.c
 a.exe

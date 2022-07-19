@@ -20,20 +20,22 @@ void Driver(struct node *T)
   // T->offset = 0; // 外部变量在数据区的偏移量
   semantic_Analysis(T);
   // test_array();
-  make_uid(&(T->code));    //给每个三地址代码进行编号，顺变把全局变量初始化移到开头
-  change_label(T->code);   //把三弟代码生成过程中产生的标号删除
-  print_IR(T->code);       //打印比较初始的三地址代码
-  basic_block(T->code);    //划分基本块
-  all_fun_reg(head_block); //进行活跃变量分析
+  make_uid(&(T->code));  //给每个三地址代码进行编号，顺变把全局变量初始化移到开头
+  change_label(T->code); //把三弟代码生成过程中产生的标号删除
+  print_IR(T->code);     //打印比较初始的三地址代码
+  basic_block(T->code);  //划分基本块
+
   // print_vars();
-  check_immes(head_block);    //检验立即数合法性
-  make_uid_block(head_block); //在进入arm翻译前最后一次调整编号
-  for (int i = 0; i < head_block->count; i++)
-  {
-    print_IR(head_block->block[i]->tac_list); //打印一下
-  }
-  arminterface(head_block);
-  // printf("optimize\n");
+  // check_immes(head_block);    //检验立即数合法性
+  // all_fun_reg(head_block);    //进行活跃变量分析
+  // make_uid_block(head_block); //在进入arm翻译前最后一次调整编号
+  // for (int i = 0; i < head_block->count; i++)
+  // {
+  //   print_IR(head_block->block[i]->tac_list); //打印一下
+  // }
+  // arminterface(head_block);
+  printf("optimize\n");
+  invariant_Extrapolation(head_block);
   // dag_optimize(head_block);
   // // all_fun(head_block);
   // for (int i = 0; i < head_block->count; i++)

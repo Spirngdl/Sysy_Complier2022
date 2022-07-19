@@ -57,6 +57,8 @@ typedef struct var_ass_table_
 int search_var_loop(var_table *table, char *name);
 void add_var_loop(var_table *table, char *name, int uid);
 
+bool find_literal(List *list, int vlaue);
+int comp(const void *a, const void *b);
 // TODO: 先找循环
 //获取该基本块的前驱
 //在划分基本块时实现
@@ -70,6 +72,7 @@ List *get_loop(Blocks *fun_block, int back_edge[][2], int count);
 //找只有一个基本块的循环
 
 //对单个循环体查找循环不变量
-void find_invariants(Blocks *fun_block, List *loop, HashSet *dom_set[]);
-
+void find_invariants(Blocks *fun_block, List *loop, HashSet *dom_set[], int flag[], int base_id[]);
+//循环不变式外提
+void invariant_Extrapolation(Blocks *blocks);
 #endif
