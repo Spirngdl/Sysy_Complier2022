@@ -22,14 +22,14 @@
 #include "reg.h"
 #include "symtable.h"
 #include "../Common/list.h"
-// #include "Optimize.h"
+#include "Optimize.h"
 #include "../Common/hash_set.h"
 #include "../toARM/toArm.h"
 #include "Dag.h"
 // #define DD
 enum node_kind
 {
-    TOK_LDR = 2022,
+    TOK_LDR = 0,
     VAR_DECL,
     VAR_DECL_LIST,
     COMPUNIT_LIST,

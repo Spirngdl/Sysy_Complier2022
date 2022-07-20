@@ -1,8 +1,9 @@
-
+int arr[10];
 int main()
 {
-    int j = 511;
-    j = 511 + j;
-    int a = j + 1;
+    int i = 520;
+    int j = 1;
+
+    j = arr[1];
     return 0;
 }

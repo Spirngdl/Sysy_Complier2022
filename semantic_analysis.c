@@ -250,7 +250,7 @@ void var_decl(struct node *T) //变量声明 -- kind -- NAME --TYPE
     int rtn, num;
     struct opn opn1, opn2, opn3, result;
     T->code = NULL;
-
+    opn2.kind = NONE;
     rtn = fillSymbolTable(T->type_id, newAlias(), LEV, T->type, VAR); //填符号表
     if (rtn == -1)
         semantic_error(T->pos, T->type_id, "变量重复定义");
@@ -267,6 +267,7 @@ void var_decl(struct node *T) //变量声明 -- kind -- NAME --TYPE
                 result.kind = ID;
                 strcpy(result.id, symbolTable.symbols[T->place].alias); //赋上别名
 #ifdef DD
+
                 if (symbolTable.symbols[T->place].flag != TEMP_VAR)
                 {
                     strcpy(result.id, symbolTable.symbols[T->place].name);
@@ -318,6 +319,7 @@ void var_decl(struct node *T) //变量声明 -- kind -- NAME --TYPE
         {
             if (T->ptr[0]->kind == LITERAL) //浮点数赋值整型。
             {
+
                 opn1.kind = FLOAT_LITERAL;
                 opn1.const_float = T->ptr[0]->type_int; //转换
                 result.kind = ID;
@@ -431,6 +433,7 @@ void id_exp(struct node *T)
 void int_exp(struct node *T)
 {
     struct opn opn1, opn2, result;
+    opn2.kind = NONE;
     T->place = temp_add(newTemp(), LEV, T->kind, TEMP_VAR); //为整常量生成一个临时变量
     T->type = T->kind;
     opn1.kind = T->kind;
@@ -533,6 +536,7 @@ void unaryexp(struct node *T)
 void assignop_exp(struct node *T)
 {
     struct opn opn1, opn2, result;
+    opn2.kind = NONE;
     if (T->ptr[0]->kind == ID)
     {
         Exp(T->ptr[0]);                 //处理左值，例中仅为变量

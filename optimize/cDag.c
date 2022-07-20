@@ -21,6 +21,7 @@ DAGnode *create_dagnode()
 DAG *creat_dag()
 {
     DAG *newnode = (DAG *)malloc(sizeof(DAG));
+    newnode->arrOptSerial = 0;
     newnode->haltRec = newnode->jumperRec = NULL;
     newnode->functionrec = newnode->endfunction = NULL;
     newnode->nodes = ListInit();
@@ -258,9 +259,13 @@ int readquad(DAG *dag, struct codenode *T)
     {
         return readquad0(dag, T);
     }
-    else if (T->op == TOK_ADD || T->op == TOK_SUB || T->op == TOK_DIV || T->op == TOK_MUL || T->op == TOK_MODULO)
+    else if (T->op == TOK_ADD || T->op == TOK_SUB || T->op == TOK_DIV || T->op == TOK_MUL || T->op == TOK_MODULO || T->op == EXP_ARRAY)
     {
         return readquad2(dag, T);
+    }
+    else if (T->op == ARRAY_ASSIGN) // 数组赋值
+    {
+        return readquad3(dag, T);
     }
 }
 
@@ -499,6 +504,8 @@ int readquad2(DAG *dag, struct codenode *T)
             n1->left = indexn2, n1->right = indexn3, n1->tri = -1;
             n1->kind = T->op;
             // TODO: 判断T.kind FAR 是数组相关
+            if (T->op == EXP_ARRAY)
+                n1->arrOptSerial = dag->arrOptSerial++;
             //         if (E.op == "FAR")
             // n1->arrOptSerial = (this->arrOptSerial)++;
             removeSymbol(dag, T->result.id); //出现新的赋值，把原来位置的全删了
@@ -516,8 +523,103 @@ int readquad2(DAG *dag, struct codenode *T)
 
 // (TAR, a1, a2, a3)  a1[a2] = a3 先放着
 // TODO:
+/**
+ * @brief result[opn1] = opn2;
+ *
+ * @param dag
+ * @param T
+ * @return int
+ */
 int readquad3(DAG *dag, struct codenode *T)
 {
+    DAGnode *n1 = NULL, *n2 = NULL, *n3 = NULL, *n = NULL;
+    //先找函数名
+    n1 = findnode_symbol(dag, T->result.id);
+    if (n1 == NULL)
+    {
+        n1 = findNode_value(dag, T->result.id, -1, -1, -1);
+        if (n1 == NULL)
+        {
+            n1 = create_dagnode();
+            n1->left = n1->right = n1->tri = -1;
+            n1->kind = ID;
+            strcpy(n1->v_id, T->result.id);
+            ListPushBack(dag->nodes, n1);
+        }
+    }
+    //再处理下标
+    if (T->opn1.kind == LITERAL)
+    {
+        n2 = find_value_num(dag, T->opn1.const_int, -1, -1, -1);
+        if (n2 == NULL)
+        {
+            n2 = create_dagnode();
+            n2->left = n2->right = n2->tri = -1;
+            n2->kind = LITERAL;
+            n2->v_num = T->opn1.const_int;
+            ListPushBack(dag->nodes, n2);
+        }
+    }
+    else if (T->opn1.kind == ID)
+    {
+        n2 = findnode_symbol(dag, T->opn1.id);
+        if (n2 == NULL)
+        {
+            n2 = findNode_value(dag, T->opn1.id, -1, -1, -1);
+            if (n2 == NULL)
+            {
+                n2 = create_dagnode();
+                n2->left = n2->right = n2->tri = -1;
+                n2->kind = ID;
+                strcpy(n2->v_id, T->opn1.id);
+                ListPushBack(dag->nodes, n2);
+            }
+        }
+    }
+    //然后是右值
+    if (T->opn2.kind == LITERAL)
+    {
+        n3 = find_value_num(dag, T->opn2.const_int, -1, -1, -1);
+        if (n3 == NULL)
+        {
+            n3 = create_dagnode();
+            n3->left = n3->right = n3->tri = -1;
+            n3->kind = LITERAL;
+            n3->v_num = T->opn2.const_int;
+            ListPushBack(dag->nodes, n3);
+        }
+    }
+    else if (T->opn2.kind == ID)
+    {
+        n3 = findnode_symbol(dag, T->opn2.id);
+        if (n3 == NULL)
+        {
+            n3 = findNode_value(dag, T->opn2.id, -1, -1, -1);
+            if (n3 == NULL)
+            {
+                n3 = create_dagnode();
+                n3->left = n3->right = n3->tri = -1;
+                n3->kind = ID;
+                strcpy(n3->v_id, T->opn2.id);
+                ListPushBack(dag->nodes, n3);
+            }
+        }
+    }
+    n = create_dagnode();
+    n->left = findNode(dag, n1->ID), n->right = findNode(dag, n2->ID), n->tri = findNode(dag, n3->ID);
+    n->kind = ARRAY_ASSIGN;
+    n->arrOptSerial = (dag->arrOptSerial++);
+
+    ListPushBack(dag->nodes, n);
+    int index = findNode(dag, n1->ID);
+    void *element = NULL;
+    ListFirst(dag->nodes, false);
+    while (ListNext(dag->nodes, &element))
+    {
+        DAGnode *node = (DAGnode *)element;
+        if (node->left == index)
+            node->isKilled = true;
+    }
 }
 // 判断结点 n 是否是入度为 0 的结点
 bool isRoot(DAG *dag, DAGnode *n)
@@ -559,9 +661,101 @@ struct codenode *to_code(DAG *dag, DAGnode *n)
 {
     if (n == NULL)
         return NULL;
+    if (n->kind == ARRAY_ASSIGN) // result[opn1] = opn2
+    {
+        struct opn result, opn1, opn2;
+        void *elem;
+        //下标
+        ListGetAt(dag->nodes, n->right, &elem);
+        DAGnode *left_node = (DAGnode *)elem; //
+        if (isLeaf(left_node))
+        {
+            if (left_node->kind == LITERAL)
+            {
+                opn1.kind = LITERAL;
+                opn1.const_int = left_node->v_num;
+            }
+            else if (left_node->kind == ID)
+            {
+                opn1.kind = ID;
+                strcpy(opn1.id, left_node->v_id);
+            }
+        }
+        else if (isFutileASSIGN(dag, left_node)) //如果是无用赋值，那就直接拿赋值的
+        {
+            ListGetAt(dag->nodes, left_node->left, &elem);
+            DAGnode *assign_node = (DAGnode *)elem;
+            if (assign_node->kind == LITERAL)
+            {
+                opn1.kind = LITERAL;
+                opn1.const_int = assign_node->v_num;
+            }
+            else if (assign_node->kind == ID)
+            {
+                opn1.kind = ID;
+                strcpy(opn1.id, assign_node->v_id);
+            }
+        }
+        else //是一个有用的赋值，那就只能拿symlist了
+        {
+            opn1.kind = ID;
+            void *sym;
+            ListGetFront(left_node->symList, &sym);
+            strcpy(opn1.id, (char *)sym);
+        }
+        //右值
+        ListGetAt(dag->nodes, n->tri, &elem);
+        DAGnode *right_node = (DAGnode *)elem; //
+        if (isLeaf(right_node))                //是否是叶子节点
+        {
+            if (right_node->kind == LITERAL)
+            {
+                opn2.kind = LITERAL;
+                opn2.const_int = right_node->v_num;
+            }
+            else if (right_node->kind == ID)
+            {
+                opn2.kind = ID;
+                strcpy(opn2.id, right_node->v_id);
+            }
+        }
+        else if (isFutileASSIGN(dag, right_node)) //如果是无用赋值，那就直接拿赋值的
+        {
+            ListGetAt(dag->nodes, right_node->left, &elem);
+            DAGnode *assign_node = (DAGnode *)elem;
+            if (assign_node->kind == LITERAL)
+            {
+                opn2.kind = LITERAL;
+                opn2.const_int = assign_node->v_num;
+            }
+            else if (assign_node->kind == ID)
+            {
+                opn2.kind = ID;
+                strcpy(opn2.id, assign_node->v_id);
+            }
+        }
+        else //是一个有用的赋值，那就只能拿symlist了
+        {
+            opn2.kind = ID;
+            void *sym;
+            ListGetFront(right_node->symList, &sym);
+            strcpy(opn2.id, (char *)sym);
+        }
+        //函数名了
+        ListGetAt(dag->nodes, n->left, &elem);
+        DAGnode *array_name = (DAGnode *)elem;
+        // if (isLeaf(array_name))
+        // {
 
+        // }
+        result.kind = ID;
+        strcpy(result.id, array_name->v_id);
+        struct codenode *e = genIR(ARRAY_ASSIGN, opn1, opn2, result);
+        return e;
+    }
     void *elem;
     struct opn result, opn1, opn2;
+    opn1.kind = opn2.kind = NONE;
     result.kind = ID; //默认result为ID
     n->symList->get_front(n->symList, &elem);
     // n->symList->pop_front(n->symList);
@@ -708,6 +902,8 @@ struct codenode *genOptimizedCode(DAG *dag)
         DAGnode *temp_node = (DAGnode *)elem;
         // if(ARRAY)
         // continue;
+        if (temp_node->kind == ARRAY_ASSIGN)
+            continue;
         // TODO: 判断sym是否在活跃变量内，如果不是，删除
 
         //为不是叶节点的节点添加临时变量
@@ -824,8 +1020,30 @@ struct codenode *genOptimizedCode(DAG *dag)
             }
             if (flag)
                 continue;
-
             // TODO: 处理数组的，之后再写
+            if (cur->kind == ARRAY_ASSIGN || cur->kind == EXP_ARRAY)
+            {
+                List *prefArrOpt = ListInit();
+                cur_dagnode = head_dagnode;
+                while (cur_dagnode)
+                {
+                    if ((cur_dagnode->kind == ARRAY_ASSIGN || cur_dagnode->kind == EXP_ARRAY) && cur_dagnode->arrOptSerial < cur->arrOptSerial && cur_dagnode->isvisited == 0)
+                        ListPushBack(prefArrOpt, cur_dagnode);
+                    cur_dagnode = cur_dagnode->next;
+                }
+                if (ListSize(prefArrOpt) != 0)
+                {
+                    ListPushBack(stk, cur);
+                    void *temp = NULL;
+                    ListFirst(prefArrOpt, false);
+                    while (ListNext(prefArrOpt, &temp))
+                    {
+                        ListPushBack(stk, (DAGnode *)temp);
+                    }
+                    continue;
+                }
+            }
+
             //  if (cur->value == "TAR" || cur->value == "FAR")
             //  {
             //      std::vector<std::shared_ptr<DAGNode>> prefArrOpt;

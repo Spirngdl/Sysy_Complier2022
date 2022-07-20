@@ -290,3 +290,4 @@ void arminterface(Blocks *blocks)
     armcode *armcode = translatearm(blocks);
     printarm(armcode, fp);
 }
+

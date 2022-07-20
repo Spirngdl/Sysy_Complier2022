@@ -49,7 +49,7 @@ typedef struct DAG_
     //函数结束
     struct codenode *endfunction;
     //数组还原顺序
-    size_t arrOptSerial[100];
+    size_t arrOptSerial;
 } DAG;
 
 // DAGNODE
@@ -74,6 +74,7 @@ int findnode_depend_on(DAG *dag, DAGnode *n, int vector[]);          //查找DAG
 int readquad(DAG *dag, struct codenode *T);                          //读取三地址代码
 int readquad0(DAG *dag, struct codenode *T);                         // 0型
 int readquad2(DAG *dag, struct codenode *T);                         // 2型
+int readquad3(DAG *dag, struct codenode *T);                         // 3型 数组赋值
 bool isRoot(DAG *dag, DAGnode *n);                                   // 判断结点 n 是否是入度为 0 的结点
 bool isActivenNode(DAGnode *n);                                      //判断结点 n 是否是有活跃变量的结点
 // TODO: 由dag变回三地址
@@ -83,6 +84,5 @@ struct codenode *to_code(DAG *dag, DAGnode *n); //暂时不考虑是不是活跃
 bool isFutileSet(DAGnode *n, int active[]);     // 判断结点 n 是否代表一个无用赋值语句（形如 T = N ，其中 T 为非活跃变量）
 bool isFutileASSIGN(DAG *dag, DAGnode *n);      //暂时用来判断一个赋值语句是否无用
 void dag_optimize(Blocks *blocks);              // dag优化接口
-
 
 #endif
