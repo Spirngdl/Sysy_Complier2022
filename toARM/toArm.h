@@ -8,6 +8,7 @@ typedef enum
     IMME,
     ILIMME,
     REG,
+    STR,
     NUL, //空值
 } optype;
 
@@ -18,6 +19,8 @@ typedef enum
     SUB,
     MUL,
     LDR,
+
+    ARMLABEL,
 
 } armop;
 
@@ -35,7 +38,12 @@ typedef enum
 typedef struct armoper_
 {
     optype type; //寄存器直接，立即数，带=号的立即数，寄存器间接，//TODO 变址寻址
-    int value;   //立即数（合法&非法），寄存器编号
+    union 
+    {
+        int value;   //立即数（合法&非法），寄存器编号
+        char str_id[33];
+    };
+    
 
 } armoper;
 
@@ -50,8 +58,8 @@ struct armcode_
     armoper oper3; //用来移位的
     struct armcode_ *next;
     struct armcode_ *pre;
-    short int reg[14];
-    int num;
+    short int reglist[14];//stmfd,ldrfd寄存器列表
+    int regnum;//寄存器个数
 };
 
 #define R0 0

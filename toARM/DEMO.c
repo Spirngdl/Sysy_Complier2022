@@ -171,6 +171,13 @@ armcode *translatearm(Blocks *blocks)
                 q = newnode;
                 switch (p->op)
                 {
+                case FUNCTION:
+                    newnode->op = ARMLABEL;
+                    newnode->result.type = STR;
+                    strcpy(newnode->result.str_id , p->result.id);
+                    newnode->oper1.type = NUL;
+                    newnode->oper2.type = NUL;
+                    break;
                 case TOK_ASSIGN:
                     if ((rn0 = search_var(p->result.id)) > 0) // The result is stored in the register
                     {
@@ -261,13 +268,13 @@ void printarm(armcode *armnode, FILE *fp)
             switch (p->oper2.type)
             {
             case IMME:
-                fprintf(fp, "%S  R%d , R%d , #%d\n", Oper[p->op - MOV], p->result.value, p->oper1.value, p->oper2.value);
+                fprintf(fp, "\t%S  R%d , R%d , #%d\n", Oper[p->op - MOV], p->result.value, p->oper1.value, p->oper2.value);
                 break;
             case REG:
-                fprintf(fp, "%s  R%d , R%d , R%d\n", Oper[p->op - MOV], p->result.value, p->oper1.value, p->oper2.value);
+                fprintf(fp, "\t%s  R%d , R%d , R%d\n", Oper[p->op - MOV], p->result.value, p->oper1.value, p->oper2.value);
                 break;
             case NUL:
-                fprintf(fp, "%s  R%d , R%d\n", Oper[p->op - MOV], p->result.value, p->oper1.value);
+                fprintf(fp, "\t%s  R%d , R%d\n", Oper[p->op - MOV], p->result.value, p->oper1.value);
                 break;
             default:
                 printf("p->oper2.type error!\n");
@@ -275,11 +282,18 @@ void printarm(armcode *armnode, FILE *fp)
         }
         else if (p->oper1.type == IMME)
         {
-            fprintf(fp, "%s  R%d , #%d\n", Oper[p->op - MOV], p->result.value, p->oper1.value);
+            fprintf(fp, "\t%s  R%d , #%d\n", Oper[p->op - MOV], p->result.value, p->oper1.value);
         }
         else if (p->oper1.type == ILIMME)
         {
-            fprintf(fp, "%s  R%d , =%d\n", Oper[p->op - MOV], p->result.value, p->oper1.value); // the op should be LDR
+            fprintf(fp, "\t%s  R%d , =%d\n", Oper[p->op - MOV], p->result.value, p->oper1.value); // the op should be LDR
+        }
+        else if(p->oper1.type == NUL)
+        {
+            if(p->op == ARMLABEL)
+            {
+                fprintf(fp,"%s\n",p->result.str_id);
+            }
         }
     }
 }
