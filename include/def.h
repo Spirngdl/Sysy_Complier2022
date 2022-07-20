@@ -29,7 +29,7 @@
 // #define DD
 enum node_kind
 {
-    TOK_LDR = 2022,
+    TOK_LDR = 0,
     VAR_DECL,
     VAR_DECL_LIST,
     COMPUNIT_LIST,

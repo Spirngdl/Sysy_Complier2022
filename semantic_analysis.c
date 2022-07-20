@@ -267,6 +267,7 @@ void var_decl(struct node *T) //变量声明 -- kind -- NAME --TYPE
                 result.kind = ID;
                 strcpy(result.id, symbolTable.symbols[T->place].alias); //赋上别名
 #ifdef DD
+
                 if (symbolTable.symbols[T->place].flag != TEMP_VAR)
                 {
                     strcpy(result.id, symbolTable.symbols[T->place].name);

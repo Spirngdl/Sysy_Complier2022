@@ -35,13 +35,14 @@ void Driver(struct node *T)
   // }
   // arminterface(head_block);
   printf("optimize\n");
-  invariant_Extrapolation(head_block);
-  // dag_optimize(head_block);
+  // invariant_Extrapolation(head_block);
+  dag_optimize(head_block);
+    make_uid_block(head_block); //在进入arm翻译前最后一次调整编号
   // // all_fun(head_block);
-  // for (int i = 0; i < head_block->count; i++)
-  // {
-  //   print_IR(head_block->block[i]->tac_list);
-  // }
+  for (int i = 0; i < head_block->count; i++)
+  {
+    print_IR(head_block->block[i]->tac_list);
+  }
   printf("ending\n");
   // struct Block *block = divide_block(T->code);
 }
