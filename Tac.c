@@ -605,3 +605,60 @@ void check_immes(Blocks *blocks)
         cur_blocks = cur_blocks->next;
     }
 }
+
+unsigned HashDjb2(char *key)
+{
+    unsigned hash = 5381;
+    int c;
+
+    while (c = *key++)
+        hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+
+    return hash;
+}
+unsigned HashKey(void *key)
+{
+    return HashDjb2((char *)key);
+}
+
+int CompareKey(void *lhs, void *rhs)
+{
+    return strcmp((char *)lhs, (char *)rhs);
+}
+
+void CleanKey(void *key)
+{
+    free(key);
+}
+/**
+ * @brief 拿到一个函数内，使用的变量个数
+ *
+ * @param head
+ * @return int
+ */
+int get_count_var(Blocks *head)
+{
+    //用集合吧
+    HashSet *var_set = HashSetInit();
+    HashSetSetHash(var_set, HashKey);
+    HashSetSetCompare(var_set, CompareKey);
+    HashSetSetCleanKey(var_set, CleanKey);
+    char *func_name = head->name;
+    for (int i = 0; i < head->count; i++)
+    {
+        struct codenode *tcode = head->block[i]->tac_list;
+        while (tcode)
+        {
+            if (tcode->result.kind == ID)
+                HashSetAdd(var_set, strdup(tcode->result.id));
+            if (tcode->opn1.kind == ID)
+                HashSetAdd(var_set, strdup(tcode->opn1.id));
+            if (tcode->opn2.kind == ID)
+                HashSetAdd(var_set, strdup(tcode->opn2.id));
+            tcode = tcode->next;
+        }
+    }
+    HashSetRemove(var_set, func_name);
+    int size = HashSetSize(var_set);
+    return size;
+}

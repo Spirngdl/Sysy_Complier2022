@@ -229,6 +229,9 @@ void arrayinit_bracker(List *value_list, struct node *T, int brace_num, int *arr
 void test_array();
 void push_initarray(struct node *T, struct node *newnode);
 
+//查看函数内使用了几个变量
+int get_count_var(Blocks *head);
+//合法立即数检查
 int check_imme(int imme);
 void check_immes(Blocks *blocks);
 #endif
