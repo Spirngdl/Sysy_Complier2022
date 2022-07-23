@@ -659,6 +659,7 @@ int get_count_var(Blocks *head)
         }
     }
     HashSetRemove(var_set, func_name);
+    //其实还得删掉全局变量的
     int size = HashSetSize(var_set);
     return size;
 }

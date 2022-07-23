@@ -29,7 +29,7 @@
 // #define DD
 enum node_kind
 {
-    TOK_LDR = 0,
+    TOK_LDR = 2022,
     VAR_DECL,
     VAR_DECL_LIST,
     COMPUNIT_LIST,
@@ -51,7 +51,8 @@ enum node_kind
 
     ID,
     INT,
-    CONST_INT,
+    CONST_TOK_INT,
+    CONST_TOK_FLOAT,
     LITERAL,
     FLOAT_LITERAL,
     ARRAY_ASSIGN,
@@ -149,7 +150,7 @@ struct node *mknode(int kind, struct node *first, struct node *second, struct no
 struct node *mkopnode(int kind, struct node *left, struct node *right, int pos);
 struct node *mkarrnode(int kind, struct node *first, int length, int pos);
 struct node *mkparray(int kind, char *first, struct node *len, int pos);
-
+struct node *mkunarynode(int kind, struct node *first, struct node *second, int pos);
 int const_exp(struct node *T);
 /*semantic analysis*/
 void semantic_error(int line, char *msg1, char *msg2);

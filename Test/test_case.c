@@ -1,13 +1,13 @@
-int fun(int i, int j)
-{
-    int k = i + i;
-    return k;
-}
 
 int main()
 {
-    int i = 520;
-    int j = 80;
+    dd;
+    int i = -5;
+    int j = !(30 - 30);
+    if ((i > 5))
+    {
+        int k = 30;
+    }
     j = j - 3;
     j = 2 + j;
     i = 2;

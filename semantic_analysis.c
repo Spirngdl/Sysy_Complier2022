@@ -69,6 +69,7 @@ void semantic_Analysis(struct node *T)
         case TOK_MUL:
         case TOK_DIV:
         case TOK_MODULO:
+        case UNARYEXP:
         case FUNC_CALL:
         case EXP_ARRAY:
             Exp(T); //处理基本表达式

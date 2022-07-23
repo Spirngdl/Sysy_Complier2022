@@ -14,12 +14,14 @@
     // #define YYSTYPE YYLVAL
 %}
 %option yylineno
-DIGIT   [0-9]
-LETTER  [a-zA-Z]
-FLOAT  ([0-9]*\.[0-9]+)|([0-9]+\.)
+FLOAT   ([0-9]*\.[0-9]+)|([0-9]+\.)
+HEX     0(X|x)[0-9a-fA-F]+ 
+OCTAL   0[0-7]+
+DECIMAL [0-9]+
+INTEGER {HEX}|{OCTAL}|{DECIMAL}
 %%
 
-{DIGIT}+    {yylval.type_int = atoi(yytext); ;return INTCONST;}
+{INTEGER}   {yylval.type_int = strtol(yytext,NULL,0);return INTCONST;}
 {FLOAT}+    {yylval.type_float = atof(yytext);return FLOAT;}
 [+]         {return TOK_ADD;}
 [-]         {return TOK_SUB;}
@@ -55,6 +57,8 @@ FLOAT  ([0-9]*\.[0-9]+)|([0-9]+\.)
 "continue"  {return TOK_CONTINUE;}
 [a-z_A-Z][a-z_A-Z0-9]*  {strcpy(yylval.type_id,yytext) ;return IDENT;}
 [ \t\n]+    {yycolumn = 1;}
+"//"[^\n]*  {/* 注释 */}
+"/*"([^\*]|(\*)*[^\*/])*(\*)*"*/" {/* 注释 */}
 %%
 
 int yywrap()

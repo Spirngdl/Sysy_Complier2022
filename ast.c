@@ -4,9 +4,9 @@
  * @brief 定义对抽象语法树生成相关的函数。
  * @version 0.1
  * @date 2022-07-11
- * 
+ *
  * @copyright Copyright (c) 2022
- * 
+ *
  */
 #include "include/def.h"
 struct node *mknode(int kind, struct node *first, struct node *second, struct node *third, int pos)
@@ -113,6 +113,59 @@ struct node *mkopnode(int kind, struct node *left, struct node *right, int pos)
         T->ptr[1] = right;
         T->ptr[2] = NULL;
         T->code = NULL;
+        return T;
+    }
+}
+/**
+ * @brief 用于单目运算节点，如果是LITERAL，直接生成
+ * 
+ * @param kind 
+ * @param first 
+ * @param second 
+ * @param pos 
+ * @return struct node* 
+ */
+struct node *mkunarynode(int kind, struct node *first, struct node *second, int pos)
+{
+    struct node *T = mknode(kind, NULL, NULL, NULL, pos);
+    if (second->kind == LITERAL)
+    {
+        T->kind = LITERAL;
+        if (first->kind == TOK_ADD)
+        {
+            T->type_int = second->type_int;
+        }
+        else if (first->kind == TOK_SUB)
+        {
+            T->type_int = -(second->type_int);
+        }
+        else if (first->kind == TOK_NOT)
+        {
+            T->type_int = second->type_int == 0 ? 1 : 0;
+        }
+        return T;
+    }
+    else if (second->kind == FLOAT_LITERAL)
+    {
+        T->kind == FLOAT_LITERAL;
+        if (first->kind == TOK_ADD)
+        {
+            T->type_float = second->type_float;
+        }
+        else if (first->kind == TOK_SUB)
+        {
+            T->type_float = second->type_float;
+        }
+        else if (first->kind == TOK_NOT)
+        {
+            T->type_float = second->type_float == 0 ? 1 : 0;
+        }
+        return T;
+    }
+    else //
+    {
+        T->ptr[0] = first;
+        T->ptr[1] = second;
         return T;
     }
 }
