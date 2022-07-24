@@ -1,13 +1,12 @@
-
+int fun(int i,int arr[] )
+{
+    return 9;
+}
 int main()
 {
-    dd;
-    int i = -5;
-    int j = !(30 - 30);
-    if ((i > 5))
-    {
-        int k = 30;
-    }
+    // int i = -5;
+   float j = 12.2;
+    int i = 4;
     j = j - 3;
     j = 2 + j;
     i = 2;

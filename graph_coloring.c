@@ -17,6 +17,29 @@
 
 int var_cnt = 0;
 
+int next_reg (int curr_reg, const int reg[]) {
+    int i = 0;
+    curr_reg++;
+    for (i = 0; (i < MAX_REG) && (curr_reg < MAX_REG); i++) {
+        if (reg[curr_reg] == 0) return curr_reg;
+        curr_reg++;
+    }
+    return curr_reg;
+}
+
+// 获取一个可用的寄存器号，并将相应位置 1
+// 失败则返回 -1
+int get_one_reg (int reg_list[]) {
+    int i = 0;
+    for (i = 0; i < MAX_REG; i++) {
+        if (reg_list[i] == 0) {
+            reg_list[i] = 1;
+            return i;
+        }
+    }
+    return -1;
+}
+
 // 获取IN、OUT中的变量总数
 int get_var_num (char*** in, char*** out, int num_block) {
     int cnt = 0;
@@ -174,11 +197,17 @@ void remove_one_point (struct var_of_RIG* list[], int** RIG, int* rmv_cnt, int n
 }
 
 // 将一个被删去的节点重新添加，并为其分配相应寄存器号，其中order为该节点在list序列中的位置
-void add_one_point (struct var_of_RIG* list[], int** RIG, int num_reg, int num_var, int order) {
+void add_one_point (struct var_of_RIG* list[], int** RIG, int num_reg, int num_var, int order, const int reg[]) {
     int i = 0, cnt = 0;
     int flag = 0;
+
     int temp_reg = 0;
-    int temp[MAX_VAR] = {0};
+    for (i = 0; i < MAX_REG; i++) {
+        if (reg[temp_reg] == 0) break;
+        temp_reg++;
+    }
+    
+    int temp[MAX_VAR] = {0}; // 存放复原节点的编号
     // 恢复标记，复原节点的边
     list[order]->rmv_flag = -1;
     for (i = 0; i < num_var; i++) {
@@ -189,11 +218,13 @@ void add_one_point (struct var_of_RIG* list[], int** RIG, int num_reg, int num_v
             cnt++;
         }
     }
-    while ((temp_reg < num_reg) && (flag == 0)) {
+    while ((temp_reg < MAX_REG) && (flag == 0)) {
         flag = 1;
         for (i = 0; i < cnt; i++) {
             if (list[temp[i]]->reg == temp_reg) {
-                temp_reg++;
+                
+                temp_reg = next_reg(temp_reg, reg);
+                
                 flag = 0;
                 break;
             }
@@ -207,30 +238,38 @@ void add_one_point (struct var_of_RIG* list[], int** RIG, int num_reg, int num_v
 }
 
 // 完成寄存器分配方案，并尽可能减少变量溢出
-void input_color (struct var_of_RIG* list[], int** RIG, int num_var, int num_reg) {
+void input_color (struct var_of_RIG* list[], int** RIG, int num_var, int num_reg, int reg_list[]) {
     int i = 0, j = 0;
     int rmv_cnt = -1;
     int rmv_num = 0; // 被删去的变量总数
     int num_var_copy = num_var;
+    
+    int reg[MAX_REG];
+    for (i = 0; i < MAX_REG; i++) {
+        reg[i] = reg_list[i];
+    }
+
     // 在图中变量大于寄存器总数时，删去一个边少于num_reg的节点，标记删去的节点
     while (num_var_copy > num_reg) {
         remove_one_point(list, RIG, &rmv_cnt, num_reg, num_var);
         num_var_copy--;
         rmv_num++;
     }
+    
     // 此时，如无意外，已得到一个变量小于等于寄存器总数的RIG，可进行着色
-    int temp = 0;
+    int use_reg = -1;
     for (i = 0; i < num_var; i++) {
         if (list[i]->rmv_flag == -1) {
-            list[i]->reg = temp; // 可进一步优化
-            temp++;
+            use_reg = get_one_reg(reg_list);
+            list[i]->reg = use_reg;
         }
     }
+
     // 将被删去的节点依次重新添加，并为其分配寄存器号
     for (i = 0; i < rmv_num; i++) {
         for (j = 0; j < num_var; j++) {
             if (list[j]->rmv_flag == rmv_cnt) {
-                add_one_point(list, RIG, num_reg, num_var, j);
+                add_one_point(list, RIG, num_reg, num_var, j, reg);
                 rmv_cnt--;
                 break;
             }
@@ -239,7 +278,7 @@ void input_color (struct var_of_RIG* list[], int** RIG, int num_var, int num_reg
 }
 
 // 函数所需条件：各基本块的IN、OUT集合（即节点关系），基本块总数（方便遍历），寄存器总数（即颜色总数），所有变量（即着色节点）
-void graph_coloring (char*** in, char*** out, int num_block, int num_reg) {
+void graph_coloring (char*** in, char*** out, int num_block, int num_reg, char* fun_add, int reg_list[]) {
     int i = 0, j = 0;
     int num_var = 0;
     num_var = get_var_num(in, out, num_block); // 变量总数
@@ -276,7 +315,7 @@ void graph_coloring (char*** in, char*** out, int num_block, int num_reg) {
         printf("\n");
     }*/
     // 获取一个着色方案
-    input_color(var_list, RIG, num_var, num_reg);
+    input_color(var_list, RIG, num_var, num_reg, reg_list);
     //printf("Register Allocation:");
     /*if (num_var == 0) {
         printf("\tno var in IN or OUT\n");
@@ -285,6 +324,7 @@ void graph_coloring (char*** in, char*** out, int num_block, int num_reg) {
     // 对于全局的变量序列进行赋值，以便ARM生成时调用（此时仅 基本块间变量 存在）
     for (i = 0; i < num_var; i++) {
         strcpy(vars[var_cnt].name, var_list[i]->name);
+        strcpy(vars[var_cnt].fun_name, fun_add);
         if (var_list[i]->reg == -2) {
             vars[var_cnt].reg = -1;
         } else {
@@ -303,16 +343,52 @@ void graph_coloring (char*** in, char*** out, int num_block, int num_reg) {
     //printf("\n");
 }
 
+// 内部调用
 // 根据变量别名返回寄存器号，-1为变量溢出，-2为查找失败
 // 全局变量不在 vars[MAX_VARS] 数组中，即会查找失败
-int search_var (char* name) {
+int _search_var (char* fun_name, char* name) {
     int i = 0;
     for (i = 0; i < var_cnt; i++) {
-        if(strcmp(vars[i].name, name) == 0) {
+        if(strcmp(vars[i].name, name) == 0 && strcmp(vars[i].fun_name, fun_name) == 0) {
             return vars[i].reg;
         }
     }
     return -2;
+}
+
+// 外部调用
+// 根据变量别名返回寄存器号，-1为变量溢出
+// 全局变量不在 vars[MAX_VARS] 数组中，将返回 -2
+// 无用赋值不属于活跃变量，不分配其寄存器，将返回 -3
+int search_var (char* fun_name, char* name) {
+    int i = 0;
+    for (i = 0; i < var_cnt; i++) {
+        if(strcmp(vars[i].name, name) == 0 && strcmp(vars[i].fun_name, fun_name) == 0) {
+            return vars[i].reg;
+        }
+    }
+    if (search_alias(name) != -1) {
+        return -2;
+    } else {
+        return -3;
+    }
+}
+
+// 输入函数名、寄存器数组
+// 函数将为所用寄存器的相应位赋 1，其余为 0
+// 寄存器默认为 16 个，其中 R11、R12 不分配，为 0
+int one_fun_reg(char* fun_name, int reg[]) {
+    int i = 0, num = 0;
+    for (i = 0; i < 16; i++) {
+        reg[i] = -1;
+    }
+    for (i = 0; i < var_cnt; i++) {
+        if ((strcmp(fun_name, vars[i].fun_name) == 0) && (vars[i].reg >= 0)) {
+            reg[num] = vars[i].reg;
+            num++;
+        }
+    }
+    return num;
 }
 
 // 打印所有变量及其寄存器号
@@ -321,70 +397,10 @@ void print_vars (void) {
     printf("All Vars:\n");
     for (i = 0; i < var_cnt; i++) {
         if (vars[i].reg == -1) {
-            printf("\t%s\tSpilling\n", vars[i].name);
+            printf("\t%s\t\t%s\t\tSpilling\n",vars[i].fun_name, vars[i].name);
         } else {
-            printf("\t%s\tR%d\n", vars[i].name, vars[i].reg);
+            printf("\t%s\t\t%s\t\tR%d\n",vars[i].fun_name, vars[i].name, vars[i].reg);
         }
     }
     printf("\n");
 }
-
-/*int main() {
-    int i = 0, j = 0;
-    int num_block = 4;
-    char*** in = (char***)malloc(sizeof(char**) * num_block);
-    char*** out = (char***)malloc(sizeof(char**) * num_block);   
-    for (i = 0; i < num_block; i++) {
-        in[i] = (char**)malloc(sizeof(char*) * MAX_VAR);
-        out[i] = (char**)malloc(sizeof(char*) * MAX_VAR);
-        for (j = 0; j < MAX_VAR; j++) {
-            in[i][j] = (char*)malloc(sizeof(char) * 32);
-            out[i][j] = (char*)malloc(sizeof(char) * 32);
-            strcpy(in[i][j], "");
-            strcpy(out[i][j], "");
-        }
-    }
-    
-    strcpy(in[0][0], "u3");
-    strcpy(in[0][1], "u2");
-    strcpy(in[0][2], "m");
-    strcpy(in[0][3], "n");
-    strcpy(in[0][4], "u1");
-
-    strcpy(in[1][0], "u3");
-    strcpy(in[1][1], "u2");
-    strcpy(in[1][2], "j");
-    strcpy(in[1][3], "i");
-
-    strcpy(in[2][0], "u3");
-    strcpy(in[2][1], "u2");
-    strcpy(in[2][2], "j");
-
-    strcpy(in[3][0], "u3");
-    strcpy(in[3][1], "u2");
-    strcpy(in[3][2], "j");
-
-    strcpy(out[0][0], "u3");
-    strcpy(out[0][1], "u2");
-    strcpy(out[0][2], "j");
-    strcpy(out[0][3], "i");
-
-    strcpy(out[1][0], "u3");
-    strcpy(out[1][1], "u2");
-    strcpy(out[1][2], "j");
-
-    strcpy(out[2][0], "u3");
-    strcpy(out[2][1], "u2");
-    strcpy(out[2][2], "j");
-
-    strcpy(out[3][0], "u3");
-    strcpy(out[3][1], "u2");
-    strcpy(out[3][2], "j");
-    strcpy(out[3][3], "i");
-
-    // 进行寄存器分配
-    printf("\n 开始寄存器分配!\n");
-    graph_coloring(in, out, num_block, MAX_REG);
-    printf("\n\n\n 寄存器分配完毕!\n");
-    return 0;
-}*/

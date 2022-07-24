@@ -12,17 +12,24 @@
     //     past ptr;
     // }YYLVAL;
     // #define YYSTYPE YYLVAL
+    //FLOAT   ([0-9]*\.[0-9]+)|([0-9]+\.)
 %}
 %option yylineno
-FLOAT   ([0-9]*\.[0-9]+)|([0-9]+\.)
+
 HEX     0(X|x)[0-9a-fA-F]+ 
 OCTAL   0[0-7]+
 DECIMAL [0-9]+
 INTEGER {HEX}|{OCTAL}|{DECIMAL}
+
+HEX_FLOAT {HEX}(\.[0-9a-fA-F]+)?((P|p){INTEGER})?
+DECIMAL_FLOAT {DECIMAL}(\.[0-9]+)?((E|e){INTEGER})?
+FLOAT       {DECIMAL_FLOAT}(f|F|l|L)?
+FLOAT_HEX {HEX_FLOAT}(f|F|l|L)?
 %%
 
 {INTEGER}   {yylval.type_int = strtol(yytext,NULL,0);return INTCONST;}
-{FLOAT}+    {yylval.type_float = atof(yytext);return FLOAT;}
+{FLOAT}     {yylval.type_float = atof(yytext);return FLOAT;}
+{FLOAT_HEX} {yylval.type_float = hex_atof(yytext);return FLOAT;}
 [+]         {return TOK_ADD;}
 [-]         {return TOK_SUB;}
 [*]         {return TOK_MUL;}

@@ -9,6 +9,7 @@
  *
  */
 #include "include/def.h"
+#include <math.h>
 struct node *mknode(int kind, struct node *first, struct node *second, struct node *third, int pos)
 {
     struct node *T = (struct node *)malloc(sizeof(struct node));
@@ -118,12 +119,12 @@ struct node *mkopnode(int kind, struct node *left, struct node *right, int pos)
 }
 /**
  * @brief 用于单目运算节点，如果是LITERAL，直接生成
- * 
- * @param kind 
- * @param first 
- * @param second 
- * @param pos 
- * @return struct node* 
+ *
+ * @param kind
+ * @param first
+ * @param second
+ * @param pos
+ * @return struct node*
  */
 struct node *mkunarynode(int kind, struct node *first, struct node *second, int pos)
 {
@@ -223,4 +224,85 @@ int find_initvalue_arr(int symbol_index, int offset)
     }
     else
         return 0;
+}
+/**
+ * @brief 实现16进制的字符串转10进制float
+ *
+ * @param str 0xf.ffpf
+ * @return float
+ */
+float hex_atof(char *str)
+{
+    float result = 0;
+    int len = strlen(str);
+    int index = 0;
+    int p = 0;
+    while (str[index] == ' ')
+    {
+        index++;
+    }
+    index += 2;     //忽略0x
+    int inter[30];  //整数部分
+    int floter[30]; //小数部分
+    int pter[10];
+    int i = 0, j = 0, k = 0;
+    //整数部分
+    for (; index < len; index++)
+    {
+        if (str[index] == '.')
+        {
+            index++;
+            break;
+        }
+        if (str[index] <= '9')
+            inter[i] = str[index] - '0';
+        else if (str[index] <= 'F')
+            inter[i] = str[index] - 'A';
+        else if (str[index] <= 'f')
+            inter[i] = str[index] - 'a';
+        i++;
+    }
+    //小数部分
+    for (; index < len; index++)
+    {
+        if (str[index] == 'p' || str[index] == 'P')
+        {
+            index++;
+            break;
+        }
+        if (str[index] <= '9')
+            floter[j] = str[index] - '0';
+        else if (str[index] <= 'F')
+            floter[j] = str[index] - 'A';
+        else if (str[index] <= 'f')
+            floter[j] = str[index] - 'a';
+        j++;
+    }
+    //
+    for (; index < len; index++)
+    {
+        pter[k++] = str[index] - '0';
+    }
+    int ad = 1;
+    i -= 1, j--, k--;
+    for (int c = i; c >= 0; c--)
+    {
+        result += inter[c] * ad;
+        ad *= 16;
+    }
+    ad = 16;
+    for (int c = 0; c <= j; c++)
+    {
+        result +=(float) ((float)floter[c] / ad);
+        ad *= 16;
+    }
+    ad = 1;
+    for (int c = k; c >= 0; c--)
+    {
+        p += pter[c] * ad;
+        ad *= 10;
+    }
+    ad = pow(2,p);
+    result *= ad;
+    return result;
 }
