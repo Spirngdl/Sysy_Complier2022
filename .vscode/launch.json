@@ -28,7 +28,7 @@
             "name": "list测试",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/dd.exe",
+            "program": "${workspaceFolder}/a.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",

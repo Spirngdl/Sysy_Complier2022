@@ -2,12 +2,13 @@
 
 char *Reg[16];
 
-char *Oper[5] = {"MOV", "ADD", "SUB", "MUL", "LDR"};
+
 
 bool MULFLAG = false;
 
-armcode *initnewnode(armcode *newnode)
+armcode *initnewnode()
 {
+    armcode *newnode = (armcode *)malloc(sizeof(struct armcode_));
     memset(newnode, 0, sizeof(struct armcode_));
     newnode->result.type = REG;
 
@@ -25,8 +26,8 @@ void translate(armcode *newnode, struct codenode *p, armop armop)
 
         if (p->opn1.kind == LITERAL)
         {
-            armcode *movcode = (armcode *)malloc(sizeof(struct armcode_));
-            initnewnode(movcode);
+            //armcode *movcode = (armcode *)malloc(sizeof(struct armcode_));
+            armcode *movcode = initnewnode();
             movcode->op = MOV;
             movcode->result.value = R4;
             movcode->oper1.type = IMME;
@@ -75,8 +76,8 @@ void translate(armcode *newnode, struct codenode *p, armop armop)
                 if (MULFLAG && rn0 == rn1)
                 {
                     MULFLAG = false;
-                    armcode *movcode = (armcode *)malloc(sizeof(struct armcode_));
-                    initnewnode(movcode);
+                    //armcode *movcode = (armcode *)malloc(sizeof(struct armcode_));
+                    armcode *movcode  = initnewnode();
                     movcode->op = MOV;
                     movcode->result.value = R4;
                     movcode->oper1.type = REG;
@@ -163,9 +164,9 @@ armcode *translatearm(Blocks *blocks)
             p = tcode;
             while (p->next != NULL)
             {
-                newnode = (armcode *)malloc(sizeof(struct armcode_));
+                //newnode = (armcode *)malloc(sizeof(struct armcode_));
                 // memset(newnode, 0, sizeof(struct armcode_));
-                initnewnode(newnode);
+                newnode = initnewnode();
                 q->next = newnode;
                 newnode->pre = q;
                 q = newnode;
@@ -246,6 +247,13 @@ armcode *translatearm(Blocks *blocks)
                     translate(newnode, p, SUB);
                     break;
 
+                case ARG:
+                    
+                    break;
+
+                case CALL:
+                    break;
+
                 default:
                     break;
                 }
@@ -257,50 +265,31 @@ armcode *translatearm(Blocks *blocks)
     return first;
 }
 
-void printarm(armcode *armnode, FILE *fp)
+armcode * stmnode(int stkreg,int reg[],int regnum)
 {
-
-    armcode *p = armnode->next;
-    while (p->next != NULL)
+    //armcode * snode = (armcode*)malloc(sizeof(struct armcode_));
+    armcode * snode = initnewnode();
+    snode->op = STMFD;
+    snode->regnum = regnum;
+    snode->result.value = stkreg;
+    snode->oper1.type = REGLIST;
+    for(int i=0;i<regnum;i++)
     {
-        if (p->oper1.type == REG)
-        {
-            switch (p->oper2.type)
-            {
-            case IMME:
-                fprintf(fp, "\t%S  R%d , R%d , #%d\n", Oper[p->op - MOV], p->result.value, p->oper1.value, p->oper2.value);
-                break;
-            case REG:
-                fprintf(fp, "\t%s  R%d , R%d , R%d\n", Oper[p->op - MOV], p->result.value, p->oper1.value, p->oper2.value);
-                break;
-            case NUL:
-                fprintf(fp, "\t%s  R%d , R%d\n", Oper[p->op - MOV], p->result.value, p->oper1.value);
-                break;
-            default:
-                printf("p->oper2.type error!\n");
-            }
-        }
-        else if (p->oper1.type == IMME)
-        {
-            fprintf(fp, "\t%s  R%d , #%d\n", Oper[p->op - MOV], p->result.value, p->oper1.value);
-        }
-        else if (p->oper1.type == ILIMME)
-        {
-            fprintf(fp, "\t%s  R%d , =%d\n", Oper[p->op - MOV], p->result.value, p->oper1.value); // the op should be LDR
-        }
-        else if(p->oper1.type == NUL)
-        {
-            if(p->op == ARMLABEL)
-            {
-                fprintf(fp,"%s\n",p->result.str_id);
-            }
-        }
+        snode->oper1.reglist[i] = reg[i];
     }
+
+    return snode;
+
 }
 
-void arminterface(Blocks *blocks)
+int regcount(short reg)
 {
-    FILE *fp = fopen("./a.asm", "w+");
-    armcode *armcode = translatearm(blocks);
-    printarm(armcode, fp);
+    int temp=0,count =0;
+    for(int i=0;i<4;i++)
+    {
+        temp=(reg&&(0xF<<i*4));
+        temp=temp>>i*4;
+        count +=regcountmask[temp];
+    }
+    return count;
 }

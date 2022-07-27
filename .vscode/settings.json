@@ -1,6 +1,10 @@
 {
     "files.associations": {
         "*.h": "cpp",
-        "DEMO.C": "cpp"
+        "DEMO.C": "cpp",
+        "*.tcc": "c",
+        "fstream": "c",
+        "istream": "c",
+        "streambuf": "c"
     }
 }
