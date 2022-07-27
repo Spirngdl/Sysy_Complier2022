@@ -2,9 +2,9 @@
 
 char *Reg[16];
 
-
-
 bool MULFLAG = false;
+// bool FIRSTARG = false;//第一次遇到ARG时，插入压栈操作后置true，遇到call时再置false
+int ARGTIM = 0;
 
 armcode *initnewnode()
 {
@@ -18,7 +18,7 @@ armcode *initnewnode()
 void translate(armcode *newnode, struct codenode *p, armop armop)
 {
     int rn0, rn1, rn2, rn3;
-    if ((rn0 = search_var(p->result.id)) > 0)
+    if ((rn0 = search_var(p->result.id)) >= 0)
     {
         Reg[rn0] = p->result.id;
         newnode->op = armop;
@@ -26,7 +26,7 @@ void translate(armcode *newnode, struct codenode *p, armop armop)
 
         if (p->opn1.kind == LITERAL)
         {
-            //armcode *movcode = (armcode *)malloc(sizeof(struct armcode_));
+            // armcode *movcode = (armcode *)malloc(sizeof(struct armcode_));
             armcode *movcode = initnewnode();
             movcode->op = MOV;
             movcode->result.value = R4;
@@ -48,7 +48,7 @@ void translate(armcode *newnode, struct codenode *p, armop armop)
             }
             else if (p->opn2.kind == ID)
             {
-                if ((rn2 = search_var(p->opn2.id)) > 0)
+                if ((rn2 = search_var(p->opn2.id)) >= 0)
                 {
                     // printf("ADD R%d ,R%d ,#%d", rn0, rn1, p->opn1.const_int);
                     Reg[rn2] = p->opn2.id;
@@ -71,13 +71,13 @@ void translate(armcode *newnode, struct codenode *p, armop armop)
         }
         else if (p->opn1.kind == ID)
         {
-            if ((rn1 = search_var(p->opn1.id)) > 0)
+            if ((rn1 = search_var(p->opn1.id)) >= 0)
             {
                 if (MULFLAG && rn0 == rn1)
                 {
                     MULFLAG = false;
-                    //armcode *movcode = (armcode *)malloc(sizeof(struct armcode_));
-                    armcode *movcode  = initnewnode();
+                    // armcode *movcode = (armcode *)malloc(sizeof(struct armcode_));
+                    armcode *movcode = initnewnode();
                     movcode->op = MOV;
                     movcode->result.value = R4;
                     movcode->oper1.type = REG;
@@ -164,8 +164,8 @@ armcode *translatearm(Blocks *blocks)
             p = tcode;
             while (p->next != NULL)
             {
-                //newnode = (armcode *)malloc(sizeof(struct armcode_));
-                // memset(newnode, 0, sizeof(struct armcode_));
+                // newnode = (armcode *)malloc(sizeof(struct armcode_));
+                //  memset(newnode, 0, sizeof(struct armcode_));
                 newnode = initnewnode();
                 q->next = newnode;
                 newnode->pre = q;
@@ -175,12 +175,12 @@ armcode *translatearm(Blocks *blocks)
                 case FUNCTION:
                     newnode->op = ARMLABEL;
                     newnode->result.type = STR;
-                    strcpy(newnode->result.str_id , p->result.id);
+                    strcpy(newnode->result.str_id, p->result.id);
                     newnode->oper1.type = NUL;
                     newnode->oper2.type = NUL;
                     break;
                 case TOK_ASSIGN:
-                    if ((rn0 = search_var(p->result.id)) > 0) // The result is stored in the register
+                    if ((rn0 = search_var(p->result.id)) >= 0) // The result is stored in the register
                     {
                         Reg[rn0] = p->result.id;
                         newnode->op = MOV;
@@ -195,7 +195,7 @@ armcode *translatearm(Blocks *blocks)
                         }
                         else if (p->opn1.kind == ID)
                         {
-                            if ((rn1 = search_var(p->opn1.id)) > 0)
+                            if ((rn1 = search_var(p->opn1.id)) >= 0)
                             {
                                 Reg[rn1] = p->opn1.id;
                                 printf("MOV R%d ,R%d\n", rn0, rn1);
@@ -216,7 +216,7 @@ armcode *translatearm(Blocks *blocks)
                     break;
 
                 case TOK_LDR:
-                    if ((rn0 = search_var(p->result.id)) > 0)
+                    if ((rn0 = search_var(p->result.id)) >= 0)
                     {
                         Reg[rn0] = p->result.id;
                         newnode->op = LDR;
@@ -248,10 +248,59 @@ armcode *translatearm(Blocks *blocks)
                     break;
 
                 case ARG:
-                    
+                    if (!ARGTIM)
+                    {
+                        int reg[5] = {0, 1, 2, 3, 14};
+                        armcode *snode = stmnode(R13, reg, 5);
+                        newnode->pre->next = snode;
+                        snode->pre = newnode->pre;
+                        snode->next = newnode;
+                        newnode->pre = snode;
+                    }
+                    if (ARGTIM > 3) //超过四个参数，压栈
+                    {
+
+                    }
+                    else            //四个参数以内，寄存器传值
+                    {
+                        
+                        newnode->result.value = ARGTIM;
+                        if(p->result.kind == ID)
+                        {
+                            newnode->op = MOV;
+                           if(( rn1 = search_var(p->result.id))>=0)
+                           {
+                                Reg[rn0] = p->result.id;
+                                newnode->oper1.type = REG;
+                                newnode->oper1.value = rn1;
+                           }
+                           else
+                           {
+                            //todo
+                           }
+                        }
+                        else if(p->result.kind == LITERAL)
+                        {
+                            if(check_imme(p->result.const_int)==0)  //合法立即数
+                            {
+                                newnode->op = MOV;
+                                newnode->oper1.type = IMME;
+                                newnode->oper1.value = p->result.const_int;
+                            }
+                            else
+                            {
+                                newnode->op = LDR;
+                                newnode->oper1.type = ILIMME;
+                                newnode->oper1.value = p->result.const_int;
+
+                            }
+                        }
+                    }
+                    ARGTIM += 1;
                     break;
 
                 case CALL:
+                    ARGTIM = 0;
                     break;
 
                 default:
@@ -265,31 +314,30 @@ armcode *translatearm(Blocks *blocks)
     return first;
 }
 
-armcode * stmnode(int stkreg,int reg[],int regnum)
+armcode *stmnode(int stkreg, int reg[], int regnum)
 {
-    //armcode * snode = (armcode*)malloc(sizeof(struct armcode_));
-    armcode * snode = initnewnode();
+    // armcode * snode = (armcode*)malloc(sizeof(struct armcode_));
+    armcode *snode = initnewnode();
     snode->op = STMFD;
     snode->regnum = regnum;
     snode->result.value = stkreg;
     snode->oper1.type = REGLIST;
-    for(int i=0;i<regnum;i++)
+    for (int i = 0; i < regnum; i++)
     {
         snode->oper1.reglist[i] = reg[i];
     }
 
     return snode;
-
 }
 
 int regcount(short reg)
 {
-    int temp=0,count =0;
-    for(int i=0;i<4;i++)
+    int temp = 0, count = 0;
+    for (int i = 0; i < 4; i++)
     {
-        temp=(reg&&(0xF<<i*4));
-        temp=temp>>i*4;
-        count +=regcountmask[temp];
+        temp = (reg && (0xF << i * 4));
+        temp = temp >> i * 4;
+        count += regcountmask[temp];
     }
     return count;
 }
