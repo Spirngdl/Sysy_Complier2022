@@ -172,7 +172,7 @@ number: INTCONST                                {$$ = mknode(LITERAL,NULL,NULL,N
 unaryexp: primaryexp                            {$$ = $1;}
         | IDENT TOK_LPAR funcrparams TOK_RPAR   {$$ = mknode(FUNC_CALL,$3,NULL,NULL,yylineno);strcpy($$->type_id,$1);}
         | IDENT TOK_LPAR TOK_RPAR               {$$ = mknode(FUNC_CALL,NULL,NULL,NULL,yylineno);strcpy($$->type_id,$1);}
-        | unaryop unaryexp                      {$$ = mknode(UNARYEXP,$1,$2,NULL,yylineno);}
+        | unaryop unaryexp                      {$$ = mkunarynode(UNARYEXP,$1,$2,yylineno);}
         ;
 unaryop: TOK_ADD                                {$$ = mknode(TOK_ADD,NULL,NULL,NULL,yylineno);strcpy($$->type_id,"TOK_ADD");}
        | TOK_SUB                                {$$ = mknode(TOK_SUB,NULL,NULL,NULL,yylineno);strcpy($$->type_id,"TOK_SUB");}

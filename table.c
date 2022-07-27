@@ -37,16 +37,19 @@ int searchFuncTable(char *name)
  * @brief 通过别名查找符号表，一般是在后端调用了，因为三地址代码中存储的变量的ID就是别名
  *
  * @param alias 别名
- * @return 变量在符号表数组中的位置.失败返回-1
+ * @return 全局变量返回i 其他返回-1
  */
 int search_alias(char *alias)
 {
     int i;
     for (i = symbolTable.index - 1; i >= 0; i--)
     {
-        if (strcmp(symbolTable.symbols[i].alias, alias) == 0)
+        if (strcmp(symbolTable.symbols[i].alias, alias) == 0) //找到了，可能是全局变量或者形式参数
         {
-            return i;
+            if (symbolTable.symbols[i].level == 0) //是全局变量
+                return i;
+            else
+                return -1;
         }
     }
     return -1;
@@ -92,4 +95,20 @@ int fillast(char *name, char flag)
     strcpy(astsymbol.symbols[astsymbol.index].name, name);
     astsymbol.symbols[astsymbol.index].flag = flag;
     return astsymbol.index++; //返回的是符号在符号表中的位置序号，中间代码生成时可用序号取到符号别名
+}
+/**
+ * @brief 返回函数形式参数个数
+ *
+ * @param fun_name
+ * @return int
+ */
+int search_func(char *fun_name)
+{
+    int i;
+    for (i = symbolTable.index - 1; i >= 0; i--)
+    {
+        if (symbolTable.symbols[i].flag == FUNCTION)
+            if (strcmp(symbolTable.symbols[i].name, fun_name) == 0)
+                return symbolTable.symbols[i].paramnum;
+    }
 }

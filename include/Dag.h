@@ -19,14 +19,16 @@ typedef struct DAGNode_
     List *symList; //<char *>
     int ID;        //标识身份
     int kind;
-    int left;
-    int right;
-    int tri;
+    struct DAGNode_ *left, *right, *tri;
+    // int left;
+    // int right;
+    // int tri;
     char value[4];
     union
     {
         char v_id[10];
         int v_num;
+        float v_float;
     };
     int isvisited;
     // 对于形如 A [ I ] = X 的操作，其之后需要杀死依赖于 A 的所有结点
@@ -76,13 +78,14 @@ int readquad0(DAG *dag, struct codenode *T);                         // 0型
 int readquad2(DAG *dag, struct codenode *T);                         // 2型
 int readquad3(DAG *dag, struct codenode *T);                         // 3型 数组赋值
 bool isRoot(DAG *dag, DAGnode *n);                                   // 判断结点 n 是否是入度为 0 的结点
-bool isActivenNode(DAGnode *n);                                      //判断结点 n 是否是有活跃变量的结点
+bool isActivenNode(DAGnode *n, int out_count, char *outActive[]);    //判断结点 n 是否是有活跃变量的结点
 // TODO: 由dag变回三地址
 // std::vector<QuadExp> genCode(std::shared_ptr<DAGNode> n, const std::vector<std::string> &outActive); // 返回一个结点 n 生成的所有代码
 //由dag结点变三地址
-struct codenode *to_code(DAG *dag, DAGnode *n); //暂时不考虑是不是活跃变量
-bool isFutileSet(DAGnode *n, int active[]);     // 判断结点 n 是否代表一个无用赋值语句（形如 T = N ，其中 T 为非活跃变量）
-bool isFutileASSIGN(DAG *dag, DAGnode *n);      //暂时用来判断一个赋值语句是否无用
-void dag_optimize(Blocks *blocks);              // dag优化接口
+struct codenode *genOptimizedCode(DAG *dag, int out_count, char *outActive[]);
+struct codenode *to_code(DAG *dag, DAGnode *n, int out_count, char *outActive[]); //暂时不考虑是不是活跃变量
+bool isFutileSet(DAGnode *n, int active[]);                                       // 判断结点 n 是否代表一个无用赋值语句（形如 T = N ，其中 T 为非活跃变量）
+bool isFutileASSIGN(DAG *dag, DAGnode *n, int out_count, char *outActive[]);      //暂时用来判断一个赋值语句是否无用
+void dag_optimize(Blocks *blocks);                                                // dag优化接口
 
 #endif

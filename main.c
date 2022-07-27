@@ -24,25 +24,32 @@ void Driver(struct node *T)
   change_label(T->code); //把三弟代码生成过程中产生的标号删除
   print_IR(T->code);     //打印比较初始的三地址代码
   basic_block(T->code);  //划分基本块
+  get_count_var(head_block);
+  // arminterface(head_block);
+  printf("optimize\n");
+  // invariant_Extrapolation(head_block);
+  dag_optimize(head_block);
+  make_uid_block(head_block); //在进入arm翻译前最后一次调整编号
+  // // all_fun(head_block);
+  Blocks *cur_blocks = head_block;
+  while (cur_blocks)
+  {
+    for (int i = 0; i < cur_blocks->count; i++)
+    {
+      print_IR(cur_blocks->block[i]->tac_list);
+    }
+    cur_blocks = cur_blocks->next;
+  }
 
-  // print_vars();
-  // check_immes(head_block);    //检验立即数合法性
-  // all_fun_reg(head_block);    //进行活跃变量分析
+  // check_immes(head_block); //检验立即数合法性
+  // all_fun_reg(head_block); //进行活跃变量分析
+  // // print_vars();
+
   // make_uid_block(head_block); //在进入arm翻译前最后一次调整编号
   // for (int i = 0; i < head_block->count; i++)
   // {
   //   print_IR(head_block->block[i]->tac_list); //打印一下
   // }
-  // arminterface(head_block);
-  printf("optimize\n");
-  // invariant_Extrapolation(head_block);
-  dag_optimize(head_block);
-    make_uid_block(head_block); //在进入arm翻译前最后一次调整编号
-  // // all_fun(head_block);
-  for (int i = 0; i < head_block->count; i++)
-  {
-    print_IR(head_block->block[i]->tac_list);
-  }
   printf("ending\n");
   // struct Block *block = divide_block(T->code);
 }
