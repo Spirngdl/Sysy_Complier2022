@@ -541,7 +541,7 @@ void assignop_exp(struct node *T)
     if (T->ptr[0]->kind == ID)
     {
         Exp(T->ptr[0]);                 //处理左值，例中仅为变量
-        if (T->ptr[1]->kind == LITERAL) //
+        if (T->ptr[1]->kind == LITERAL) // 右值是整型常量
         {
             opn1.kind = LITERAL;
             opn1.const_int = T->ptr[1]->type_int;
@@ -556,7 +556,15 @@ void assignop_exp(struct node *T)
 #endif
             T->code = merge(2, T->ptr[0]->code, genIR(TOK_ASSIGN, opn1, opn2, result));
         }
-        else if (T->ptr[1]->kind == ID)
+        else if (T->ptr[1]->kind == FLOAT_LITERAL) //右值是浮点型常量
+        {
+            opn1.kind = FLOAT_LITERAL;
+            opn1.const_float = T->ptr[1]->type_float;
+            result.kind = ID;
+            strcpy(result.id, symbolTable.symbols[T->ptr[0]->place].alias);
+            T->code = merge(2, T->ptr[0]->code, genIR(TOK_ASSIGN, opn1, opn2, result));
+        }
+        else if (T->ptr[1]->kind == ID) //右值是变量
         {
             T->type = T->ptr[1]->type;
             result.kind = ID;
@@ -580,7 +588,7 @@ void assignop_exp(struct node *T)
 #endif
             T->code = merge(2, T->ptr[0]->code, genIR(TOK_ASSIGN, opn1, opn2, result));
         }
-        else
+        else //右值有可能是数组，是函数调用
         {
             Exp(T->ptr[1]); //处理右值
             T->type = T->ptr[1]->type;
@@ -598,12 +606,12 @@ void assignop_exp(struct node *T)
             T->code = merge(2, T->ptr[0]->code, T->ptr[1]->code);
         }
     }
-    else if (T->ptr[0]->kind == EXP_ARRAY) //数组作为左值
+    else if (T->ptr[0]->kind == EXP_ARRAY) //数组作为左值 没这个东西 不敢删 先留着
     {
         exp_array(T->ptr[0]); //处理左值
         T->type = T->ptr[0]->type;
 
-        //处理下标
+        //处理下标 下标只能是整型
         if (symbolTable.symbols[T->ptr[0]->ptr[0]->place].type == LITERAL)
         {
             opn1.kind = LITERAL;
@@ -619,6 +627,11 @@ void assignop_exp(struct node *T)
         {
             opn2.kind = LITERAL;
             opn2.const_int = T->ptr[1]->type_int;
+        }
+        else if (T->ptr[1]->kind == FLOAT_LITERAL)
+        {
+            opn2.kind = FLOAT_LITERAL;
+            opn2.const_float = T->ptr[1]->type_float;
         }
         else
         {
@@ -641,12 +654,12 @@ void rval_array(struct node *T) //数组作为右值
 {
     exp_array(T); //先进这边处理，下面基本只是凑 temp = arr[t];
     struct opn opn1, opn2, result;
-    int place = temp_add(newTemp(), LEV, TOK_INT, TEMP_VAR);
+    int place = temp_add(newTemp(), LEV, symbolTable.symbols[T->place].type, TEMP_VAR);
     result.kind = ID;
     strcpy(result.id, symbolTable.symbols[place].alias);
     opn1.kind = ID;
-    strcpy(opn1.id, symbolTable.symbols[T->place].alias); //数组名
-    if (symbolTable.symbols[T->ptr[0]->place].type == LITERAL)
+    strcpy(opn1.id, symbolTable.symbols[T->place].alias);      //数组名
+    if (symbolTable.symbols[T->ptr[0]->place].type == LITERAL) //下标
     {
         opn2.kind = LITERAL;
         opn2.const_int = symbolTable.symbols[T->ptr[0]->place].array_dimension;
@@ -660,17 +673,17 @@ void rval_array(struct node *T) //数组作为右值
     T->place = place;
 }
 /**
- * @brief dd
- *
+ * @brief 数组处理比较核心的地方
+ *        主要有数组名和下标
  * @param T d
  */
-void exp_array(struct node *T) //数组处理比较核心的地方
+void exp_array(struct node *T)
 {
     struct opn opn1, opn2, result;
     int rtn = searchSymbolTable(T->type_id); //先处理数组ID
     if (rtn == -1)
         semantic_error(T->pos, T->type_id, "变量未声明定义就引用，语义错误");
-    if (symbolTable.symbols[rtn].flag == 'F')
+    if (symbolTable.symbols[rtn].flag == FUNCTION)
         semantic_error(T->pos, T->type_id, "是函数名，不是普通变量，语义错误");
     else
     {
@@ -929,14 +942,29 @@ void func_call_exp(struct node *T)
         T->code = merge(2, T->code, genIR(ARG, opn1, opn2, result));
         T0 = T0->ptr[1];
     }
+
     T->place = temp_add(newTemp(), LEV, T->type, TEMP_VAR);
     opn1.kind = ID;
     strcpy(opn1.id, T->type_id); //保存函数名
     //暂时不知道啥用opn1.offset = rtn;           //这里offset用以保存函数定义入口,在目标代码生成时，能获取相应信息
-    result.kind = ID;
-    strcpy(result.id, symbolTable.symbols[T->place].alias);
+    if (T->type == TOK_VOID)
+    {
+        result.kind = NONE;
+    }
+    else
+    {
+        result.kind = ID;
+        strcpy(result.id, symbolTable.symbols[T->place].alias);
+    }
     T->code = merge(2, T->code, genIR(CALL, opn1, opn2, result)); //生成函数调用中间代码
 }
+/**
+ * @brief 参数匹配，但是老出问题
+ *
+ * @param i
+ * @param T
+ * @return int
+ */
 int match_param(int i, struct node *T)
 {
     int j, num = symbolTable.symbols[i].paramnum;
@@ -948,13 +976,28 @@ int match_param(int i, struct node *T)
         type1 = symbolTable.symbols[i + j].type; //形参类型
 
         type2 = T->ptr[0]->type;
-        if (type2 == LITERAL)
-            type2 = TOK_INT;
-        if (type1 != type2)
+        if (type2 == LITERAL && type1 == TOK_FLOAT)
         {
-            semantic_error(T->pos, "", "参数类型不匹配");
-            return 0;
+            T->ptr[0]->kind = FLOAT_LITERAL;
+            int temp = T->ptr[0]->type_int;
+            T->ptr[0]->type_float = temp;
         }
+        if (type2 == FLOAT_LITERAL && type1 == TOK_INT)
+        {
+            T->ptr[0]->kind = LITERAL;
+            int temp = T->ptr[0]->type_float;
+            T->ptr[0]->type_int = temp;
+        }
+        //就全都可以匹配，哪里需要考虑不匹配了
+        // if (type2 == LITERAL)
+        //     type2 = TOK_INT;
+        // if (type2 == FLOAT_LITERAL)
+        //     type2 = TOK_FLOAT;
+        // if (type1 != type2)
+        // {
+        //     semantic_error(T->pos, "", "参数类型不匹配");
+        //     return 0;
+        // }
         T = T->ptr[1];
     }
     if (T->ptr[1])

@@ -40,12 +40,12 @@ typedef struct ArraySymbol_
     int array_demension; //数组维度
     List *value;         //保存数组的值
 } arraysymbol;
-
 struct astsymboltable
 {
     struct symbol symbols[MAXLENGTH];
     int index;
 } astsymbol;
+
 //符号表，是一个顺序栈，index初值为0
 struct symboltable
 {
@@ -65,11 +65,23 @@ struct symbol_scope_begin
     int top;
 } symbol_scope_TX;
 
+//做一个记录所有变量的符号表
+struct aliassym
+{
+    char name[33];         //别名
+    enum yytokentype type; // TOK_INT TOK_FLOAT
+};
+struct _aliastable
+{
+    struct aliassym table[MAXLENGTH];
+    int index;
+} AliasTable;
 int searchSymbolTable(char *name);
 int searchFuncTable(char *name); //用来查找函数的 目前只在函数调用时候查找一下
 
-int search_alias(char *alias);      //通过别名查找符号表，一般是在后端调用了，因为三地址代码中存储的变量的ID就是别名
-int search_func(char *fun_name);    //查找函数名，返回参数个数
+int search_alias(char *alias);   //通过别名查找符号表，一般是在后端调用了，因为三地址代码中存储的变量的ID就是别名
+int search_func(char *fun_name); //查找函数名，返回参数个数
+int search_all_alias(char *alias);
 int fillast(char *name, char flag); //用来处理临时符号表
 int fillSymbolTable(char *name, char *alias, int level, int type, int flag);
 int fillSymbolTable_(char *name, char *alias, int level, int type, char flag, int offset);

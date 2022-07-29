@@ -214,7 +214,12 @@ void print_IR(struct codenode *head)
             printf("  ARG %s\n", resultstr);
             break;
         case CALL:
-            printf("  %s := CALL %s\n", resultstr, opnstr1);
+            if (h->result.kind == NONE)
+            {
+                printf("  CALL %s\n", opnstr1);
+            }
+            else
+                printf("  %s := CALL %s\n", resultstr, opnstr1);
             break;
         case TOK_RETURN:
             if (h->result.kind)

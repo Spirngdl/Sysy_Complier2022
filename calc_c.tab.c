@@ -1535,13 +1535,13 @@ yyreduce:
 
   case 10:
 #line 62 "calc_c.y"
-                                                      {(yyvsp[-1].ptr)->kind = VAR_DECL;(yyval.ptr) = mknode(VAR_DECL_LIST,(yyvsp[-1].ptr),(yyvsp[0].ptr),NULL,yylineno);}
+                                                     {(yyvsp[-1].ptr)->kind = VAR_DECL;(yyval.ptr) = mknode(VAR_DECL_LIST,(yyvsp[-1].ptr),(yyvsp[0].ptr),NULL,yylineno);}
 #line 1540 "calc_c.tab.c"
     break;
 
   case 11:
 #line 63 "calc_c.y"
-                                                        {(yyval.ptr) = NULL;}
+                                                     {(yyval.ptr) = NULL;}
 #line 1546 "calc_c.tab.c"
     break;
 
@@ -1617,13 +1617,13 @@ yyreduce:
 
   case 23:
 #line 103 "calc_c.y"
-                                                           {struct node * temp = mknode(TOK_INT,(yyvsp[0].ptr),NULL,NULL,yylineno);temp->type_int = const_exp((yyvsp[-2].ptr));(yyval.ptr) =temp;}
+                                                                {struct node * temp = mknode(TOK_INT,(yyvsp[0].ptr),NULL,NULL,yylineno);temp->type_int = const_exp((yyvsp[-2].ptr));(yyval.ptr) =temp;}
 #line 1622 "calc_c.tab.c"
     break;
 
   case 24:
 #line 104 "calc_c.y"
-                                                            {(yyval.ptr) = NULL;}
+                                                                {(yyval.ptr) = NULL;}
 #line 1628 "calc_c.tab.c"
     break;
 
@@ -1671,8 +1671,8 @@ yyreduce:
 
   case 32:
 #line 116 "calc_c.y"
-                                                             {struct node* temp = mknode(FUNC_DEF,(yyvsp[-2].ptr),(yyvsp[0].ptr),NULL,yylineno);strcpy(temp->type_id,(yyvsp[-4].type_id));
-                                                                temp->type = TOK_INT;(yyval.ptr) = temp;}
+                                                                {struct node* temp = mknode(FUNC_DEF,(yyvsp[-2].ptr),(yyvsp[0].ptr),NULL,yylineno);strcpy(temp->type_id,(yyvsp[-4].type_id));
+                                                                temp->type = (yyvsp[-5].ptr)->kind;(yyval.ptr) = temp;}
 #line 1677 "calc_c.tab.c"
     break;
 
@@ -1685,8 +1685,8 @@ yyreduce:
 
   case 34:
 #line 120 "calc_c.y"
-                                                             {struct node* temp = mknode(FUNC_DEF,NULL,(yyvsp[0].ptr),NULL,yylineno);strcpy(temp->type_id,(yyvsp[-3].type_id));
-                                                                temp->type = TOK_INT;(yyval.ptr) = temp;}
+                                                                {struct node* temp = mknode(FUNC_DEF,NULL,(yyvsp[0].ptr),NULL,yylineno);strcpy(temp->type_id,(yyvsp[-3].type_id));
+                                                                temp->type = (yyvsp[-4].ptr)->kind;(yyval.ptr) = temp;}
 #line 1691 "calc_c.tab.c"
     break;
 
@@ -1717,7 +1717,7 @@ yyreduce:
 
   case 39:
 #line 129 "calc_c.y"
-                                                                {struct node*temp = mknode(PARAM_DEC,NULL,NULL,NULL,yylineno); strcpy(temp->type_id,(yyvsp[0].type_id));temp->type = (yyvsp[-1].ptr)->type;(yyval.ptr) = temp;}
+                                                                {struct node*temp = mknode(PARAM_DEC,NULL,NULL,NULL,yylineno); strcpy(temp->type_id,(yyvsp[0].type_id));temp->type = (yyvsp[-1].ptr)->kind;(yyval.ptr) = temp;}
 #line 1722 "calc_c.tab.c"
     break;
 
@@ -1849,13 +1849,13 @@ yyreduce:
 
   case 61:
 #line 163 "calc_c.y"
-                                           {(yyval.ptr) = mknode(EXP_ARRAY,(yyvsp[-2].ptr),(yyvsp[0].ptr),NULL,yylineno);}
+                                                {(yyval.ptr) = mknode(EXP_ARRAY,(yyvsp[-2].ptr),(yyvsp[0].ptr),NULL,yylineno);}
 #line 1854 "calc_c.tab.c"
     break;
 
   case 62:
 #line 164 "calc_c.y"
-                                           {(yyval.ptr) = NULL;}
+                                                {(yyval.ptr) = NULL;}
 #line 1860 "calc_c.tab.c"
     break;
 
@@ -1879,7 +1879,7 @@ yyreduce:
 
   case 66:
 #line 170 "calc_c.y"
-                                                {(yyval.ptr) = mknode(LITERAL,NULL,NULL,NULL,yylineno);(yyval.ptr)->type_int = (yyvsp[0].type_int);(yyval.ptr)->type = INT;}
+                                                {(yyval.ptr) = mknode(LITERAL,NULL,NULL,NULL,yylineno);(yyval.ptr)->type_int = (yyvsp[0].type_int);(yyval.ptr)->type = LITERAL;}
 #line 1884 "calc_c.tab.c"
     break;
 
