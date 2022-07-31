@@ -34,6 +34,22 @@ int searchFuncTable(char *name)
     return -1;
 }
 /**
+ * @brief 在总的别名符号表里查找，主要找type
+ *
+ * @param alias
+ * @return int
+ */
+int search_all_alias(char *alias)
+{
+    int i = 0;
+    for (i = AliasTable.index - 1; i >= 0; i--)
+    {
+        if (strcmp(AliasTable.table[i].name, alias) == 0)
+            return AliasTable.table[i].type;
+    }
+    return -1;
+}
+/**
  * @brief 通过别名查找符号表，一般是在后端调用了，因为三地址代码中存储的变量的ID就是别名
  *
  * @param alias 别名
@@ -54,7 +70,22 @@ int search_alias(char *alias)
     }
     return -1;
 }
-// 首先根据name查符号表，不能重复定义 重复定义返回-1
+void AliasTableADD(char *alias, int type)
+{
+    AliasTable.table[AliasTable.index].type = type;
+    strcpy(AliasTable.table[AliasTable.index].name, alias);
+    AliasTable.index++;
+}
+/**
+ * @brief  首先根据name查符号表，不能重复定义 重复定义返回-1
+ *
+ * @param name 名字
+ * @param alias 别名
+ * @param level 层级，全局变量和函数为0
+ * @param type  TOK_INT TOK_FLOAT TOK_VOID
+ * @param flag  FUNCTION
+ * @return int
+ */
 int fillSymbolTable(char *name, char *alias, int level, int type, int flag)
 {
     int i;
@@ -77,16 +108,28 @@ int fillSymbolTable(char *name, char *alias, int level, int type, int flag)
     symbolTable.symbols[symbolTable.index].level = level;
     symbolTable.symbols[symbolTable.index].type = type;
     symbolTable.symbols[symbolTable.index].flag = flag;
+    AliasTableADD(alias, type);
     return symbolTable.index++; //返回的是符号在符号表中的位置序号，中间代码生成时可用序号取到符号别名
 }
 //首先根据name查符号表，不能重复定义 重复定义返回-1
 int fillArrayTable(char *name, char *alias, int level, int type)
 {
     //应该不用查重 暂时只做填表功能
-    strcpy(arrayTalbe.symbols[symbolTable.index].name, name);
+    strcpy(arrayTalbe.symbols[arrayTalbe.index].name, name);
     arrayTalbe.symbols[arrayTalbe.index].level = level;
     arrayTalbe.symbols[arrayTalbe.index].type = type;
     return arrayTalbe.index++;
+}
+//添加函数
+int fillFunctionTable(char *name, int type, int paramnum)
+{
+    int index = symbolTable.index;
+    strcpy(symbolTable.symbols[index].name, name);
+    symbolTable.symbols[index].level = 0;
+    symbolTable.symbols[index].type = type;
+    symbolTable.symbols[index].flag = FUNCTION;
+    symbolTable.symbols[index].paramnum = paramnum;
+    symbolTable.index++;
 }
 // 首先根据name查符号表，不能重复定义 重复定义返回-1
 int fillast(char *name, char flag)
