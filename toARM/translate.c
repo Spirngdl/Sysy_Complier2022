@@ -3,7 +3,7 @@
 char *Reg[16];
 char funcname[33];
 const int reg[5] = {0, 1, 2, 3, 14};
-regcountmask[16] = {0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4};
+int regcountmask[16] = {0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4};
 
 
 bool MULFLAG = false;

@@ -101,7 +101,7 @@ typedef struct _vartable
 #define R13 13
 #define LR 14
 
-int regcountmask[16]
+
 
 void arminterface();
 void translate(armcode *newnode, struct codenode *p, armop armop);
