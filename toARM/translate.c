@@ -3,6 +3,8 @@
 char *Reg[16];
 char funcname[33];
 const int reg[5] = {0, 1, 2, 3, 14};
+regcountmask[16] = {0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4};
+
 
 bool MULFLAG = false;
 // bool FIRSTARG = false;//第一次遇到ARG时，插入压栈操作后置true，遇到call时再置false
