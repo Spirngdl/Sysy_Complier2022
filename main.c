@@ -23,7 +23,7 @@ void Driver(struct node *T)
   // test_array();
   make_uid(&(T->code));  //给每个三地址代码进行编号，顺变把全局变量初始化移到开头
   change_label(T->code); //把三弟代码生成过程中产生的标号删除
-  print_IR(T->code);     //打印比较初始的三地址代码
+  //print_IR(T->code);     //打印比较初始的三地址代码
   basic_block(T->code);  //划分基本块
   // get_count_var(head_block);
   // arminterface(head_block);

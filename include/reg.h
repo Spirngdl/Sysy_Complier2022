@@ -41,6 +41,7 @@ void graph_coloring (char*** in, char*** out, int num_block, int num_reg, char* 
 // 根据变量别名返回寄存器号，-1为变量溢出，-2为查找失败
 // 全局变量不在 vars[MAX_VARS] 数组中，即会查找失败
 int _search_var (char* fun_name, char* name);
+int search_var (char* fun_name, char* name);
 
 // 输入函数名、寄存器数组
 // 函数将为所用寄存器的相应位赋 1，其余为 0
