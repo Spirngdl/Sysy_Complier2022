@@ -1,12 +1,17 @@
 #include "../include/def.h"
 
 char *Reg[16];
-char *funcname[33];
+char funcname[33];
+const int reg[5] = {0, 1, 2, 3, 14};
 
 bool MULFLAG = false;
 // bool FIRSTARG = false;//第一次遇到ARG时，插入压栈操作后置true，遇到call时再置false
-int ARGTIM = 0;
 vartable *vartbl;
+
+int func_enter_subindex;
+int func_call_subindex;
+int func_enter_reg[16];
+int func_enter_regnum;
 
 armcode *initnewnode()
 {
@@ -149,6 +154,7 @@ void translate(armcode *newnode, struct codenode *p, armop armop)
 armcode *translatearm(Blocks *blocks)
 {
     struct codenode *p;
+    struct codenode *m;
     armcode *q = NULL;
     armcode *newnode = NULL;
     armcode *first = (armcode *)malloc(sizeof(struct armcode_)); // header node
@@ -156,6 +162,10 @@ armcode *translatearm(Blocks *blocks)
 
     q = first;
     int rn0, rn1, rn2, rn3;
+    int index,stkindex;
+    char regname[10]={0};
+    int paranum,spil_var_num;
+    armcode *snode,*subnode,*addnode,*strnode,*movnode,*ldmnode;
     Blocks *cur_blocks = blocks;
     struct codenode *result = NULL;
     while (cur_blocks != NULL) //遍历所有基本块
@@ -183,7 +193,7 @@ armcode *translatearm(Blocks *blocks)
                     newnode->oper1.type = NUL;
                     newnode->oper2.type = NUL;
 
-                    int paranum = search_func(funcname);
+                    paranum = search_func(funcname);
                     if (paranum > 4)
                     {
                         // struct codenode* m = p->next;   //第一个参数
@@ -198,6 +208,34 @@ armcode *translatearm(Blocks *blocks)
                             vartable_insert(vartbl, p->result.id, memindex, i * 4);
                         }
                     }
+
+                    //int reg[16] = {0};
+                    func_enter_regnum = one_fun_reg(funcname,func_enter_reg);
+                    snode = mul_reg_node(STMFD,R13,func_enter_reg,func_enter_regnum);
+                    newnode->next = snode;
+                    snode->pre = newnode;
+                    q=snode;
+
+                    vartable_update_all(vartbl,func_enter_regnum*4);
+
+                    spil_var_num = search_fun_spilling(funcname);
+
+                    func_enter_subindex = (spil_var_num+2)*4;       //+2为宏区
+
+                    subnode = initnewnode();
+                    subnode->op = SUB;
+                    subnode->result.value = R13;
+                    subnode->oper1.type = REG;
+                    subnode->oper1.value = R13;
+                    subnode->oper2.type = IMME;
+                    subnode->oper2.value = func_enter_subindex;
+                    snode->next = subnode;
+                    subnode->pre = snode;
+                    q = subnode;
+
+                    vartable_update_all(vartbl,func_enter_subindex);
+
+
                     break;
                 case TOK_ASSIGN:
                     if ((rn0 = search_var(funcname, p->result.id)) >= 0) // The result is stored in the register
@@ -268,15 +306,15 @@ armcode *translatearm(Blocks *blocks)
                     break;
 
                 case ARG:
-                    struct codenode *m = p;
+                    m = p;
                     while (m->op != CALL)
                     {
                         m = m->next;
                     }
-                    int paranum = search_func(m->opn1.id);
+                    paranum = search_func(m->opn1.id);
 
-                    int reg[5] = {0, 1, 2, 3, 14};
-                    armcode *snode = stmnode(R13, reg, 5);
+                    //int reg[5] = {0, 1, 2, 3, 14};
+                    snode = mul_reg_node(STMFD,R13, reg, 5);
                     newnode->pre->next = snode;
                     snode->pre = newnode->pre;
                     snode->next = newnode;
@@ -292,22 +330,22 @@ armcode *translatearm(Blocks *blocks)
 
                     if (paranum > 4)
                     {
-                        int index = (paranum - 4) * 4;
+                        func_call_subindex = (paranum - 4) * 4;
 
-                        armcode *subnode = initnewnode();
+                        subnode = initnewnode();
                         subnode->op = SUB;
                         subnode->result.value = R13;
                         subnode->oper1.type = REG;
                         subnode->oper1.value = R13;
                         subnode->oper2.type = IMME;
-                        subnode->oper2.value = index;
+                        subnode->oper2.value = func_call_subindex;
                         // newnode->pre->next = subnode;
                         // subnode->pre = newnode->pre;
                         // subnode->next = newnode;
                         // newnode->pre = subnode;
                         armlink_insert(newnode, subnode);
 
-                        vartable_update_all(vartbl, index);
+                        vartable_update_all(vartbl, func_call_subindex);
 
                         m = p;
                         for (int i = 0; i < 4; i++)
@@ -320,7 +358,7 @@ armcode *translatearm(Blocks *blocks)
                                 rn2 = search_var(funcname, m->result.id);
                                 if (rn2 >= 0)
                                 {
-                                    armcode *strnode = initnewnode();
+                                    strnode = initnewnode();
                                     strnode->op = STR;
                                     strnode->result.value = rn2;
                                     strnode->oper1.type = MEM;
@@ -345,14 +383,14 @@ armcode *translatearm(Blocks *blocks)
                             {
                                 if (check_imme(m->result.const_int) == 0)
                                 {
-                                    armcode *movnode = initnewnode();
+                                    movnode = initnewnode();
                                     movnode->op = MOV;
                                     movnode->result.value = R11;
                                     movnode->oper1.type = IMME;
                                     movnode->oper1.value = m->result.const_int;
                                     armlink_insert(newnode, movnode);
 
-                                    armcode *strnode = initnewnode();
+                                    strnode = initnewnode();
                                     strnode->op = STR;
                                     strnode->result.value = R11;
                                     strnode->oper1.type = MEM;
@@ -362,14 +400,14 @@ armcode *translatearm(Blocks *blocks)
                                 }
                                 else
                                 {
-                                    armcode *movnode = initnewnode();
+                                    movnode = initnewnode();
                                     movnode->op = LDR;
                                     movnode->result.value = R11;
                                     movnode->oper1.type = ILIMME;
                                     movnode->oper1.value = m->result.const_int;
                                     armlink_insert(newnode, movnode);
 
-                                    armcode *strnode = initnewnode();
+                                    strnode = initnewnode();
                                     strnode->op = STR;
                                     strnode->result.value = R11;
                                     strnode->oper1.type = MEM;
@@ -392,12 +430,12 @@ armcode *translatearm(Blocks *blocks)
                             {
                                if(rn1<i)        //被覆盖，需从栈中取
                                {
-                                    char * regname[10]={0};
+                                    
                                     sprintf(regname,"R%d",rn1);
-                                    int index = vartable_select(vartbl,regname);
-                                    int stkindex = vartbl->table[index].index;
+                                    index = vartable_select(vartbl,regname);
+                                    stkindex = vartbl->table[index].index;
 
-                                    armcode *strnode = initnewnode();
+                                    strnode = initnewnode();
                                     strnode->op = LDR;
                                     strnode->result.value = i;
                                     strnode->oper1.type = MEM;
@@ -407,7 +445,7 @@ armcode *translatearm(Blocks *blocks)
                                }
                                else
                                {
-                                    armcode * movnode = initnewnode();
+                                    movnode = initnewnode();
                                     movnode->op = MOV;
                                     movnode->result.value = i;
                                     movnode->oper1.type = REG;
@@ -432,7 +470,7 @@ armcode *translatearm(Blocks *blocks)
                         {
                             if (check_imme(p->result.const_int) == 0) //合法立即数
                             {
-                                armcode *movnode = initnewnode();
+                                movnode = initnewnode();
                                 movnode->op = MOV;
                                 movnode->result.value = i;
                                 movnode->oper1.type = IMME;
@@ -441,7 +479,7 @@ armcode *translatearm(Blocks *blocks)
                             }
                             else
                             {
-                                armcode *movnode = initnewnode();
+                                movnode = initnewnode();
                                 movnode->op = LDR;
                                 movnode->result.value = i;
                                 movnode->oper1.type = ILIMME;
@@ -456,24 +494,146 @@ armcode *translatearm(Blocks *blocks)
                     break;
 
                 case CALL:
-                    ARGTIM = 0;
+    
                     if (search_func(p->opn1.id) == 0)
                     {
-                        int reg[5] = {0, 1, 2, 3, 14};
-                        armcode *snode = stmnode(R13, reg, 5);
-                        newnode->pre->next = snode;
-                        snode->pre = newnode->pre;
-                        snode->next = newnode;
-                        newnode->pre = snode;
+                        //int reg[5] = {0, 1, 2, 3, 14};
+                        snode = mul_reg_node(STMFD,R13, reg, 5);
+                        // newnode->pre->next = snode;
+                        // snode->pre = newnode->pre;
+                        // snode->next = newnode;
+                        // newnode->pre = snode;
+                        armlink_insert(newnode,snode);
                         // vartable_insert(vartbl,"R0",memindex,0);
                         // vartable_insert(vartbl,"R1",memindex,4);
                         // vartable_insert(vartbl,"R2",memindex,8);
                         // vartable_insert(vartbl,"R3",memindex,12);
                         // vartable_insert(vartbl,"R14",memindex,16);
                     }
+
+                    newnode->op = BL;
+                    newnode->result.type = STRING;
+                    strcpy(newnode->result.str_id,p->opn1.id);
+
+                    if(p->result.kind == ID)
+                    {
+                        rn0 = search_var(funcname,p->result.id);
+                        if(rn0>=0)
+                        {
+                            movnode = initnewnode();
+                            movnode->op = MOV;
+                            movnode->result.value = rn0;
+                            movnode->oper1.type = REG;
+                            movnode->oper1.value = R0;
+
+                            newnode->next = movnode;
+                            movnode->pre = newnode;
+                            q = movnode;
+                        }
+                        else if(rn0 == -1)
+                        {
+                            //TODO
+                        }
+                        else if(rn0 == -2)
+                        {
+                            //TODO
+                        }
+                        else
+                        {
+                            //TODO
+                        }
+                    }
+
+                    addnode = initnewnode();
+                    addnode->op = ADD;
+                    addnode->result.value = R13;
+                    addnode->oper1.type = REG;
+                    addnode->oper1.value = R13;
+                    addnode->oper2.type = IMME;
+                    addnode->oper2.value = func_call_subindex;
+                    q->next = addnode;
+                    addnode->pre = q;
+                    q = addnode;
+                    vartable_update_all(vartbl,-func_call_subindex);
+
+                    //int reg[5] = {0, 1, 2, 3, 14};
+                    ldmnode = mul_reg_node(LDMFD,R13,reg,5);
+                    q->next = ldmnode;
+                    ldmnode->pre = q;
+                    q = ldmnode;
+
+                    vartable_update_all(vartbl,-20);
+
+                    break;
+
+                case TOK_RETURN:
+                    if(p->result.kind == ID)
+                    {
+                        rn0 = search_var(funcname,p->result.id);
+                        if(rn0>=0)
+                        {
+                            newnode->op = MOV;
+                            newnode->result.value = R0;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = rn0;
+                        }
+                        else if(rn0==-1)
+                        {
+                            //TODO
+                        }
+                        else if(rn0 == -2)
+                        {
+
+                        }
+                        else
+                        {
+
+                        }
+                    }
+                    else if(p->result.kind == LITERAL)
+                    {
+                        if(check_imme(p->result.const_int) == 0)
+                        {
+                            newnode->op = MOV;
+                            newnode->result.value = R0;
+                            newnode->oper1.type = IMME;
+                            newnode->oper1.value = p->result.const_int;
+                        }
+                        else
+                        {
+                            newnode->op = LDR;
+                            newnode->result.value = R0;
+                            newnode->oper1.type = ILIMME;
+                            newnode->oper1.value = p->result.const_int;
+                        }
+                    }
+                    else if(p->result.kind == FLOAT_LITERAL)
+                    {
+                        //TODO
+                    }
+                    else
+                    {
+                        q = newnode->pre;
+                    }
                     break;
 
                 case END:
+                    newnode->op = BX;
+                    newnode->result.value = LR;
+
+                    addnode = initnewnode();
+                    addnode->op = ADD;
+                    addnode->result.value = R13;
+                    addnode->oper1.type = REG;
+                    addnode->oper1.value = R13;
+                    addnode->oper2.type = IMME;
+                    addnode->oper2.value = func_enter_subindex;
+                    armlink_insert(newnode,addnode);
+                    vartable_update_all(vartbl,-func_enter_subindex);
+
+                    ldmnode = mul_reg_node(LDMFD,R13,func_enter_reg,func_enter_regnum);
+                    armlink_insert(newnode,ldmnode);
+                    vartable_update_all(vartbl,-(func_enter_regnum*4));
 
                     free(vartbl);
                     break;
@@ -489,11 +649,11 @@ armcode *translatearm(Blocks *blocks)
     return first;
 }
 
-armcode *stmnode(int stkreg, int reg[], int regnum)
+armcode *mul_reg_node(armop opt,int stkreg, int reg[], int regnum)
 {
     // armcode * snode = (armcode*)malloc(sizeof(struct armcode_));
     armcode *snode = initnewnode();
-    snode->op = STMFD;
+    snode->op = opt;
     snode->regnum = regnum;
     snode->result.value = stkreg;
     snode->oper1.type = REGLIST;

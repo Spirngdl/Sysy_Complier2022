@@ -21,9 +21,12 @@ typedef enum
     ADD,
     SUB,
     MUL,
+    BL,
+    BX,
     LDR,
     STR,
     STMFD,
+    LDMFD,
     ARMLABEL,
 
 } armop;
@@ -96,6 +99,7 @@ typedef struct _vartable
 #define R11 11
 #define R12 12
 #define R13 13
+#define LR 14
 
 int regcountmask[16] = {0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4};
 
@@ -113,6 +117,8 @@ int vartable_select(vartable* table,char *varname);                             
 int vartable_update(vartable* table,char *varname,indexkind kind,int index);    //成功返回修改后下标，-1失败
 int vartable_update_all(vartable* table,int stkamt);              //修改整个表中，栈中变量的偏移量
 vartable * vartable_create();
+
+armcode *mul_reg_node(armop opt,int stkreg, int reg[], int regnum); //生成LDMFD、STMFD节点
 
 
 #endif
