@@ -55,3 +55,5 @@ int one_fun_reg(char *fun_name, int reg[]);
 void print_vars(void);
 
 void reg_param(char *fun_add, char *param[], int param_num);
+
+int search_fun_spilling (char* fun_name);
