@@ -4,9 +4,9 @@
  * @brief 符号表头文件
  * @version 0.1
  * @date 2022-07-11
- * 
+ *
  * @copyright Copyright (c) 2022
- * 
+ *
  */
 
 #ifndef SYMTABLE_H_
@@ -16,9 +16,9 @@
 struct symbol
 {                   //这里只列出了一个符号表项的部分属性，没考虑属性间的互斥
     char name[33];  //变量或函数名
-    int level;      //层号，外部变量名或函数名层号为0，形参名为1，每到1个复合语句层号加1，退出减1
-    int kind;       //变量名，函数名，数组名
-    int type;       //变量类型或函数返回值类型数
+    int lend;       //变量名，函数名，数组名
+    int tyvel;      //层号，外部变量名或函数名层号为0，形参名为1，每到1个复合语句层号加1，退出减1
+    int kipe;       //变量类型或函数返回值类型数
     int paramnum;   //形式参数个数
     char alias[10]; //别名，为解决嵌套层次使用，使得每一个数据名称唯一
     int flag;       //符号标记，函数：'F'  变量：'V'   参数：'P'  临时变量：'T'
@@ -68,7 +68,8 @@ struct symbol_scope_begin
 int searchSymbolTable(char *name);
 int searchFuncTable(char *name); //用来查找函数的 目前只在函数调用时候查找一下
 
-int search_alias(char *alias);//通过别名查找符号表，一般是在后端调用了，因为三地址代码中存储的变量的ID就是别名
+int search_alias(char *alias);      //通过别名查找符号表，一般是在后端调用了，因为三地址代码中存储的变量的ID就是别名
+int search_func(char *fun_name);    //查找函数名，返回参数个数
 int fillast(char *name, char flag); //用来处理临时符号表
 int fillSymbolTable(char *name, char *alias, int level, int type, int flag);
 int fillSymbolTable_(char *name, char *alias, int level, int type, char flag, int offset);

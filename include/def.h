@@ -29,7 +29,7 @@
 // #define DD
 enum node_kind
 {
-    TOK_LDR = 0,
+    TOK_LDR = 2022,
     VAR_DECL,
     VAR_DECL_LIST,
     COMPUNIT_LIST,
@@ -51,7 +51,8 @@ enum node_kind
 
     ID,
     INT,
-    CONST_INT,
+    CONST_TOK_INT,
+    CONST_TOK_FLOAT,
     LITERAL,
     FLOAT_LITERAL,
     ARRAY_ASSIGN,
@@ -149,7 +150,8 @@ struct node *mknode(int kind, struct node *first, struct node *second, struct no
 struct node *mkopnode(int kind, struct node *left, struct node *right, int pos);
 struct node *mkarrnode(int kind, struct node *first, int length, int pos);
 struct node *mkparray(int kind, char *first, struct node *len, int pos);
-
+struct node *mkunarynode(int kind, struct node *first, struct node *second, int pos);
+float hex_atof(char *str);
 int const_exp(struct node *T);
 /*semantic analysis*/
 void semantic_error(int line, char *msg1, char *msg2);
@@ -229,6 +231,9 @@ void arrayinit_bracker(List *value_list, struct node *T, int brace_num, int *arr
 void test_array();
 void push_initarray(struct node *T, struct node *newnode);
 
+//查看函数内使用了几个变量
+int get_count_var(Blocks *head);
+//合法立即数检查
 int check_imme(int imme);
 void check_immes(Blocks *blocks);
 #endif

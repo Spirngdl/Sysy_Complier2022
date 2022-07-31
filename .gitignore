@@ -8,3 +8,4 @@ set_test.c
 a.exe
 a.asm
 list_test.c
+test_case.c

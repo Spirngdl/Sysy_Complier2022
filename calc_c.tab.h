@@ -66,24 +66,25 @@ extern int yydebug;
     TOK_NOT = 272,
     INTCONST = 273,
     IDENT = 274,
-    TOK_CONST = 275,
-    TOK_LPAR = 276,
-    TOK_RPAR = 277,
-    TOK_LBRACKET = 278,
-    TOK_RBRACKET = 279,
-    TOK_LSQUARE = 280,
-    TOK_RSQUARE = 281,
-    TOK_COMMA = 282,
-    TOK_SEMICOLON = 283,
-    TOK_BREAK = 284,
-    TOK_CONTINUE = 285,
-    TOK_IF = 286,
-    TOK_ELSE = 287,
-    TOK_WHILE = 288,
-    TOK_RETURN = 289,
-    TOK_INT = 290,
-    TOK_VOID = 291,
-    TOK_FLOAT = 292
+    FLOAT = 275,
+    TOK_CONST = 276,
+    TOK_LPAR = 277,
+    TOK_RPAR = 278,
+    TOK_LBRACKET = 279,
+    TOK_RBRACKET = 280,
+    TOK_LSQUARE = 281,
+    TOK_RSQUARE = 282,
+    TOK_COMMA = 283,
+    TOK_SEMICOLON = 284,
+    TOK_BREAK = 285,
+    TOK_CONTINUE = 286,
+    TOK_IF = 287,
+    TOK_ELSE = 288,
+    TOK_WHILE = 289,
+    TOK_RETURN = 290,
+    TOK_INT = 291,
+    TOK_VOID = 292,
+    TOK_FLOAT = 293
   };
 #endif
 
@@ -94,10 +95,11 @@ union YYSTYPE
 #line 13 "calc_c.y"
 
     int         type_int;
+    float       type_float;
     struct node * ptr;
     char        type_id[32];
 
-#line 101 "calc_c.tab.h"
+#line 103 "calc_c.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
