@@ -293,7 +293,7 @@ float hex_atof(char *str)
     ad = 16;
     for (int c = 0; c <= j; c++)
     {
-        result +=(float) ((float)floter[c] / ad);
+        result += (float)((float)floter[c] / ad);
         ad *= 16;
     }
     ad = 1;
@@ -302,7 +302,51 @@ float hex_atof(char *str)
         p += pter[c] * ad;
         ad *= 10;
     }
-    ad = pow(2,p);
+    ad = pow(2, p);
     result *= ad;
     return result;
+}
+void add_function(char *name, int type, int paramnum)
+{
+}
+/**
+ * @brief 手动添加运行库函数
+ *
+ */
+void add_functions()
+{
+    // int getint()
+    fillFunctionTable("getint", TOK_INT, 0);
+    // int getch()
+    fillFunctionTable("getch", TOK_INT, 0);
+    // float getfloat()
+    fillFunctionTable("getfloat", TOK_FLOAT, 0);
+    // int getarray(int [])
+    fillSymbolTable("arr", "", 1, TOK_INT, PARAM_ARRAY);
+    fillFunctionTable("getarray", TOK_INT, 1);
+    // int getfarray(float[])
+    fillSymbolTable("arr", "", 1, TOK_FLOAT, PARAM_ARRAY);
+    fillFunctionTable("getfarray", TOK_INT, 1);
+    // void putint(int)
+    fillSymbolTable("i", "", 1, TOK_INT, PARAM);
+    fillFunctionTable("putint", TOK_VOID, 1);
+    // void putch(int)
+    fillSymbolTable("i", "", 1, TOK_INT, PARAM);
+    fillFunctionTable("putch", TOK_VOID, 1);
+    // void putfloat(float)
+    fillSymbolTable("i", "", 1, TOK_FLOAT, PARAM);
+    fillFunctionTable("putfloat", TOK_VOID, 1);
+    // void putarray(int ,int[])
+    fillSymbolTable("i", "", 1, TOK_INT, PARAM);
+    fillSymbolTable("arr", "", 1, TOK_INT, PARAM_ARRAY);
+    fillFunctionTable("putarray", TOK_VOID, 2);
+    // void putfarray(int ,float[])
+    fillSymbolTable("i", "", 1, TOK_INT, PARAM);
+    fillSymbolTable("ARRAY", "", 1, TOK_FLOAT, PARAM_ARRAY);
+    fillFunctionTable("putfarray", TOK_VOID, 2);
+    // void putf() 这个比较特殊
+    // void starttime()
+    fillFunctionTable("starttime", TOK_VOID, 0);
+    // void stoptime()
+    fillFunctionTable("stoptime", TOK_VOID, 0);
 }
