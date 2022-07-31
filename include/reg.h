@@ -49,3 +49,5 @@ int one_fun_reg(char* fun_name, int reg[]);
 
 // 打印所有变量及其寄存器号
 void print_vars (void);
+
+void reg_param (char* fun_add, char* param[], int param_num);

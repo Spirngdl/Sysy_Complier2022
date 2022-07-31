@@ -7,7 +7,7 @@ int codenode_num (struct codenode* TAC);
 int id_exist_strs (char* str, char* total1[], char* total2[], int size);
 
 // 获取一个基本块中的use、def集合
-void one_block_use_def (char* use[], char* def[], int size, Block block, char* fun_name);
+void one_block_use_def (char* use[], char* def[], int size, Block block, char* fun_name, char* param[], int param_num);
 
 // 判断字符串是否在一个字符串数组中，不存在则返回-1，否则返回在数组中存在的位置i
 int str_exist_strs (char* str, char* strTotal[], int size);
@@ -25,7 +25,7 @@ void available_reg (int reg[], char* in[], char* out[], char* fun_add);
 void divide_TACs_to_blocks (Block* p_source, Blocks* p_dest, int num_source);
 
 // 传入一个基本块，分别计算每个语句的USE、DEF、IN、OUT，并通过图着色算法为其分配寄存器
-void one_block_tac_liveness (Block* cntr, char* in[], char* out[], char* fun_add);
+void one_block_tac_liveness (Block* cntr, char* in[], char* out[], char* fun_add, char* param[], int param_num);
 
 // 根据算法进行liveness分析
 void all_block_liveness (Block* cntr[], int num_block, char* fun_add);

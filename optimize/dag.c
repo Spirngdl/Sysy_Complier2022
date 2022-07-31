@@ -40,7 +40,7 @@ void addSymbol(DAGnode *node, char *target)
     // strcpy(name, target);
     while (list->next(list, &element))
     {
-        if (strcmp(target, (char *)element) == 0)
+        if (strcmp(target, (char *)element) == 0) //已经存在了
         {
             return;
         }

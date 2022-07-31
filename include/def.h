@@ -153,6 +153,7 @@ struct node *mkparray(int kind, char *first, struct node *len, int pos);
 struct node *mkunarynode(int kind, struct node *first, struct node *second, int pos);
 float hex_atof(char *str);
 int const_exp(struct node *T);
+void add_functions();
 /*semantic analysis*/
 void semantic_error(int line, char *msg1, char *msg2);
 

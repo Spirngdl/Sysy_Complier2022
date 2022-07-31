@@ -76,7 +76,16 @@ void AliasTableADD(char *alias, int type)
     strcpy(AliasTable.table[AliasTable.index].name, alias);
     AliasTable.index++;
 }
-// 首先根据name查符号表，不能重复定义 重复定义返回-1
+/**
+ * @brief  首先根据name查符号表，不能重复定义 重复定义返回-1
+ *
+ * @param name 名字
+ * @param alias 别名
+ * @param level 层级，全局变量和函数为0
+ * @param type  TOK_INT TOK_FLOAT TOK_VOID
+ * @param flag  FUNCTION
+ * @return int
+ */
 int fillSymbolTable(char *name, char *alias, int level, int type, int flag)
 {
     int i;
@@ -106,10 +115,21 @@ int fillSymbolTable(char *name, char *alias, int level, int type, int flag)
 int fillArrayTable(char *name, char *alias, int level, int type)
 {
     //应该不用查重 暂时只做填表功能
-    strcpy(arrayTalbe.symbols[symbolTable.index].name, name);
+    strcpy(arrayTalbe.symbols[arrayTalbe.index].name, name);
     arrayTalbe.symbols[arrayTalbe.index].level = level;
     arrayTalbe.symbols[arrayTalbe.index].type = type;
     return arrayTalbe.index++;
+}
+//添加函数
+int fillFunctionTable(char *name, int type, int paramnum)
+{
+    int index = symbolTable.index;
+    strcpy(symbolTable.symbols[index].name, name);
+    symbolTable.symbols[index].level = 0;
+    symbolTable.symbols[index].type = type;
+    symbolTable.symbols[index].flag = FUNCTION;
+    symbolTable.symbols[index].paramnum = paramnum;
+    symbolTable.index++;
 }
 // 首先根据name查符号表，不能重复定义 重复定义返回-1
 int fillast(char *name, char flag)

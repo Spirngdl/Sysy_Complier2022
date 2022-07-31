@@ -343,6 +343,16 @@ void graph_coloring (char*** in, char*** out, int num_block, int num_reg, char* 
     //printf("\n");
 }
 
+void reg_param (char* fun_add, char* param[], int param_num) {
+    int i = 0;
+    for (i = 0; i < param_num; i++) {
+        strcpy(vars[var_cnt].name, param[i]);
+        strcpy(vars[var_cnt].fun_name, fun_add);
+        vars[var_cnt].reg = i;
+        var_cnt++;
+    }
+}
+
 // 内部调用
 // 根据变量别名返回寄存器号，-1为变量溢出，-2为查找失败
 // 全局变量不在 vars[MAX_VARS] 数组中，即会查找失败
@@ -385,6 +395,16 @@ int one_fun_reg(char* fun_name, int reg[]) {
     for (i = 0; i < var_cnt; i++) {
         if ((strcmp(fun_name, vars[i].fun_name) == 0) && (vars[i].reg >= 0)) {
             reg[num] = vars[i].reg;
+            num++;
+        }
+    }
+    return num;
+}
+
+int search_fun_spilling (char* fun_name) {
+    int i = 0, num = 0;
+    for (i = 0; i < var_cnt; i++) {
+        if ((strcmp(fun_name, vars[i].fun_name) == 0) && (vars[i].reg == -1)) {
             num++;
         }
     }

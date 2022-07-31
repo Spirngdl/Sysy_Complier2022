@@ -86,4 +86,5 @@ int fillast(char *name, char flag); //用来处理临时符号表
 int fillSymbolTable(char *name, char *alias, int level, int type, int flag);
 int fillSymbolTable_(char *name, char *alias, int level, int type, char flag, int offset);
 int fillArrayTable(char *name, char *alias, int level, int type);
+int fillFunctionTable(char *name, int type, int paramnum);
 #endif

@@ -87,7 +87,7 @@ vardecl: btype vardef vardecl_                  { $2->type = $1->kind;if($2->kin
                                                  {$$=$2;}}
                                                 
         ;
-vardecl_: TOK_COMMA vardef vardecl_                             {$2->kind = VAR_DECL;$$ = mknode(VAR_DECL_LIST,$2,$3,NULL,yylineno);}
+vardecl_: TOK_COMMA vardef vardecl_                             {if($2->kind == ID)$2->kind = VAR_DECL;$$ = mknode(VAR_DECL_LIST,$2,$3,NULL,yylineno);}
         |                                                       {$$ = NULL;}
         ;
 

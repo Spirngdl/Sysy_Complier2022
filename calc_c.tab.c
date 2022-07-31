@@ -1569,7 +1569,7 @@ yyreduce:
 
   case 15:
 #line 90 "calc_c.y"
-                                                                {(yyvsp[-1].ptr)->kind = VAR_DECL;(yyval.ptr) = mknode(VAR_DECL_LIST,(yyvsp[-1].ptr),(yyvsp[0].ptr),NULL,yylineno);}
+                                                                {if((yyvsp[-1].ptr)->kind == ID)(yyvsp[-1].ptr)->kind = VAR_DECL;(yyval.ptr) = mknode(VAR_DECL_LIST,(yyvsp[-1].ptr),(yyvsp[0].ptr),NULL,yylineno);}
 #line 1574 "calc_c.tab.c"
     break;
 

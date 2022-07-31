@@ -40,7 +40,7 @@ int id_exist_strs (char* str, char* total1[], char* total2[], int size) {
 }
 
 // 获取一个基本块中的use、def集合
-void one_block_use_def (char* use[], char* def[], int size, Block block, char* fun_name) {
+void one_block_use_def (char* use[], char* def[], int size, Block block, char* fun_name, char* param[], int param_num) {
     struct codenode* p = block.tac_list;
     int use_num = 0, def_num = 0;
     while (p != NULL) {
@@ -48,7 +48,7 @@ void one_block_use_def (char* use[], char* def[], int size, Block block, char* f
         // return返回语句
         if (p->op == TOK_RETURN) {
             if (p->result.kind == ID) {
-                if (!id_exist_strs(p->result.id, use, def, size) && search_alias(p->result.id) == -1 && _search_var(fun_name, p->result.id) == -2) {
+                if (!id_exist_strs(p->result.id, param, param, param_num) && !id_exist_strs(p->result.id, use, def, size) && search_alias(p->result.id) == -1 && _search_var(fun_name, p->result.id) == -2) {
                 use[use_num] = p->result.id;
                 use_num++;
                 }
@@ -57,13 +57,13 @@ void one_block_use_def (char* use[], char* def[], int size, Block block, char* f
         // if判断语句
         if (p->op == JLT || p->op == JLE || p->op == JGT || p->op == JGE || p->op == EQ || p->op == NEQ ) {
             if (p->opn1.kind == ID) {
-                if (!id_exist_strs(p->opn1.id, use, def, size) && search_alias(p->opn1.id) == -1 && _search_var(fun_name, p->opn1.id) == -2) { 
+                if (!id_exist_strs(p->opn1.id, param, param, param_num) && !id_exist_strs(p->opn1.id, use, def, size) && search_alias(p->opn1.id) == -1 && _search_var(fun_name, p->opn1.id) == -2) { 
                 use[use_num] = p->opn1.id;
                 use_num++;
                 }
             }
             if (p->opn2.kind == ID) {
-                if (!id_exist_strs(p->opn2.id, use, def, size) && search_alias(p->opn2.id) == -1 && _search_var(fun_name, p->opn2.id) == -2) {
+                if (!id_exist_strs(p->opn2.id, param, param, param_num) && !id_exist_strs(p->opn2.id, use, def, size) && search_alias(p->opn2.id) == -1 && _search_var(fun_name, p->opn2.id) == -2) {
                 use[use_num] = p->opn2.id;
                 use_num++;
                 }
@@ -74,13 +74,13 @@ void one_block_use_def (char* use[], char* def[], int size, Block block, char* f
             //printf("\n*%d*", p->op);
             //printf("\n%d, %d", p->result.kind, p->opn1.kind);
             if (p->opn1.kind == ID) {
-                if (!id_exist_strs(p->opn1.id, use, def, size) && search_alias(p->opn1.id) == -1 && _search_var(fun_name, p->opn1.id) == -2) {
+                if (!id_exist_strs(p->opn1.id, param, param, param_num) && !id_exist_strs(p->opn1.id, use, def, size) && search_alias(p->opn1.id) == -1 && _search_var(fun_name, p->opn1.id) == -2) {
                     use[use_num] = p->opn1.id;
                     use_num++;
                 }
             }
             if (p->result.kind == ID) {
-                if (!id_exist_strs(p->result.id, use, def, size) && search_alias(p->result.id) == -1 && _search_var(fun_name, p->result.id) == -2) {
+                if (!id_exist_strs(p->result.id, param, param, param_num) && !id_exist_strs(p->result.id, use, def, size) && search_alias(p->result.id) == -1 && _search_var(fun_name, p->result.id) == -2) {
                     def[def_num] = p->result.id;
                     def_num++;
                 }
@@ -89,19 +89,19 @@ void one_block_use_def (char* use[], char* def[], int size, Block block, char* f
         // 加减乘除语句
         if (p->op == TOK_ADD || p->op == TOK_MUL || p->op == TOK_SUB || p->op == TOK_DIV || p->op == TOK_MODULO) {
             if (p->opn1.kind == ID) {
-                if (!id_exist_strs(p->opn1.id, use, def, size) && search_alias(p->opn1.id) == -1 && _search_var(fun_name, p->opn1.id) == -2) {
+                if (!id_exist_strs(p->opn1.id, param, param, param_num) && !id_exist_strs(p->opn1.id, use, def, size) && search_alias(p->opn1.id) == -1 && _search_var(fun_name, p->opn1.id) == -2) {
                     use[use_num] = p->opn1.id;
                     use_num++;
                 }    
             }
             if (p->opn2.kind == ID) {
-                if (!id_exist_strs(p->opn2.id, use, def, size) && search_alias(p->opn2.id) == -1 && _search_var(fun_name, p->opn2.id) == -2) {
+                if (!id_exist_strs(p->opn2.id, param, param, param_num) && !id_exist_strs(p->opn2.id, use, def, size) && search_alias(p->opn2.id) == -1 && _search_var(fun_name, p->opn2.id) == -2) {
                     use[use_num] = p->opn2.id;
                     use_num++;
                 }
             }
             if (p->result.kind == ID) {
-                if (!id_exist_strs(p->result.id, use, def, size) && search_alias(p->result.id) == -1 && _search_var(fun_name, p->result.id) == -2) {
+                if (!id_exist_strs(p->result.id, param, param, param_num) && !id_exist_strs(p->result.id, use, def, size) && search_alias(p->result.id) == -1 && _search_var(fun_name, p->result.id) == -2) {
                     def[def_num] = p->result.id;
                     def_num++;
                 }
@@ -110,19 +110,19 @@ void one_block_use_def (char* use[], char* def[], int size, Block block, char* f
         // 数组赋值语句（三地址皆为use）
        if (p->op == ARRAY_ASSIGN) {
             if (p->opn1.kind == ID) {
-                if (!id_exist_strs(p->opn1.id, use, def, size) && search_alias(p->opn1.id) == -1 && _search_var(fun_name, p->opn1.id) == -2) {
+                if (!id_exist_strs(p->opn1.id, param, param, param_num) && !id_exist_strs(p->opn1.id, use, def, size) && search_alias(p->opn1.id) == -1 && _search_var(fun_name, p->opn1.id) == -2) {
                     use[use_num] = p->opn1.id;
                     use_num++;
                 }    
             }
             if (p->opn2.kind == ID) {
-                if (!id_exist_strs(p->opn2.id, use, def, size) && search_alias(p->opn2.id) == -1 && _search_var(fun_name, p->opn2.id) == -2) {
+                if (!id_exist_strs(p->opn2.id, param, param, param_num) && !id_exist_strs(p->opn2.id, use, def, size) && search_alias(p->opn2.id) == -1 && _search_var(fun_name, p->opn2.id) == -2) {
                     use[use_num] = p->opn2.id;
                     use_num++;
                 }
             }
             if (p->result.kind == ID) {
-                if (!id_exist_strs(p->result.id, use, def, size) && search_alias(p->result.id) == -1 && _search_var(fun_name, p->result.id) == -2) {
+                if (!id_exist_strs(p->result.id, param, param, param_num) && !id_exist_strs(p->result.id, use, def, size) && search_alias(p->result.id) == -1 && _search_var(fun_name, p->result.id) == -2) {
                     use[use_num] = p->result.id;
                     use_num++;
                 }
@@ -131,19 +131,19 @@ void one_block_use_def (char* use[], char* def[], int size, Block block, char* f
         // 数组引用语句
         if (p->op == ARRAY_EXP) {
             if (p->opn1.kind == ID) {
-                if (!id_exist_strs(p->opn1.id, use, def, size) && search_alias(p->opn1.id) == -1 && _search_var(fun_name, p->opn1.id) == -2) {
+                if (!id_exist_strs(p->opn1.id, param, param, param_num) && !id_exist_strs(p->opn1.id, use, def, size) && search_alias(p->opn1.id) == -1 && _search_var(fun_name, p->opn1.id) == -2) {
                     use[use_num] = p->opn1.id;
                     use_num++;
                 }    
             }
             if (p->opn2.kind == ID) {
-                if (!id_exist_strs(p->opn2.id, use, def, size) && search_alias(p->opn2.id) == -1 && _search_var(fun_name, p->opn2.id) == -2) {
+                if (!id_exist_strs(p->opn2.id, param, param, param_num) && !id_exist_strs(p->opn2.id, use, def, size) && search_alias(p->opn2.id) == -1 && _search_var(fun_name, p->opn2.id) == -2) {
                     use[use_num] = p->opn2.id;
                     use_num++;
                 }
             }
             if (p->result.kind == ID) {
-                if (!id_exist_strs(p->result.id, use, def, size) && search_alias(p->result.id) == -1 && _search_var(fun_name, p->result.id) == -2) {
+                if (!id_exist_strs(p->result.id, param, param, param_num) && !id_exist_strs(p->result.id, use, def, size) && search_alias(p->result.id) == -1 && _search_var(fun_name, p->result.id) == -2) {
                     def[def_num] = p->result.id;
                     def_num++;
                 }
@@ -155,7 +155,7 @@ void one_block_use_def (char* use[], char* def[], int size, Block block, char* f
                 nop; // 函数名不是变量，不作处理
             }*/
             if (p->result.kind == ID) {
-                if (!id_exist_strs(p->result.id, use, def, size) && search_alias(p->result.id) == -1 && _search_var(fun_name, p->result.id) == -2) {
+                if (!id_exist_strs(p->result.id, param, param, param_num) && !id_exist_strs(p->result.id, use, def, size) && search_alias(p->result.id) == -1 && _search_var(fun_name, p->result.id) == -2) {
                     def[def_num] = p->result.id;
                     def_num++;
                 }
@@ -169,8 +169,12 @@ void one_block_use_def (char* use[], char* def[], int size, Block block, char* f
         /*if (p->op == FUNCTION) {
             nop;
         }*/
-        // 形参、实参语句
-        /*if (p->op == PARAM || p->op == ARGS) {
+        // 形参语句
+        /*if (p->op == PARAM) {
+            nop;
+        }*/
+        // 实参语句
+        /*if (p->op == ARGS) {
             nop;
         }*/
         // 结束语句
@@ -311,7 +315,7 @@ void divide_TACs_to_blocks (Block* p_source, Blocks* p_dest, int num_source) {
 
 // 传入一个基本块，分别计算每个语句的USE、DEF、IN、OUT，并通过图着色算法为其分配寄存器
 // 需注意哪些寄存器已被块间变量占用（通过该基本块的IN、OUT集合计算）
-void one_block_tac_liveness (Block* cntr, char* block_in[], char* block_out[], char* fun_add) {
+void one_block_tac_liveness (Block* cntr, char* block_in[], char* block_out[], char* fun_add, char* param[], int param_num) {
     int i = 0, j = 0;
     int reg[MAX_REG] = {0};      // 寄存器数组，空闲为0，占用为1
     available_reg(reg, block_in, block_out, fun_add); // 对reg数组进行处理，得到空闲寄存器集合
@@ -348,7 +352,7 @@ void one_block_tac_liveness (Block* cntr, char* block_in[], char* block_out[], c
     }
     divide_TACs_to_blocks(cntr, temp_blocks, num_tac);
     for (i = 0; i < num_tac; i++) {
-        one_block_use_def(use[i], def[i], MAX_VAR, *(temp_blocks->block[i]), fun_add);
+        one_block_use_def(use[i], def[i], MAX_VAR, *(temp_blocks->block[i]), fun_add, param, param_num);
     }
     int flag = 1;
     while (flag == 1) {
@@ -388,6 +392,17 @@ void one_block_tac_liveness (Block* cntr, char* block_in[], char* block_out[], c
     graph_coloring(in, out, num_tac, reg_cnt, fun_add, reg);
 }
 
+void get_param (char* param[], int* param_num, Block block) {
+    struct codenode* p = block.tac_list;
+    while (p != NULL) {
+        if ((p->op == PARAM) && (*param_num < 4)) {
+            param[*param_num] = p->result.id;
+            (*param_num)++;
+        }
+        p = p->next;
+    }
+}
+
 // 根据算法进行liveness分析
 // 对于每一个基本块而言，通过对于use、def的操作，得到其in、out，对所有基本块同样处理
 // in->live-in at n、out->live-out at n、def->结点所定义、use->结点所使用
@@ -412,9 +427,22 @@ void all_block_liveness (Block* cntr[], int num_block, char* fun_add) {
             out[i][j] = NULL;
         }
     }
+
+    char* param[4] = {""};
+    int param_num = 0;
+
+    get_param(param, &param_num, *cntr[0]);
+    
+    reg_param(fun_add, param, param_num);
+
+    /*for (i = 0; i < param_num; i++) {
+        printf("\n\t%s\tPARAM %d: %s", fun_add, i, param[i]);
+    }
+    printf("\n");*/
+
     // 分析得到每个基本块的use、def集合
     for (i = 0; i < num_block; i++) {
-        one_block_use_def(use[i], def[i], MAX_VAR, *cntr[i], fun_add);
+        one_block_use_def(use[i], def[i], MAX_VAR, *cntr[i], fun_add, param, param_num);
     }
     // 分析得到每个基本块的in、out集合
     while (flag == 1) {
@@ -471,7 +499,7 @@ void all_block_liveness (Block* cntr[], int num_block, char* fun_add) {
         }
         printf("\n");
     }*/
-    
+
     for (i = 0; i < num_block; i++) {
         for (j = 0; j < MAX_VAR; j++) {
             if (in[i][j] == NULL) {
@@ -486,6 +514,10 @@ void all_block_liveness (Block* cntr[], int num_block, char* fun_add) {
     }
     //printf("\n");
     int reg[MAX_REG] = {0};
+
+    for (i = 0; i < param_num; i++) {
+        reg[i] = 1;
+    }
     
     int reg_cnt = 0;
     for (i = 0; i < MAX_REG; i++) {
@@ -497,7 +529,7 @@ void all_block_liveness (Block* cntr[], int num_block, char* fun_add) {
     // 传入一个函数的基本块以及in、out，分别对每个基本块进行处理，每次循环得到一个基本块的寄存器分配情况
     // 结果存于vars[MAX_VARS]中
     for (i = 0; i < num_block; i++) {
-        one_block_tac_liveness(cntr[i], in[i], out[i], fun_add);
+        one_block_tac_liveness(cntr[i], in[i], out[i], fun_add, param, param_num);
     }
 }
 
