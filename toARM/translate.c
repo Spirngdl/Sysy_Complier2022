@@ -3,7 +3,7 @@
 char *Reg[16];
 char funcname[33];
 const int reg[5] = {0, 1, 2, 3, 14};
-int regcountmask[16] = {0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4};
+//int regcountmask[16] = {0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4};
 
 
 bool MULFLAG = false;
@@ -38,7 +38,7 @@ void translate(armcode *newnode, struct codenode *p, armop armop)
             // armcode *movcode = (armcode *)malloc(sizeof(struct armcode_));
             armcode *movcode = initnewnode();
             movcode->op = MOV;
-            movcode->result.value = R11;
+            movcode->result.value = R12;
             movcode->oper1.type = IMME;
             movcode->oper1.value = p->opn1.const_int;
 
@@ -48,7 +48,7 @@ void translate(armcode *newnode, struct codenode *p, armop armop)
             newnode->pre = movcode;
 
             newnode->oper1.type = REG;
-            newnode->oper1.value = R11;
+            newnode->oper1.value = R12;
             if (p->opn2.kind == LITERAL)
             {
                 // printf("ADD R%d ,R0 ,#%d\n", rn0, p->opn2.const_int);
@@ -176,7 +176,7 @@ armcode *translatearm(Blocks *blocks)
         {
             struct codenode *tcode = cur_blocks->block[i]->tac_list;
             p = tcode;
-            while (p->next != NULL)
+            while (p != NULL)
             {
                 // newnode = (armcode *)malloc(sizeof(struct armcode_));
                 //  memset(newnode, 0, sizeof(struct armcode_));
