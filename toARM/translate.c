@@ -3,7 +3,8 @@
 char *Reg[16];
 char funcname[33];
 const int reg[5] = {0, 1, 2, 3, 14};
-int regcountmask[16] = {0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4};
+//int regcountmask[16] = {0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4};
+
 
 bool MULFLAG = false;
 // bool FIRSTARG = false;//第一次遇到ARG时，插入压栈操作后置true，遇到call时再置false
@@ -37,7 +38,7 @@ void translate(armcode *newnode, struct codenode *p, armop armop)
             // armcode *movcode = (armcode *)malloc(sizeof(struct armcode_));
             armcode *movcode = initnewnode();
             movcode->op = MOV;
-            movcode->result.value = R11;
+            movcode->result.value = R12;
             movcode->oper1.type = IMME;
             movcode->oper1.value = p->opn1.const_int;
 
@@ -47,7 +48,7 @@ void translate(armcode *newnode, struct codenode *p, armop armop)
             newnode->pre = movcode;
 
             newnode->oper1.type = REG;
-            newnode->oper1.value = R11;
+            newnode->oper1.value = R12;
             if (p->opn2.kind == LITERAL)
             {
                 // printf("ADD R%d ,R0 ,#%d\n", rn0, p->opn2.const_int);
@@ -163,10 +164,10 @@ armcode *translatearm(Blocks *blocks)
 
     q = first;
     int rn0, rn1, rn2, rn3;
-    int index, stkindex;
-    char regname[10] = {0};
-    int paranum, spil_var_num;
-    armcode *snode, *subnode, *addnode, *strnode, *movnode, *ldmnode;
+    int index,stkindex;
+    char regname[10]={0};
+    int paranum,spil_var_num;
+    armcode *snode,*subnode,*addnode,*strnode,*movnode,*ldmnode;
     Blocks *cur_blocks = blocks;
     struct codenode *result = NULL;
     while (cur_blocks != NULL) //遍历所有基本块
@@ -210,18 +211,18 @@ armcode *translatearm(Blocks *blocks)
                         }
                     }
 
-                    // int reg[16] = {0};
-                    func_enter_regnum = one_fun_reg(funcname, func_enter_reg);
-                    snode = mul_reg_node(STMFD, R13, func_enter_reg, func_enter_regnum);
+                    //int reg[16] = {0};
+                    func_enter_regnum = one_fun_reg(funcname,func_enter_reg);
+                    snode = mul_reg_node(STMFD,R13,func_enter_reg,func_enter_regnum);
                     newnode->next = snode;
                     snode->pre = newnode;
-                    q = snode;
+                    q=snode;
 
-                    vartable_update_all(vartbl, func_enter_regnum * 4);
+                    vartable_update_all(vartbl,func_enter_regnum*4);
 
                     spil_var_num = search_fun_spilling(funcname);
 
-                    func_enter_subindex = (spil_var_num + 2) * 4; //+2为宏区
+                    func_enter_subindex = (spil_var_num+2)*4;       //+2为宏区
 
                     subnode = initnewnode();
                     subnode->op = SUB;
@@ -234,7 +235,8 @@ armcode *translatearm(Blocks *blocks)
                     subnode->pre = snode;
                     q = subnode;
 
-                    vartable_update_all(vartbl, func_enter_subindex);
+                    vartable_update_all(vartbl,func_enter_subindex);
+
 
                     break;
                 case TOK_ASSIGN:
@@ -313,8 +315,8 @@ armcode *translatearm(Blocks *blocks)
                     }
                     paranum = search_func(m->opn1.id);
 
-                    // int reg[5] = {0, 1, 2, 3, 14};
-                    snode = mul_reg_node(STMFD, R13, reg, 5);
+                    //int reg[5] = {0, 1, 2, 3, 14};
+                    snode = mul_reg_node(STMFD,R13, reg, 5);
                     newnode->pre->next = snode;
                     snode->pre = newnode->pre;
                     snode->next = newnode;
@@ -428,11 +430,11 @@ armcode *translatearm(Blocks *blocks)
                             rn1 = search_var(funcname, p->result.id);
                             if (rn1 >= 0)
                             {
-                                if (rn1 < i) //被覆盖，需从栈中取
-                                {
-
-                                    sprintf(regname, "R%d", rn1);
-                                    index = vartable_select(vartbl, regname);
+                               if(rn1<i)        //被覆盖，需从栈中取
+                               {
+                                    
+                                    sprintf(regname,"R%d",rn1);
+                                    index = vartable_select(vartbl,regname);
                                     stkindex = vartbl->table[index].index;
 
                                     strnode = initnewnode();
@@ -442,9 +444,9 @@ armcode *translatearm(Blocks *blocks)
                                     strnode->oper1.value = R13;
                                     strnode->oper1.index = stkindex;
                                     armlink_insert(newnode, strnode);
-                                }
-                                else
-                                {
+                               }
+                               else
+                               {
                                     movnode = initnewnode();
                                     movnode->op = MOV;
                                     movnode->result.value = i;
@@ -494,16 +496,16 @@ armcode *translatearm(Blocks *blocks)
                     break;
 
                 case CALL:
-
+    
                     if (search_func(p->opn1.id) == 0)
                     {
-                        // int reg[5] = {0, 1, 2, 3, 14};
-                        snode = mul_reg_node(STMFD, R13, reg, 5);
+                        //int reg[5] = {0, 1, 2, 3, 14};
+                        snode = mul_reg_node(STMFD,R13, reg, 5);
                         // newnode->pre->next = snode;
                         // snode->pre = newnode->pre;
                         // snode->next = newnode;
                         // newnode->pre = snode;
-                        armlink_insert(newnode, snode);
+                        armlink_insert(newnode,snode);
                         // vartable_insert(vartbl,"R0",memindex,0);
                         // vartable_insert(vartbl,"R1",memindex,4);
                         // vartable_insert(vartbl,"R2",memindex,8);
@@ -513,12 +515,12 @@ armcode *translatearm(Blocks *blocks)
 
                     newnode->op = BL;
                     newnode->result.type = STRING;
-                    strcpy(newnode->result.str_id, p->opn1.id);
+                    strcpy(newnode->result.str_id,p->opn1.id);
 
-                    if (p->result.kind == ID)
+                    if(p->result.kind == ID)
                     {
-                        rn0 = search_var(funcname, p->result.id);
-                        if (rn0 >= 0)
+                        rn0 = search_var(funcname,p->result.id);
+                        if(rn0>=0)
                         {
                             movnode = initnewnode();
                             movnode->op = MOV;
@@ -530,17 +532,17 @@ armcode *translatearm(Blocks *blocks)
                             movnode->pre = newnode;
                             q = movnode;
                         }
-                        else if (rn0 == -1)
+                        else if(rn0 == -1)
                         {
-                            // TODO
+                            //TODO
                         }
-                        else if (rn0 == -2)
+                        else if(rn0 == -2)
                         {
-                            // TODO
+                            //TODO
                         }
                         else
                         {
-                            // TODO
+                            //TODO
                         }
                     }
 
@@ -554,43 +556,45 @@ armcode *translatearm(Blocks *blocks)
                     q->next = addnode;
                     addnode->pre = q;
                     q = addnode;
-                    vartable_update_all(vartbl, -func_call_subindex);
+                    vartable_update_all(vartbl,-func_call_subindex);
 
-                    // int reg[5] = {0, 1, 2, 3, 14};
-                    ldmnode = mul_reg_node(LDMFD, R13, reg, 5);
+                    //int reg[5] = {0, 1, 2, 3, 14};
+                    ldmnode = mul_reg_node(LDMFD,R13,reg,5);
                     q->next = ldmnode;
                     ldmnode->pre = q;
                     q = ldmnode;
 
-                    vartable_update_all(vartbl, -20);
+                    vartable_update_all(vartbl,-20);
 
                     break;
 
                 case TOK_RETURN:
-                    if (p->result.kind == ID)
+                    if(p->result.kind == ID)
                     {
-                        rn0 = search_var(funcname, p->result.id);
-                        if (rn0 >= 0)
+                        rn0 = search_var(funcname,p->result.id);
+                        if(rn0>=0)
                         {
                             newnode->op = MOV;
                             newnode->result.value = R0;
                             newnode->oper1.type = REG;
                             newnode->oper1.value = rn0;
                         }
-                        else if (rn0 == -1)
+                        else if(rn0==-1)
                         {
-                            // TODO
+                            //TODO
                         }
-                        else if (rn0 == -2)
+                        else if(rn0 == -2)
                         {
+
                         }
                         else
                         {
+
                         }
                     }
-                    else if (p->result.kind == LITERAL)
+                    else if(p->result.kind == LITERAL)
                     {
-                        if (check_imme(p->result.const_int) == 0)
+                        if(check_imme(p->result.const_int) == 0)
                         {
                             newnode->op = MOV;
                             newnode->result.value = R0;
@@ -605,9 +609,9 @@ armcode *translatearm(Blocks *blocks)
                             newnode->oper1.value = p->result.const_int;
                         }
                     }
-                    else if (p->result.kind == FLOAT_LITERAL)
+                    else if(p->result.kind == FLOAT_LITERAL)
                     {
-                        // TODO
+                        //TODO
                     }
                     else
                     {
@@ -626,12 +630,12 @@ armcode *translatearm(Blocks *blocks)
                     addnode->oper1.value = R13;
                     addnode->oper2.type = IMME;
                     addnode->oper2.value = func_enter_subindex;
-                    armlink_insert(newnode, addnode);
-                    vartable_update_all(vartbl, -func_enter_subindex);
+                    armlink_insert(newnode,addnode);
+                    vartable_update_all(vartbl,-func_enter_subindex);
 
-                    ldmnode = mul_reg_node(LDMFD, R13, func_enter_reg, func_enter_regnum);
-                    armlink_insert(newnode, ldmnode);
-                    vartable_update_all(vartbl, -(func_enter_regnum * 4));
+                    ldmnode = mul_reg_node(LDMFD,R13,func_enter_reg,func_enter_regnum);
+                    armlink_insert(newnode,ldmnode);
+                    vartable_update_all(vartbl,-(func_enter_regnum*4));
 
                     free(vartbl);
                     break;
@@ -647,7 +651,7 @@ armcode *translatearm(Blocks *blocks)
     return first;
 }
 
-armcode *mul_reg_node(armop opt, int stkreg, int reg[], int regnum)
+armcode *mul_reg_node(armop opt,int stkreg, int reg[], int regnum)
 {
     // armcode * snode = (armcode*)malloc(sizeof(struct armcode_));
     armcode *snode = initnewnode();
