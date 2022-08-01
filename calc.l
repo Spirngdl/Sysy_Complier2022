@@ -15,7 +15,8 @@
     // FLOAT   ([0-9]*\.[0-9]+)|([0-9]+\.)
 %}
 %option yylineno
-
+DIGIT   [0-9]
+LETTER  [a-zA-Z]
 
 HEX     0(X|x)[0-9a-fA-F]+ 
 OCTAL   0[0-7]+
@@ -69,7 +70,7 @@ FLOAT_HEX       {HEX_FLOAT}(f|F|l|L)?
 "const"     {strcpy(yylval.type_id,  yytext) ;return TOK_CONST;}
 "break"     {return TOK_BREAK;}
 "continue"  {return TOK_CONTINUE;}
-[a-z_A-Z][a-z_A-Z0-9]*  {strcpy(yylval.type_id,yytext) ;return IDENT;}
+[a-z_A-Z][a-z_A-Z0-9]*     { if(strlen(yytext)>32){int hash_key = HashKey(yytext);sprintf(yylval.type_id,"hash_%d",hash_key);}else{strcpy(yylval.type_id,yytext);}return IDENT;}
 [ \t\n]+    {yycolumn = 1;}
 "//"[^\n]*  {/* 注释 */}
 "/*"([^\*]|(\*)*[^\*/])*(\*)*"*/" {/* 注释 */}

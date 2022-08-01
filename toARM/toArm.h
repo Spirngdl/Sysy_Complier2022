@@ -102,7 +102,6 @@ typedef struct _vartable
 #define LR 14
 
 
-
 void arminterface();
 void translate(armcode *newnode, struct codenode *p, armop armop);
 armcode *initnewnode();

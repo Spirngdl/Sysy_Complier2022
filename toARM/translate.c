@@ -452,8 +452,8 @@ armcode *translatearm(Blocks *blocks)
                                     movnode->result.value = i;
                                     movnode->oper1.type = REG;
                                     movnode->oper1.value = rn1;
-                                    armlink_insert(newnode,movnode);
-                               }
+                                    armlink_insert(newnode, movnode);
+                                }
                             }
                             else if (rn2 == -1)
                             {

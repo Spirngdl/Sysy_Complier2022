@@ -84,7 +84,7 @@ void AliasTableADD(char *alias, int type)
  * @param level 层级，全局变量和函数为0
  * @param type  TOK_INT TOK_FLOAT TOK_VOID
  * @param flag  FUNCTION
- * @return int
+ * @return int 符号在符号表中的位置序号，中间代码生成时可用序号取到符号别名
  */
 int fillSymbolTable(char *name, char *alias, int level, int type, int flag)
 {
@@ -138,20 +138,4 @@ int fillast(char *name, char flag)
     strcpy(astsymbol.symbols[astsymbol.index].name, name);
     astsymbol.symbols[astsymbol.index].flag = flag;
     return astsymbol.index++; //返回的是符号在符号表中的位置序号，中间代码生成时可用序号取到符号别名
-}
-/**
- * @brief 返回函数形式参数个数
- *
- * @param fun_name
- * @return int
- */
-int search_func(char *fun_name)
-{
-    int i;
-    for (i = symbolTable.index - 1; i >= 0; i--)
-    {
-        if (symbolTable.symbols[i].flag == FUNCTION)
-            if (strcmp(symbolTable.symbols[i].name, fun_name) == 0)
-                return symbolTable.symbols[i].paramnum;
-    }
 }
