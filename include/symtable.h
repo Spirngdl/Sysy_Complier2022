@@ -27,6 +27,7 @@ struct symbol
     int length[10];      //数组每一维的长度
     int array_dimension; //数组维度
     List *value;         //保存全局变量的值，用来数组初始化
+    float const_value;   //暂存临时的值
 };
 
 //考虑为数组专门开个符号表
@@ -39,7 +40,9 @@ typedef struct ArraySymbol_
     int length[10];      //数组每一维的长度
     int array_demension; //数组维度
     List *value;         //保存数组的值
+    char func_name[32];  //所在函数的函数名
 } arraysymbol;
+//临时的符号表
 struct astsymboltable
 {
     struct symbol symbols[MAXLENGTH];
@@ -87,4 +90,5 @@ int fillSymbolTable(char *name, char *alias, int level, int type, int flag);
 int fillSymbolTable_(char *name, char *alias, int level, int type, char flag, int offset);
 int fillArrayTable(char *name, char *alias, int level, int type);
 int fillFunctionTable(char *name, int type, int paramnum);
+int get_array_infunc(char *func_name);
 #endif

@@ -45,6 +45,15 @@ struct node *mkparray(int kind, char *name, struct node *len, int pos)
     }
     return temp;
 }
+/**
+ * @brief 处理加减乘除运算节点，如果可以计算则直接计算出结果。但是要考虑隐式转换
+ *
+ * @param kind
+ * @param left
+ * @param right
+ * @param pos
+ * @return struct node*
+ */
 struct node *mkopnode(int kind, struct node *left, struct node *right, int pos)
 {
     struct node *T = (struct node *)malloc(sizeof(struct node));
@@ -118,6 +127,29 @@ struct node *mkopnode(int kind, struct node *left, struct node *right, int pos)
     }
 }
 /**
+ * @brief 创建const节点，提前把值存到符号表中
+ *
+ * @param kind
+ * @param first
+ * @param pos
+ * @return struct node*
+ */
+struct node *mkconstnode(int kind, struct node *first, int pos, char *name)
+{
+    struct node *T = (struct node *)malloc(sizeof(struct node));
+    T->kind = kind;
+    T->ptr[0] = first;
+    T->ptr[1] = NULL;
+    T->ptr[2] = NULL;
+    strcpy(T->type_id, name);
+    T->pos = pos;
+    T->code = NULL;
+    float value = first->type_float;
+    int place = fillSymbolTable(name, newAlias(), 0, TOK_INT, VAR); //先临时把值放进符号表
+    symbolTable.symbols[place].const_value = value;                 //暂时用array_dimension存值
+    return T;
+}
+/**
  * @brief 用于单目运算节点，如果是LITERAL，直接生成
  *
  * @param kind
@@ -170,13 +202,25 @@ struct node *mkunarynode(int kind, struct node *first, struct node *second, int 
         return T;
     }
 }
-int const_exp(struct node *T)
+float const_exp(struct node *T)
 {
-    int left = 0, right = 0;
+    float left = 0, right = 0;
     if (T == NULL)
         return 0;
     if (T->kind == LITERAL)
         return T->type_int;
+    else if (T->kind == FLOAT_LITERAL)
+        return T->type_float;
+    if (T->kind == ID) //如果是变量，只能是CONST 去符号表中取
+    {
+        int place = searchSymbolTable(T->type_id);
+        if (place == -1)
+        {
+            printf("error const_exp\n");
+            return 0;
+        }
+        return symbolTable.symbols[place].const_value;
+    }
     left = const_exp(T->ptr[0]);
     right = const_exp(T->ptr[1]);
     switch (T->kind)
@@ -194,7 +238,7 @@ int const_exp(struct node *T)
         return left / right;
         break;
     case TOK_MODULO:
-        return left % right;
+        return (int)left % (int)right;
         break;
     default:
         break;

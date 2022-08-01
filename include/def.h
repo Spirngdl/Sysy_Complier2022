@@ -24,6 +24,7 @@
 #include "../Common/list.h"
 #include "Optimize.h"
 #include "../Common/hash_set.h"
+#include "../Common/hash.h"
 #include "../toARM/toArm.h"
 #include "Dag.h"
 // #define DD
@@ -33,7 +34,8 @@ enum node_kind
     VAR_DECL,
     VAR_DECL_LIST,
     COMPUNIT_LIST,
-    CONSTDEF,
+    
+    CONSTDECL,
     CONSTDECL_LIST,
 
     CONSTINITVAL_LIST,
@@ -101,9 +103,9 @@ enum node_kind
     END
 };
 
-#define MAXLENGTH 1000     //定义符号表的大小
 #define DX 3 * sizeof(int) //活动记录控制信息需要的单元数
 
+char *Func_name;
 struct opn
 {
     int kind; //标识操作的类型
@@ -151,8 +153,9 @@ struct node *mkopnode(int kind, struct node *left, struct node *right, int pos);
 struct node *mkarrnode(int kind, struct node *first, int length, int pos);
 struct node *mkparray(int kind, char *first, struct node *len, int pos);
 struct node *mkunarynode(int kind, struct node *first, struct node *second, int pos);
+struct node *mkconstnode(int kind, struct node *first, int pos, char *name);
 float hex_atof(char *str);
-int const_exp(struct node *T);
+float const_exp(struct node *T);
 void add_functions();
 /*semantic analysis*/
 void semantic_error(int line, char *msg1, char *msg2);

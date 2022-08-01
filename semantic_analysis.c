@@ -124,13 +124,13 @@ void var_decl_list(struct node *T)
 void array_decl(struct node *T)
 {
     int rtn, num, arr_rtn;
-    int array_dimension = astsymbol.symbols[T->place].array_dimension;
+    int array_dimension = astsymbol.symbols[T->place].array_dimension; //维度大小
     int length[10];
     char *Alias = newAlias();
     memcpy(length, astsymbol.symbols[T->place].length, array_dimension * sizeof(int)); //数组复制
     rtn = fillSymbolTable(T->type_id, Alias, LEV, T->type, ARRAY);                     //符号表
     arr_rtn = fillArrayTable(T->type_id, Alias, LEV, T->type);                         //往数组符号表填东西
-
+    strcpy(arrayTalbe.symbols[arr_rtn].func_name, Func_name);                          //记录所在函数的函数名
     if (rtn == -1)
         semantic_error(T->pos, T->type_id, "变量重复定义");
     else
@@ -145,7 +145,7 @@ void array_decl(struct node *T)
         {
             int temp_width[10], width = 1;
             int array_offset = 0;
-            int brace_num = 1;
+            int brace_num = 1; //括号层级
             struct node *initarray = T->ptr[0];
             for (int i = array_dimension - 1; i >= 0; i--)
             {
@@ -197,7 +197,7 @@ void arrayinit_bracker(List *value_list, struct node *T, int brace_num, int *arr
             (*array_offset)++;
             initarray = initarray->ptr[1];
         }
-        if (initarray == NULL)
+        if (initarray == NULL) //没有赋值了，
         {
             if (*array_offset > final_offset)
             {
@@ -1034,6 +1034,9 @@ void func_def(struct node *T) // kind type name ---params -- block
     int rtn;
     struct opn opn1, opn2, result;
     rtn = fillSymbolTable(T->type_id, newAlias(), LEV, T->type, FUNCTION);
+    char name[32];
+    strcpy(name, T->type_id);
+    Func_name = name;
     if (rtn == -1)
     {
         semantic_error(T->pos, T->type_id, "函数名重复使用，可能是函数重复定义，语义错误");
