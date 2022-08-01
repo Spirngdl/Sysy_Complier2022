@@ -40,7 +40,13 @@ int get_array_infunc(char *func_name)
     {
         if (strcmp(func_name, arrayTalbe.symbols[i].func_name) == 0)
         {
-            
+            int width = 1;
+            for (int j = arrayTalbe.symbols[i].array_demension - 1; j >= 0; j--)
+            {
+                width *= arrayTalbe.symbols[i].length[j];
+            }
+            result += width;
         }
     }
+    return result;
 }
