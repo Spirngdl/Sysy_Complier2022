@@ -27,6 +27,8 @@ void divide_TACs_to_blocks (Block* p_source, Blocks* p_dest, int num_source);
 // 传入一个基本块，分别计算每个语句的USE、DEF、IN、OUT，并通过图着色算法为其分配寄存器
 void one_block_tac_liveness (Block* cntr, char* in[], char* out[], char* fun_add, char* param[], int param_num);
 
+void get_param (char* param[], int* param_num, Block block);
+
 // 根据算法进行liveness分析
 void all_block_liveness (Block* cntr[], int num_block, char* fun_add);
 
