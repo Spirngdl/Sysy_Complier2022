@@ -1047,7 +1047,7 @@ YY_RULE_SETUP
 case 37:
 YY_RULE_SETUP
 #line 73 "calc.l"
-{strcpy(yylval.type_id,yytext) ;return IDENT;}
+{ if(strlen(yytext)>32){int hash_key = HashKey(yytext);sprintf(yylval.type_id,"hash_%d",hash_key);}else{strcpy(yylval.type_id,yytext);}return IDENT;}
 	YY_BREAK
 case 38:
 /* rule 38 can match eol */

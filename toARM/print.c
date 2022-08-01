@@ -39,6 +39,7 @@ void printarm(armcode *armnode, FILE *fp)
                 fprintf(fp,"%s\n",p->result.str_id);
             }
         }
+        p = p->next;
     }
 }
 
