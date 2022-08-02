@@ -14,7 +14,7 @@ armcode * search_global_var()
             struct symbol sym = symbolTable.symbols[i];
             if (sym.flag == ARRAY) //可能是数组
             {
-                
+
             }
             else if(sym.flag == VAR) //全局变量
             {
@@ -24,19 +24,25 @@ armcode * search_global_var()
                 newnode->op = ARMLABEL;
                 newnode->result.type = STRING;
                 strcpy(newnode->result.str_id,sym.alias);
-                newnode->oper1.type = STRING;
-                strcpy(newnode->oper1.str_id,".long");
-                int tmp = (int)sym.const_value;
-                if(sym.type == TOK_FLOAT)
-                {
-
-                }
-                newnode->oper2.type = IMME;
-                newnode->oper2.value = tmp;
-
                 p->next = newnode;
                 newnode->pre = p;
                 p=newnode;
+
+                armcode * vnode = initnewnode();
+                vnode->result.type = STRING;
+                strcpy(vnode->result.str_id,".long");
+                vnode->oper1.type = IMME;
+                if(sym.type == TOK_INT)
+                {
+                    vnode->oper1.value = sym.const_value;
+                    vnode->op = GVAR_INT;
+                }
+                else if(sym.type == TOK_FLOAT)
+                {
+                    vnode->op = GVAR_FLOAT;
+                }
+
+                
 
             }
         }
