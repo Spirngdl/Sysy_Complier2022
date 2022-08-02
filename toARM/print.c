@@ -65,7 +65,14 @@ void printarm(armcode *armnode, FILE *fp)
             }
             else
             {
-                printf("MOV node oper1.type error!\n");
+                if(p->oper1.type == NUL)
+                {
+
+                }
+                else
+                {
+                    printf("MOV node oper1.type error!\n");
+                }
             }
             break;
 
@@ -158,7 +165,7 @@ void printarm(armcode *armnode, FILE *fp)
 
 void arminterface(Blocks *blocks)
 {
-    FILE *fp = fopen("./a.asm", "w+");
+    FILE *fp = fopen("./a.asm", "w");
     armcode *armcode = translatearm(blocks);
     printarm(armcode, fp);
 }

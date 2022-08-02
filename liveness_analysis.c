@@ -107,7 +107,7 @@ void one_block_use_def (char* use[], char* def[], int size, Block block, char* f
                 }
             }
         }
-        // 数组赋值语句（三地址皆为use）
+        // 数组赋值语句（数组下标为 use，数组名不做处理）
        if (p->op == ARRAY_ASSIGN) {
             if (p->opn1.kind == ID) {
                 if (!id_exist_strs(p->opn1.id, param, param, param_num) && !id_exist_strs(p->opn1.id, use, def, size) && search_alias(p->opn1.id) == -1 && _search_var(fun_name, p->opn1.id) == -2) {
@@ -121,21 +121,21 @@ void one_block_use_def (char* use[], char* def[], int size, Block block, char* f
                     use_num++;
                 }
             }
-            if (p->result.kind == ID) {
+            /*if (p->result.kind == ID) {
                 if (!id_exist_strs(p->result.id, param, param, param_num) && !id_exist_strs(p->result.id, use, def, size) && search_alias(p->result.id) == -1 && _search_var(fun_name, p->result.id) == -2) {
                     use[use_num] = p->result.id;
                     use_num++;
                 }
-            }
+            }*/
         }
-        // 数组引用语句
+        // 数组引用语句（数组下标为 use，数组名不做处理）
         if (p->op == ARRAY_EXP) {
-            if (p->opn1.kind == ID) {
+            /*if (p->opn1.kind == ID) {
                 if (!id_exist_strs(p->opn1.id, param, param, param_num) && !id_exist_strs(p->opn1.id, use, def, size) && search_alias(p->opn1.id) == -1 && _search_var(fun_name, p->opn1.id) == -2) {
                     use[use_num] = p->opn1.id;
                     use_num++;
                 }    
-            }
+            }*/
             if (p->opn2.kind == ID) {
                 if (!id_exist_strs(p->opn2.id, param, param, param_num) && !id_exist_strs(p->opn2.id, use, def, size) && search_alias(p->opn2.id) == -1 && _search_var(fun_name, p->opn2.id) == -2) {
                     use[use_num] = p->opn2.id;
@@ -174,31 +174,17 @@ void one_block_use_def (char* use[], char* def[], int size, Block block, char* f
             nop;
         }*/
         // 实参语句
-        /*if (p->op == ARGS) {
-            nop;
-        }*/
+        if (p->op == ARG) {
+            if (p->result.kind == ID) {
+                if (!id_exist_strs(p->result.id, param, param, param_num) && !id_exist_strs(p->result.id, use, def, size) && search_alias(p->result.id) == -1 && _search_var(fun_name, p->result.id) == -2) {
+                    use[use_num] = p->result.id;
+                    use_num++;
+                }
+            }
+        }
         // 结束语句
         /*if (p->op == END) {
             nop;
-        }*/
-
-        /*if (p->opn1.kind == ID) {
-            if (!id_exist_strs(p->opn1.id, use, def, size)) { 
-                use[use_num] = p->opn1.id;
-                use_num++;
-            }
-        }
-        if (p->opn2.kind == ID) {
-            if (!id_exist_strs(p->opn2.id, use, def, size)) {
-                use[use_num] = p->opn2.id;
-                use_num++;
-            }
-        } 
-        if (p->result.kind == ID) {
-            if (!id_exist_strs(p->result.id, use, def, size)) {
-                def[def_num] = p->result.id;
-                def_num++;
-            }
         }*/
 
         p = p->next;
@@ -547,8 +533,14 @@ void all_fun_reg (Blocks* head_fun) {
 // 具体是哪个函数？
 // block_num -> 基本块序号，char* temp[] -> 存入该基本块OUT活跃变量
 // 返回值为数组中的变量个数
-/*int search_out (char* fun_name, int block_num, char* temp[]) {
+// 全局变量皆视为活跃变量
+int search_out (char* fun_name, int block_num, char* temp[]) {
     int cnt = 0;
-    
+    Blocks* p = head_block;
+    while (1) {
+        if (strcmp(fun_name, p->block[0]->tac_list->result.id) == 0) break;
+        p = p->next;
+    }
+    cnt++;
     return cnt;
-}*/
+}

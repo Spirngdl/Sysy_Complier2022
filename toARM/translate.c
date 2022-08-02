@@ -249,7 +249,7 @@ armcode *translatearm(Blocks *blocks)
 
                         if (p->opn1.kind == LITERAL)
                         {
-                            printf("MOV R%d ,#%d\n", rn0, p->opn1.const_int);
+                            //printf("MOV R%d ,#%d\n", rn0, p->opn1.const_int);
                             newnode->oper1.type = IMME;
                             newnode->oper1.value = p->opn1.const_int;
                         }
@@ -258,7 +258,7 @@ armcode *translatearm(Blocks *blocks)
                             if ((rn1 = search_var(funcname, p->opn1.id)) >= 0)
                             {
                                 Reg[rn1] = p->opn1.id;
-                                printf("MOV R%d ,R%d\n", rn0, rn1);
+                                //printf("MOV R%d ,R%d\n", rn0, rn1);
                                 newnode->oper2.type = REG;
                                 newnode->oper2.value = rn1;
                             }
@@ -476,7 +476,7 @@ armcode *translatearm(Blocks *blocks)
                                 movnode->op = MOV;
                                 movnode->result.value = i;
                                 movnode->oper1.type = IMME;
-                                movnode->oper1.value = m->result.const_int;
+                                movnode->oper1.value = p->result.const_int;
                                 armlink_insert(newnode, movnode);
                             }
                             else
@@ -485,10 +485,11 @@ armcode *translatearm(Blocks *blocks)
                                 movnode->op = LDR;
                                 movnode->result.value = i;
                                 movnode->oper1.type = ILIMME;
-                                movnode->oper1.value = m->result.const_int;
+                                movnode->oper1.value = p->result.const_int;
                                 armlink_insert(newnode, movnode);
                             }
                         }
+                        p = p->next;
                     }
                     p = m; //指向最后一个参数
                     q = newnode->pre;
