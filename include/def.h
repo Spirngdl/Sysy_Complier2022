@@ -62,6 +62,7 @@ enum node_kind
     INITARRAY,
     BACK,
     VAR,
+    CONST_VAR,
     FUN,
     ARRAY,
     TEMP_VAR,
@@ -194,6 +195,8 @@ void param_dec(struct node *T);
 void param_array(struct node *T);
 
 void var_decl_list(struct node *T);
+void const_decl_list(struct node *T);
+void const_decl(struct node *T);
 
 void var_decl(struct node *T);
 void array_decl(struct node *T);
@@ -231,7 +234,7 @@ void rval_array(struct node *T);
 
 void push_initvalue(int i, List *node);
 int find_initvalue_arr(int symbol_index, int offset);
-void arrayinit_bracker(List *value_list, struct node *T, int brace_num, int *array_offset, int width[], int dimension,int type);
+struct codenode *arrayinit_bracker(List *value_list, struct node *T, int brace_num, int *array_offset, int width[], int dimension, int type, char *array_name);
 
 void test_array();
 void push_initarray(struct node *T, struct node *newnode);
@@ -243,4 +246,5 @@ int check_imme(int imme);
 void check_immes(Blocks *blocks);
 char *Label_();
 void add_label_block(Blocks *head);
+int ToIeee754(float i);
 #endif
