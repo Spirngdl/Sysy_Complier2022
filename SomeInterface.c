@@ -79,7 +79,7 @@ void insert_param(Blocks *head)
 }
 /**
  * @brief 获取所有全局变量
- * 
+ *
  */
 void search_global_var()
 {
@@ -93,12 +93,43 @@ void search_global_var()
             if (sym.flag == ARRAY) //可能是数组
             {
             }
-            else if(sym.flag == VAR) //全局变量
+            else if (sym.flag == VAR) //全局变量
             {
                 // char *alias = sym.alias;//别名，三地址代码中所有变量名都是别名
                 // int type = sym.type; //可能是TOK_INT TOK_FLOAT
-
             }
         }
     }
+}
+
+/**
+ * @brief 通过别名查找符号表，一般是在后端调用了，因为三地址代码中存储的变量的ID就是别名
+ *
+ * @param alias 别名
+ * @return 全局变量返回i 其他返回-1
+ */
+int search_alias(char *alias)
+{
+    int i;
+    for (i = symbolTable.index - 1; i >= 0; i--)
+    {
+        if (strcmp(symbolTable.symbols[i].alias, alias) == 0) //找到了，可能是全局变量或者形式参数
+        {
+            if (symbolTable.symbols[i].level == 0) //是全局变量
+                return i;
+            else
+                return -1;
+        }
+    }
+    return -1;
+}
+/**
+ * @brief 通过指针变化将浮点数转换为IEEE754
+ * 
+ * @param i 
+ * @return int 
+ */
+int ToIeee754(float i)
+{
+    return *(int *)&i;
 }

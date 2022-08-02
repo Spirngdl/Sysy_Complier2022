@@ -22,6 +22,7 @@ void Driver(struct node *T)
   char gloal[32] = "global";
   Func_name = gloal;
   semantic_Analysis(T);
+  // print_IR(T->code);
   // test_array();
   make_uid(&(T->code));  //给每个三地址代码进行编号，顺变把全局变量初始化移到开头
   change_label(T->code); //把三弟代码生成过程中产生的标号删除

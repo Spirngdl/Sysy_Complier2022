@@ -53,13 +53,15 @@ struct LabelUid
 typedef struct ArrayValue_ ArrayValue;
 struct ArrayValue_
 {
-    enum node_kind kind; //可能是 LITERAL FLOAT_LITERAL ID
+    int kind; //可能是 LITERAL FLOAT_LITERAL ID
     union
     {
         int v_int;
         float v_float;
-        char var_name[32]
+        char var_name[32];
     };
+    struct ArrayValue_ *left;
+    struct ArrayValue_ *right;
 };
 
 struct LabelUidTable
@@ -98,6 +100,7 @@ struct aliassym
 {
     char name[33];         //别名
     enum yytokentype type; // TOK_INT TOK_FLOAT
+    int value;             //主要是const
 };
 struct _aliastable
 {
@@ -112,6 +115,7 @@ int search_func(char *fun_name); //查找函数名，返回参数个数
 int search_all_alias(char *alias);
 int fillast(char *name, char flag); //用来处理临时符号表
 int fillSymbolTable(char *name, char *alias, int level, int type, int flag);
+void AliasTableADD(char *alias, int type);
 int fillSymbolTable_(char *name, char *alias, int level, int type, char flag, int offset);
 int fillArrayTable(char *name, char *alias, int level, int type);
 int fillFunctionTable(char *name, int type, int paramnum);
