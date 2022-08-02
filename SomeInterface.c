@@ -90,10 +90,10 @@ void search_global_var()
         {
             //有可能是数组
             struct symbol sym = symbolTable.symbols[i];
-            if (sym.flag == ARRAY) //可能是数组
+            if (sym.flag == ARRAY || sym.flag == CONST_ARRAY) //可能是数组
             {
             }
-            else if (sym.flag == VAR) //全局变量
+            else if (sym.flag == VAR || sym.flag == CONST_VAR) //全局变量 全局CONST变量
             {
                 // char *alias = sym.alias;//别名，三地址代码中所有变量名都是别名
                 // int type = sym.type; //可能是TOK_INT TOK_FLOAT
@@ -125,9 +125,9 @@ int search_alias(char *alias)
 }
 /**
  * @brief 通过指针变化将浮点数转换为IEEE754
- * 
- * @param i 
- * @return int 
+ *
+ * @param i
+ * @return int
  */
 int ToIeee754(float i)
 {

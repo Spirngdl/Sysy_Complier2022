@@ -1,14 +1,8 @@
-int func(int a1, int a2, int a3, int a4, int a5, int a6)
+int i = 0;
+int j = 1;
+int l;
+int main()
 {
-  int result = 0;
-  if (a1 > 0)
-  {
-    result = a5 + 1;
-  }
-  else
-  {
-    result = a5 + 2;
-  }
-
+  int k = i;
   return 0;
 }

@@ -65,6 +65,7 @@ enum node_kind
     CONST_VAR,
     FUN,
     ARRAY,
+    CONST_ARRAY,
     TEMP_VAR,
     EXT_DEF_LIST,
     EXT_VAR_DEF,
