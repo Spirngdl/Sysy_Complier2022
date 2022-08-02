@@ -61,8 +61,8 @@ struct armcode_
     opflag flag;
     bool is_s;
     armoper result; // result
-    armoper oper1;
-    armoper oper2;
+    armoper oper1;  //···||在全局变量声明时，oper1.type为STRING，str_id为字符串值
+    armoper oper2;       //oper2.type 为imme，oper2.value为初始值
     armoper oper3; //用来移位的
     struct armcode_ *next;
     struct armcode_ *pre;

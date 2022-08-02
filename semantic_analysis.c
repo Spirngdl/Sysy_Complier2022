@@ -155,14 +155,14 @@ void array_decl(struct node *T)
             if (LEV == 0) //全局变量 把大括号里的值存到表中
             {
                 initarray = initarray->ptr[0];
-                arrayinit_bracker(value_list, initarray, brace_num, &array_offset, temp_width, array_dimension);
+                arrayinit_bracker(value_list, initarray, brace_num, &array_offset, temp_width, array_dimension,T->type);
                 symbolTable.symbols[rtn].value = value_list;
                 arrayTalbe.symbols[arr_rtn].value = value_list;
             }
             else // TODO:局部变量 暂时打算跟全局一样的处理 主要不一样的处理是要记录大小，用来开辟函数栈空间
             {
                 initarray = initarray->ptr[0];
-                arrayinit_bracker(value_list, initarray, brace_num, &array_offset, temp_width, array_dimension);
+                arrayinit_bracker(value_list, initarray, brace_num, &array_offset, temp_width, array_dimension,T->type);
                 symbolTable.symbols[rtn].value = value_list;
                 arrayTalbe.symbols[arr_rtn].value = value_list;
             }
@@ -170,16 +170,16 @@ void array_decl(struct node *T)
     }
 }
 //暂时对错误检查还有欠缺
-void arrayinit_bracker(List *value_list, struct node *T, int brace_num, int *array_offset, int width[], int dimension)
+void arrayinit_bracker(List *value_list, struct node *T, int brace_num, int *array_offset, int width[], int dimension,int type)
 {
     if (T == NULL)
         return;
     if (T->kind == INITARRAY) //表示一个大括号
     {
         brace_num++;
-        arrayinit_bracker(value_list, T->ptr[0], brace_num, array_offset, width, dimension);
+        arrayinit_bracker(value_list, T->ptr[0], brace_num, array_offset, width, dimension,type);
         brace_num--;
-        arrayinit_bracker(value_list, T->ptr[1], brace_num, array_offset, width, dimension);
+        arrayinit_bracker(value_list, T->ptr[1], brace_num, array_offset, width, dimension,type);
     }
     else
     {
@@ -220,7 +220,7 @@ void arrayinit_bracker(List *value_list, struct node *T, int brace_num, int *arr
             if (brace_num + 1 > dimension)
                 semantic_error(T->pos, "多余大括号", ".");
             else
-                arrayinit_bracker(value_list, initarray, brace_num, array_offset, width, dimension);
+                arrayinit_bracker(value_list, initarray, brace_num, array_offset, width, dimension,type);
         }
     }
 }

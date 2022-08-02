@@ -15,6 +15,8 @@ int func_call_subindex;
 int func_enter_reg[16];
 int func_enter_regnum;
 
+int cur_stk_offset;
+
 armcode *initnewnode()
 {
     armcode *newnode = (armcode *)malloc(sizeof(struct armcode_));
@@ -166,6 +168,7 @@ armcode *translatearm(Blocks *blocks)
     int rn0, rn1, rn2, rn3;
     int index,stkindex;
     char regname[10]={0};
+    // char labelname[33];
     int paranum,spil_var_num;
     armcode *snode,*subnode,*addnode,*strnode,*movnode,*ldmnode;
     Blocks *cur_blocks = blocks;
@@ -224,6 +227,8 @@ armcode *translatearm(Blocks *blocks)
 
                     func_enter_subindex = (spil_var_num+2)*4;       //+2为宏区
 
+                    cur_stk_offset = func_call_subindex -4;
+
                     subnode = initnewnode();
                     subnode->op = SUB;
                     subnode->result.value = R13;
@@ -239,6 +244,14 @@ armcode *translatearm(Blocks *blocks)
 
 
                     break;
+
+                case LABEL:
+                    // memset(labelname,0,sizeof(labelname));
+                    newnode->op = ARMLABEL;
+                    newnode->result.type = STRING;
+                    strcpy(newnode->result.str_id, p->result.id);
+                    break;
+
                 case TOK_ASSIGN:
                     if ((rn0 = search_var(funcname, p->result.id)) >= 0) // The result is stored in the register
                     {

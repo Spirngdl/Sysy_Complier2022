@@ -52,6 +52,10 @@ void printarm(armcode *armnode, FILE *fp)
         {
         case ARMLABEL:
             fprintf(fp,"%s\n",p->result.str_id);
+            if(p->oper1.type == STRING)
+            {
+                fprintf(fp,"\t%s    %d\n",p->oper1.str_id,p->oper2.value);
+            }
             break;
 
         case MOV:
