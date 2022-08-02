@@ -28,13 +28,14 @@
 #include "../toARM/toArm.h"
 #include "Dag.h"
 // #define DD
+
 enum node_kind
 {
     TOK_LDR = 2022,
     VAR_DECL,
     VAR_DECL_LIST,
     COMPUNIT_LIST,
-    
+
     CONSTDECL,
     CONSTDECL_LIST,
 
@@ -230,7 +231,7 @@ void rval_array(struct node *T);
 
 void push_initvalue(int i, List *node);
 int find_initvalue_arr(int symbol_index, int offset);
-void arrayinit_bracker(List *value_list, struct node *T, int brace_num, int *array_offset, int width[], int dimension);
+void arrayinit_bracker(List *value_list, struct node *T, int brace_num, int *array_offset, int width[], int dimension,int type);
 
 void test_array();
 void push_initarray(struct node *T, struct node *newnode);
@@ -240,4 +241,6 @@ int get_count_var(Blocks *head);
 //合法立即数检查
 int check_imme(int imme);
 void check_immes(Blocks *blocks);
+char *Label_();
+void add_label_block(Blocks *head);
 #endif

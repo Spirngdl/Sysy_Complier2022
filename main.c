@@ -23,13 +23,24 @@ void Driver(struct node *T)
   Func_name = gloal;
   semantic_Analysis(T);
   // test_array();
-  make_uid(&(T->code));    //给每个三地址代码进行编号，顺变把全局变量初始化移到开头
-  change_label(T->code);   //把三弟代码生成过程中产生的标号删除
-  print_IR(T->code);       //打印比较初始的三地址代码
-  basic_block(T->code);    //划分基本块
-                           // get_count_var(head_block);
+  make_uid(&(T->code));  //给每个三地址代码进行编号，顺变把全局变量初始化移到开头
+  change_label(T->code); //把三弟代码生成过程中产生的标号删除
+  print_IR(T->code);     //打印比较初始的三地址代码
+  int width = get_array_infunc("main");
+  basic_block(T->code); //划分基本块
+  // get_count_var(head_block);
   check_immes(head_block); //检验立即数合法性
   all_fun_reg(head_block); //进行活跃变量分析
+  add_label_block(head_block);//
+  Blocks *cur_blocks = head_block;
+  while (cur_blocks)
+  {
+    for (int i = 0; i < cur_blocks->count; i++)
+    {
+      print_IR(cur_blocks->block[i]->tac_list);
+    }
+    cur_blocks = cur_blocks->next;
+  }
   arminterface(head_block);
   // printf("optimize\n");
   // // invariant_Extrapolation(head_block);
