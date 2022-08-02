@@ -88,7 +88,10 @@ struct codenode *genLabel(char *label)
 {
     struct codenode *h = (struct codenode *)malloc(sizeof(struct codenode));
     h->op = LABEL;
+    h->result.kind = ID;
+    h->opn1.kind = h->opn2.kind = NONE;
     strcpy(h->result.id, label);
+    h->UID = 0;
     h->next = h->prior = h;
     h->in = h->out = 0;
     return h;
@@ -610,8 +613,6 @@ void check_immes(Blocks *blocks)
         cur_blocks = cur_blocks->next;
     }
 }
-
-
 
 int CompareKey(void *lhs, void *rhs)
 {

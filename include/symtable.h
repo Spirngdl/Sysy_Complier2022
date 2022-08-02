@@ -12,7 +12,7 @@
 #ifndef SYMTABLE_H_
 #define SYMTABLE_H_
 #include "../Common/list.h"
-#define MAXLENGTH 10000 //定义符号表的大小
+#define MAXLENGTH 100000 //定义符号表的大小
 struct symbol
 {                   //这里只列出了一个符号表项的部分属性，没考虑属性间的互斥
     char name[33];  //变量或函数名
@@ -20,7 +20,7 @@ struct symbol
     int kind;       //变量名，函数名，数组名
     int type;       //变量类型或函数返回值类型数
     int paramnum;   //形式参数个数
-    char alias[10]; //别名，为解决嵌套层次使用，使得每一个数据名称唯一
+    char alias[20]; //别名，为解决嵌套层次使用，使得每一个数据名称唯一
     int flag;       //符号标记，函数：'F'  变量：'V'   参数：'P'  临时变量：'T'
     // int offset;          //外部变量和局部变量在其静态数据区或活动记录中的偏移量
     //或函数活动记录大小，目标代码生成时使用
@@ -42,6 +42,31 @@ typedef struct ArraySymbol_
     List *value;         //保存数组的值
     char func_name[32];  //所在函数的函数名
 } arraysymbol;
+
+// UID-标号
+struct LabelUid
+{
+    int uid;
+    char label[32];
+};
+//数组初始化的值
+typedef struct ArrayValue_ ArrayValue;
+struct ArrayValue_
+{
+    enum node_kind kind; //可能是 LITERAL FLOAT_LITERAL ID
+    union
+    {
+        int v_int;
+        float v_float;
+        char var_name[32]
+    };
+};
+
+struct LabelUidTable
+{
+    struct LabelUid table[10000];
+    int count;
+} LabelTable;
 //临时的符号表
 struct astsymboltable
 {
@@ -91,4 +116,6 @@ int fillSymbolTable_(char *name, char *alias, int level, int type, char flag, in
 int fillArrayTable(char *name, char *alias, int level, int type);
 int fillFunctionTable(char *name, int type, int paramnum);
 int get_array_infunc(char *func_name);
+int filllabel(char *name, int uid);
+char *search_uid(int uid);
 #endif

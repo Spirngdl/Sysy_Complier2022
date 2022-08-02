@@ -139,3 +139,16 @@ int fillast(char *name, char flag)
     astsymbol.symbols[astsymbol.index].flag = flag;
     return astsymbol.index++; //返回的是符号在符号表中的位置序号，中间代码生成时可用序号取到符号别名
 }
+/**
+ * @brief 添加label和uid
+ *
+ * @param name
+ * @param uid
+ * @return int
+ */
+int filllabel(char *name, int uid)
+{
+    strcpy(LabelTable.table[LabelTable.count].label, name);
+    LabelTable.table[LabelTable.count].uid = uid;
+    return LabelTable.count++;
+}

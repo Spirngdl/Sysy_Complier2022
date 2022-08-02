@@ -196,3 +196,38 @@ void basic_block(struct codenode *head)
         head_block = head_block->pre;
     }
 }
+
+char *Label_()
+{
+    static int no = 1;
+    char s[10];
+    snprintf(s, 10, "%d", no++);
+    // itoa(no++, s, 10);
+    return str_catch("label", s);
+}
+/**
+ * @brief 遍历所有基本块为每个基本块添加Label节点
+ *
+ */
+void add_label_block(Blocks *head)
+{
+    Blocks *cur = head;
+    while (cur)
+    {
+        int count = cur->count;
+        if (count > 1) //如果只有一块，那没有跳转，不需要
+        {
+            for (int i = 0; i < count; i++)
+            {
+                int uid = cur->block[i]->tac_list->UID;
+                char *label = Label_();
+                filllabel(label, uid);
+                struct codenode *Label_node = genLabel(label);
+                Label_node->next = cur->block[i]->tac_list;
+                cur->block[i]->tac_list->prior = Label_node;
+                cur->block[i]->tac_list = Label_node;
+            }
+        }
+        cur = cur->next;
+    }
+}
