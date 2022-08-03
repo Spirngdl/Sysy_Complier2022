@@ -39,7 +39,7 @@ typedef struct ArraySymbol_
     char alias[10];      // 别名
     int length[10];      //数组每一维的长度
     int array_demension; //数组维度
-    List *value;         //保存数组的值
+    List *value;         //保存数组的值 如果没有初值，设置为NULL
     char func_name[32];  //所在函数的函数名
 } arraysymbol;
 
@@ -53,15 +53,13 @@ struct LabelUid
 typedef struct ArrayValue_ ArrayValue;
 struct ArrayValue_
 {
-    int kind; //可能是 LITERAL FLOAT_LITERAL ID
+    int kind; //可能是 LITERAL FLOAT_LITERAL ID NONE
     union
     {
         int v_int;
         float v_float;
         char var_name[32];
     };
-    struct ArrayValue_ *left;
-    struct ArrayValue_ *right;
 };
 
 struct LabelUidTable

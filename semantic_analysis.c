@@ -23,8 +23,8 @@ void semantic_Analysis(struct node *T)
             var_decl_list(T);
             break;
         case CONSTDECL:
-            break;
             const_decl(T);
+            break;
         case ARRAY_DEC:
             array_decl(T);
             break;
@@ -138,6 +138,7 @@ void array_decl(struct node *T)
     rtn = fillSymbolTable(T->type_id, Alias, LEV, T->type, ARRAY);                     //符号表
     arr_rtn = fillArrayTable(T->type_id, Alias, LEV, T->type);                         //往数组符号表填东西
     strcpy(arrayTalbe.symbols[arr_rtn].func_name, Func_name);                          //记录所在函数的函数名
+    //干脆整个数组声明语句
     if (rtn == -1)
         semantic_error(T->pos, T->type_id, "变量重复定义");
     else
@@ -162,14 +163,15 @@ void array_decl(struct node *T)
             if (LEV == 0) //全局变量 把大括号里的值存到表中
             {
                 initarray = initarray->ptr[0];
-                arrayinit_bracker(value_list, initarray, brace_num, &array_offset, temp_width, array_dimension, T->type, T->type_id);
+                T->code = merge(2, T->code, arrayinit_bracker(value_list, initarray, brace_num, &array_offset, temp_width, array_dimension, T->type, T->type_id));
                 symbolTable.symbols[rtn].value = value_list;
                 arrayTalbe.symbols[arr_rtn].value = value_list;
             }
             else // TODO:局部变量 暂时打算跟全局一样的处理 主要不一样的处理是要记录大小，用来开辟函数栈空间
+                 // 2022/8/3: 局部变量初始化和全局初始化的不同在于，如果没有显示初始化，对应位置全局变量是置为0而局部不设置
             {
                 initarray = initarray->ptr[0];
-                arrayinit_bracker(value_list, initarray, brace_num, &array_offset, temp_width, array_dimension, T->type, T->type_id);
+                T->code = merge(2, T->code, arrayinit_bracker(value_list, initarray, brace_num, &array_offset, temp_width, array_dimension, T->type, T->type_id));
                 symbolTable.symbols[rtn].value = value_list;
                 arrayTalbe.symbols[arr_rtn].value = value_list;
             }
@@ -231,7 +233,7 @@ struct codenode *arrayinit_bracker(List *value_list, struct node *T, int brace_n
                     opn1.const_int = *array_offset;
                     opn2.kind = ID;
                     strcpy(opn2.id, symbolTable.symbols[initarray->place].alias);
-                    merge(2, tcode, genIR(ARRAY_ASSIGN, opn1, opn2, result));
+                    tcode = merge(3, tcode, initarray->code, genIR(ARRAY_ASSIGN, opn1, opn2, result));
                     value->kind = LITERAL;
                     value->v_int = 0;
                 }
@@ -272,9 +274,10 @@ struct codenode *arrayinit_bracker(List *value_list, struct node *T, int brace_n
             if (brace_num + 1 > dimension)
                 semantic_error(T->pos, "多余大括号", ".");
             else
-                arrayinit_bracker(value_list, initarray, brace_num, array_offset, width, dimension, type, array_name);
+                tcode = merge(2, tcode, arrayinit_bracker(value_list, initarray, brace_num, array_offset, width, dimension, type, array_name));
         }
     }
+    return tcode;
 }
 int array_index(struct node *T, int i, int offset) //生成数组下标
 {

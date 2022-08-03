@@ -101,7 +101,32 @@ void search_global_var()
         }
     }
 }
-
+/**
+ * @brief 遍历数组的初值链表,是按顺序存的
+ *
+ * @param value_list
+ */
+void traverse_List(List *value_list)
+{
+    void *element = NULL;
+    ListFirst(value_list, false); //重置iterator
+    while (ListNext(value_list, &element))
+    {
+        ArrayValue *value = (ArrayValue *)element;
+        if (value->kind == LITERAL) //整型常量
+        {
+        }
+        else if (value->kind == FLOAT_LITERAL) //浮点型常量
+        {
+        }
+        else if (value->kind == ID) //可以显式的写出来
+        {
+        }
+        else if (value->kind == NONE) //没法存在符号表里，比如说数组，所以我会显式的写出来
+        {
+        }
+    }
+}
 /**
  * @brief 通过别名查找符号表，一般是在后端调用了，因为三地址代码中存储的变量的ID就是别名
  *

@@ -1,5 +1,5 @@
 #include "include/def.h"
-// #define DU
+#define DU
 int searchSymbolTable(char *name)
 {
     int i;
@@ -103,6 +103,7 @@ int fillArrayTable(char *name, char *alias, int level, int type)
     strcpy(arrayTalbe.symbols[arrayTalbe.index].name, name);
     arrayTalbe.symbols[arrayTalbe.index].level = level;
     arrayTalbe.symbols[arrayTalbe.index].type = type;
+    arrayTalbe.symbols[arrayTalbe.index].value = NULL;
     return arrayTalbe.index++;
 }
 //添加函数
