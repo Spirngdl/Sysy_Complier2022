@@ -15,6 +15,8 @@ int func_call_subindex;
 int func_enter_reg[16];
 int func_enter_regnum;
 
+int cur_stk_offset;
+
 armcode *initnewnode()
 {
     armcode *newnode = (armcode *)malloc(sizeof(struct armcode_));
@@ -166,6 +168,7 @@ armcode *translatearm(Blocks *blocks)
     int rn0, rn1, rn2, rn3;
     int index,stkindex;
     char regname[10]={0};
+    // char labelname[33];
     int paranum,spil_var_num;
     armcode *snode,*subnode,*addnode,*strnode,*movnode,*ldmnode;
     Blocks *cur_blocks = blocks;
@@ -224,6 +227,8 @@ armcode *translatearm(Blocks *blocks)
 
                     func_enter_subindex = (spil_var_num+2)*4;       //+2为宏区
 
+                    cur_stk_offset = func_call_subindex -4;
+
                     subnode = initnewnode();
                     subnode->op = SUB;
                     subnode->result.value = R13;
@@ -239,6 +244,14 @@ armcode *translatearm(Blocks *blocks)
 
 
                     break;
+
+                case LABEL:
+                    // memset(labelname,0,sizeof(labelname));
+                    newnode->op = ARMLABEL;
+                    newnode->result.type = STRING;
+                    strcpy(newnode->result.str_id, p->result.id);
+                    break;
+
                 case TOK_ASSIGN:
                     if ((rn0 = search_var(funcname, p->result.id)) >= 0) // The result is stored in the register
                     {
@@ -249,7 +262,7 @@ armcode *translatearm(Blocks *blocks)
 
                         if (p->opn1.kind == LITERAL)
                         {
-                            printf("MOV R%d ,#%d\n", rn0, p->opn1.const_int);
+                            //printf("MOV R%d ,#%d\n", rn0, p->opn1.const_int);
                             newnode->oper1.type = IMME;
                             newnode->oper1.value = p->opn1.const_int;
                         }
@@ -258,7 +271,7 @@ armcode *translatearm(Blocks *blocks)
                             if ((rn1 = search_var(funcname, p->opn1.id)) >= 0)
                             {
                                 Reg[rn1] = p->opn1.id;
-                                printf("MOV R%d ,R%d\n", rn0, rn1);
+                                //printf("MOV R%d ,R%d\n", rn0, rn1);
                                 newnode->oper2.type = REG;
                                 newnode->oper2.value = rn1;
                             }
@@ -476,7 +489,7 @@ armcode *translatearm(Blocks *blocks)
                                 movnode->op = MOV;
                                 movnode->result.value = i;
                                 movnode->oper1.type = IMME;
-                                movnode->oper1.value = m->result.const_int;
+                                movnode->oper1.value = p->result.const_int;
                                 armlink_insert(newnode, movnode);
                             }
                             else
@@ -485,10 +498,11 @@ armcode *translatearm(Blocks *blocks)
                                 movnode->op = LDR;
                                 movnode->result.value = i;
                                 movnode->oper1.type = ILIMME;
-                                movnode->oper1.value = m->result.const_int;
+                                movnode->oper1.value = p->result.const_int;
                                 armlink_insert(newnode, movnode);
                             }
                         }
+                        p = p->next;
                     }
                     p = m; //指向最后一个参数
                     q = newnode->pre;
@@ -648,6 +662,12 @@ armcode *translatearm(Blocks *blocks)
         }
         cur_blocks = cur_blocks->next;
     }
+
+    armcode * vnode = search_global_var();
+    q->next = vnode;
+    vnode->pre = q;
+    q = vnode;
+
     return first;
 }
 

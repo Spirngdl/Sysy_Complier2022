@@ -54,6 +54,14 @@ void printarm(armcode *armnode, FILE *fp)
             fprintf(fp,"%s\n",p->result.str_id);
             break;
 
+        case GVAR_INT:
+            fprintf(fp,"\t%s   %d\n",p->result.str_id,p->oper1.value);
+            break;
+
+        case GVAR_FLOAT:
+            fprintf(fp,"\t%s    %x\n",p->result.str_id,p->oper1.value);
+            break;
+
         case MOV:
             if(p->oper1.type == REG)
             {
@@ -65,7 +73,14 @@ void printarm(armcode *armnode, FILE *fp)
             }
             else
             {
-                printf("MOV node oper1.type error!\n");
+                if(p->oper1.type == NUL)
+                {
+
+                }
+                else
+                {
+                    printf("MOV node oper1.type error!\n");
+                }
             }
             break;
 
@@ -151,13 +166,14 @@ void printarm(armcode *armnode, FILE *fp)
         default:
             break;
         }
-        p = p->next;
+        
+        p=p->next;
     }
 }
 
 void arminterface(Blocks *blocks)
 {
-    FILE *fp = fopen("./a.asm", "w+");
+    FILE *fp = fopen("./a.asm", "w");
     armcode *armcode = translatearm(blocks);
     printarm(armcode, fp);
 }

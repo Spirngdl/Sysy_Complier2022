@@ -12,6 +12,7 @@ typedef enum
     REGLIST,
     STRING,//字符串类型
     MEM,
+    
    
 } optype;
 
@@ -28,6 +29,8 @@ typedef enum
     STMFD,
     LDMFD,
     ARMLABEL,
+    GVAR_INT,   //整型全局变量
+    GVAR_FLOAT, //浮点型全局变量
 
 } armop;
 
@@ -61,8 +64,8 @@ struct armcode_
     opflag flag;
     bool is_s;
     armoper result; // result
-    armoper oper1;
-    armoper oper2;
+    armoper oper1;  //···||全局变量初始值
+    armoper oper2;       
     armoper oper3; //用来移位的
     struct armcode_ *next;
     struct armcode_ *pre;
@@ -118,6 +121,9 @@ int vartable_update_all(vartable* table,int stkamt);              //修改整个
 vartable * vartable_create();
 
 armcode *mul_reg_node(armop opt,int stkreg, int reg[], int regnum); //生成LDMFD、STMFD节点
+
+armcode *search_global_var();
+armcode *traverse_List(List *value_list,int arysize);
 
 
 #endif
