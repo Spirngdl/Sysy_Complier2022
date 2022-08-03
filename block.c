@@ -185,7 +185,8 @@ void basic_block(struct codenode *head)
                 lcode->next = NULL;
             }
             globel->tac_list = hcode;
-            newBlocks("globel");              //为全局变量创建个块
+            newBlocks("globel"); //为全局变量创建个块
+            current_block->count++;
             current_block->block[0] = globel; //把三地址代码存进去
             continue;
         }

@@ -662,6 +662,12 @@ armcode *translatearm(Blocks *blocks)
         }
         cur_blocks = cur_blocks->next;
     }
+
+    armcode * vnode = search_global_var();
+    q->next = vnode;
+    vnode->pre = q;
+    q = vnode;
+
     return first;
 }
 

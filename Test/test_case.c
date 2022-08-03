@@ -1,11 +1,14 @@
-int func(int a1, int a2, int a3, int a4, int a5)
+int func(int a1, int a2, int a3, int a4, int a5, int a6)
 {
-  while (a1 > 3)
+  int result = 0;
+  if (a1 > 0)
   {
-    a5 = a5 + 1;
+    result = a5 + 1;
   }
-  return a5;
-}
+  else
+  {
+    result = a5 + 2;
+  }
 
 int fun(int i,int j,int k,int m,int n,int l)
 {

@@ -122,5 +122,8 @@ vartable * vartable_create();
 
 armcode *mul_reg_node(armop opt,int stkreg, int reg[], int regnum); //生成LDMFD、STMFD节点
 
+armcode *search_global_var();
+armcode *traverse_List(List *value_list,int arysize);
+
 
 #endif
