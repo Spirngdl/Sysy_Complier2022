@@ -14,6 +14,8 @@
     return -1;
 }*/
 
+int gobal_cnt = 0;
+
 // 获取一个基本块中三地址代码的数量
 int codenode_num (struct codenode* TAC) {
     int cnt = 0;
@@ -39,12 +41,48 @@ int id_exist_strs (char* str, char* total1[], char* total2[], int size) {
     return 0;
 }
 
+int exist_gobal (char* name, char* fun_name, const int num) {
+    int i = 0;
+    for (i = 0; i < num; i++) {
+        if (strcmp(name, gobals[i].name) == 0 && strcmp(fun_name, gobals[i].fun_name) == 0) return 1;
+    }
+    return 0;
+}
+
 // 获取一个基本块中的use、def集合
 void one_block_use_def (char* use[], char* def[], int size, Block block, char* fun_name, char* param[], int param_num) {
     struct codenode* p = block.tac_list;
     int use_num = 0, def_num = 0;
     while (p != NULL) {
         //printf("\n*%d*", p->op);
+        
+        if (p->op != FUNCTION) {
+            if (p->result.kind == ID && search_alias(p->result.id) != -1 && exist_gobal(p->result.id, fun_name, gobal_cnt) == 0) {
+                strcpy(gobals[gobal_cnt].name, p->result.id);
+                strcpy(gobals[gobal_cnt].fun_name, fun_name);
+                gobal_cnt++;
+            }
+            if (p->opn1.kind == ID && search_alias(p->opn1.id) != -1 && exist_gobal(p->opn1.id, fun_name, gobal_cnt) == 0) {
+                strcpy(gobals[gobal_cnt].name, p->opn1.id);
+                strcpy(gobals[gobal_cnt].fun_name, fun_name);
+                gobal_cnt++;
+            }
+            if (p->opn2.kind == ID && search_alias(p->opn2.id) != -1 && exist_gobal(p->opn2.id, fun_name, gobal_cnt) == 0) {
+                strcpy(gobals[gobal_cnt].name, p->opn2.id);
+                strcpy(gobals[gobal_cnt].fun_name, fun_name);
+                gobal_cnt++;
+            }
+        }
+            
+        // LDR语句
+        /*if (p->op == TOK_LDR) {
+            if (p->result.kind == ID) {
+                if (!id_exist_strs(p->result.id, param, param, param_num) && !id_exist_strs(p->result.id, use, def, size) && search_alias(p->result.id) == -1 && _search_var(fun_name, p->result.id) == -2) {
+                    def[def_num] = p->result.id;
+                    def_num++;
+                }
+            }
+        }*/
         // return返回语句
         if (p->op == TOK_RETURN) {
             if (p->result.kind == ID) {
@@ -530,17 +568,32 @@ void all_fun_reg (Blocks* head_fun) {
     printf("\n");
 }
 
+int search_func_gvar (char* funcname, char** gvartable) {
+    int i = 0, cnt = 0;
+    for (i = 0; i < gobal_cnt; i++) {
+        if (strcmp(funcname, gobals[i].fun_name) == 0) {
+            gvartable[cnt] = gobals[i].name;
+            cnt++;
+        }
+    }
+    return cnt;
+}
+
 // 具体是哪个函数？
 // block_num -> 基本块序号，char* temp[] -> 存入该基本块OUT活跃变量
 // 返回值为数组中的变量个数
 // 全局变量皆视为活跃变量
-int search_out (char* fun_name, int block_num, char* temp[]) {
+/*int search_out (char* fun_name, int block_num, char* out[]) {
     int cnt = 0;
+    int flag = 0;
     Blocks* p = head_block;
-    while (1) {
-        if (strcmp(fun_name, p->block[0]->tac_list->result.id) == 0) break;
+    while (p != NULL) {
+        if (strcmp(fun_name, p->block[0]->tac_list->result.id) == 0) {
+            flag = 1;
+        }
         p = p->next;
     }
+    if (flag == 0) return -1;
     cnt++;
     return cnt;
-}
+}*/

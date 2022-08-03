@@ -26,7 +26,7 @@ struct symbol
     //或函数活动记录大小，目标代码生成时使用
     int length[10];      //数组每一维的长度
     int array_dimension; //数组维度
-    List *value;         //保存全局变量的值，用来数组初始化
+    List *value;         //保存全局变量的值，用来数组初始化 如果没有完全没有初始化，置为NULL
     float const_value;   //暂存临时的值
 };
 

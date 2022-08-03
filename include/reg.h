@@ -1,4 +1,4 @@
-#define MAX_REG 11 // 最大寄存器数（R4、R5 翻译自用）
+#define MAX_REG 11 // 最大寄存器数（R11、R12 翻译自用）
 #define MAX_VARS 1024 // 最大变量数
 
 struct var_of_RIG {
@@ -55,8 +55,6 @@ int _search_var (char* fun_name, char* name);
 // 全局变量不在 vars[MAX_VARS] 数组中，将返回 -2
 // 无用赋值不属于活跃变量，不分配其寄存器，将返回 -3
 int search_var (char* fun_name, char* name);
-
-int cmpfunc (const void * a, const void * b);
 
 // 输入函数名、寄存器数组
 // 函数将为所用寄存器的相应位赋 1，其余为 0

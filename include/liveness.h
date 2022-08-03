@@ -1,10 +1,20 @@
 #define MAX_VAR 64 // 假设一个基本块中的变量最多有64个
+#define _MAX_VARS 1024 // 最大变量数
+
+struct gobal {
+    char name[32]; // 变量名
+    char fun_name[32]; // 函数名
+};
+
+struct gobal gobals[_MAX_VARS];
 
 // 获取一个基本块中三地址代码的数量
 int codenode_num (struct codenode* TAC);
 
 // 判断id是否已在use、def集合中存在，size为字符串数组的大小
 int id_exist_strs (char* str, char* total1[], char* total2[], int size);
+
+int exist_gobal (char* name, char* fun_name, const int num);
 
 // 获取一个基本块中的use、def集合
 void one_block_use_def (char* use[], char* def[], int size, Block block, char* fun_name, char* param[], int param_num);
@@ -34,3 +44,5 @@ void all_block_liveness (Block* cntr[], int num_block, char* fun_add);
 
 // 遍历所有的函数，对每一个函数进行liveness分析与寄存器分配
 void all_fun_reg (Blocks* head_fun);
+
+int search_func_gvar (char* funcname, char** gvartable);

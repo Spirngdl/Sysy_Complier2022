@@ -384,28 +384,27 @@ int search_var (char* fun_name, char* name) {
     }
 }
 
-int cmpfunc (const void * a, const void * b) {
-   return ( *(int*)a - *(int*)b );
-}
-
-
 // 输入函数名、寄存器数组
 // 函数将为所用寄存器的相应位赋 1，其余为 0
 // 寄存器默认为 16 个，其中 R11、R12 不分配，为 0
 int one_fun_reg(char* fun_name, int reg[]) {
     int i = 0, num = 0;
+    int flag[16] = {0};
     for (i = 0; i < 16; i++) {
         reg[i] = -1;
     }
     for (i = 0; i < var_cnt; i++) {
         if ((strcmp(fun_name, vars[i].fun_name) == 0) && (vars[i].reg >= 0)) {
-            reg[num] = vars[i].reg;
+            flag[vars[i].reg] = 1;       
+        }
+    }
+    for (i = 4; i < 16; i++) {
+        if (flag[i] == 1) {
+            reg[num] = i;
             num++;
         }
     }
-    
-    qsort(reg, num, sizeof(int), cmpfunc);
-
+    //qsort(reg, num, sizeof(int), cmpfunc);
     return num;
 }
 
