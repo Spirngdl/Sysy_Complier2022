@@ -164,6 +164,14 @@ void array_decl(struct node *T)
             {
                 initarray = initarray->ptr[0];
                 T->code = merge(2, T->code, arrayinit_bracker(value_list, initarray, brace_num, &array_offset, temp_width, array_dimension, T->type, T->type_id));
+                //为第一层大括号补0
+                for (int i = array_offset; i < width * length[0]; i++)
+                {
+                    ArrayValue *value = (ArrayValue *)malloc(sizeof(ArrayValue));
+                    value->kind = LITERAL;
+                    value->v_int = 0;
+                    ListPushBack(value_list, value);
+                }
                 symbolTable.symbols[rtn].value = value_list;
                 arrayTalbe.symbols[arr_rtn].value = value_list;
             }
@@ -179,6 +187,19 @@ void array_decl(struct node *T)
     }
 }
 //暂时对错误检查还有欠缺
+/**
+ * @brief 处理数组声明的初始值全局和局部应该要分开来写
+ *
+ * @param value_list
+ * @param T
+ * @param brace_num
+ * @param array_offset
+ * @param width
+ * @param dimension
+ * @param type
+ * @param array_name
+ * @return struct codenode*
+ */
 struct codenode *arrayinit_bracker(List *value_list, struct node *T, int brace_num, int *array_offset, int width[], int dimension, int type, char *array_name)
 {
 
@@ -201,14 +222,13 @@ struct codenode *arrayinit_bracker(List *value_list, struct node *T, int brace_n
             temp_width += width[brace_num - 1];
         }
         int final_offset = temp_width;
-
         if (type == TOK_INT)
         {
             while (initarray != NULL && initarray->kind != INITARRAY)
             {
                 ArrayValue *value = (ArrayValue *)malloc(sizeof(ArrayValue));
                 int const_value;
-                if (initarray->kind == ID) //如果是变量，考虑查找值
+                if (initarray->kind == ID) //如果是变量，考虑查找值,如果是全局的话可以直接拿到对应的值
                 {
                     int place = searchSymbolTable(T->type_id);
                     if (place != -1 && symbolTable.symbols[place].flag == CONST_VAR) //找到了全局变量 且是CONST
@@ -250,6 +270,49 @@ struct codenode *arrayinit_bracker(List *value_list, struct node *T, int brace_n
         }
         else if (type == TOK_FLOAT)
         {
+            while (initarray != NULL && initarray->kind != INITARRAY)
+            {
+                ArrayValue *value = (ArrayValue *)malloc(sizeof(ArrayValue));
+                float const_value;
+                if (initarray->kind == ID) //如果是变量，考虑查找值
+                {
+                    int place = searchSymbolTable(T->type_id);
+                    if (place != -1 && symbolTable.symbols[place].flag == CONST_VAR) //找到了全局变量 且是CONST
+                    {
+                        //直接取值
+                        value->kind = FLOAT_LITERAL;
+                        const_value = symbolTable.symbols[place].const_value;
+                    }
+                    else //
+                    {
+                        value->kind = ID;
+                        strcpy(value->var_name, initarray->type_id);
+                    }
+                }
+                else if (initarray->kind == EXP_ARRAY) //不处理了直接返回ARRAY_ASSIGN
+                {
+                    rval_array(initarray);
+                    struct opn opn1, opn2, result;
+                    result.kind = ID;
+                    strcpy(result.id, array_name);
+                    opn1.kind = LITERAL;
+                    opn1.const_int = *array_offset; //下标
+                    opn2.kind = ID;
+                    strcpy(opn2.id, symbolTable.symbols[initarray->place].alias);
+                    tcode = merge(3, tcode, initarray->code, genIR(ARRAY_ASSIGN, opn1, opn2, result));
+                    value->kind = LITERAL;
+                    value->v_int = 0;
+                }
+                else
+                {
+                    value->kind = FLOAT_LITERAL;
+                    value->v_float = const_exp(initarray);
+                }
+                ListPushBack(value_list, value);
+                // push_initvalue(const_value, value_list);
+                (*array_offset)++;
+                initarray = initarray->ptr[1];
+            }
         }
         if (initarray == NULL) //没有赋值了，
         {
@@ -259,11 +322,15 @@ struct codenode *arrayinit_bracker(List *value_list, struct node *T, int brace_n
             }
             else
             {
-                if (brace_num > 1) //大括号数量大于1
+                if (brace_num > 1) //大括号数量大于1 好像大括号为1的没补，为啥 因为可能后面还有大括号
                 {
-                    for (int i = 0; i < final_offset - *array_offset; i++) //补0
+                    for (int i = 0; i < final_offset - *array_offset; i++) //为全局变量补0
                     {
-                        push_initvalue(0, value_list);
+                        ArrayValue *value = (ArrayValue *)malloc(sizeof(ArrayValue));
+                        value->kind = LITERAL;
+                        value->v_int = 0;
+                        ListPushBack(value_list, value);
+                        // push_initvalue(0, value_list);
                     }
                     (*array_offset) = final_offset;
                 }
@@ -278,6 +345,10 @@ struct codenode *arrayinit_bracker(List *value_list, struct node *T, int brace_n
         }
     }
     return tcode;
+}
+
+struct codenode *arrayinit_bracker_part(List *value_list, struct node *T, int brace_num, int *array_offset, int width[], int dimension, int type, char *array_name)
+{
 }
 int array_index(struct node *T, int i, int offset) //生成数组下标
 {

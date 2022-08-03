@@ -1,5 +1,5 @@
 #include "include/def.h"
-#define DU
+// #define DU
 int searchSymbolTable(char *name)
 {
     int i;
