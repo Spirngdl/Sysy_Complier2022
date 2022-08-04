@@ -196,14 +196,6 @@ void array_decl(struct node *T)
 /**
  * @brief 处理数组声明的初始值全局和局部应该要分开来写
  *
- * @param value_list
- * @param T
- * @param brace_num
- * @param array_offset
- * @param width
- * @param dimension
- * @param type
- * @param array_name
  * @return struct codenode*
  */
 struct codenode *arrayinit_bracker(List *value_list, struct node *T, int brace_num, int *array_offset, int width[], int dimension, int type, char *array_name)
@@ -359,14 +351,6 @@ struct codenode *arrayinit_bracker(List *value_list, struct node *T, int brace_n
 /**
  * @brief 处理局部
  *
- * @param value_list
- * @param T
- * @param brace_num
- * @param array_offset
- * @param width
- * @param dimension
- * @param type
- * @param array_name
  * @return struct codenode*
  */
 struct codenode *arrayinit_bracker_part(struct node *T, int brace_num, int *array_offset, int width[], int dimension, int type, char *array_name)
@@ -472,12 +456,12 @@ struct codenode *arrayinit_bracker_part(struct node *T, int brace_num, int *arra
                 else if (initarray->kind == LITERAL)
                 {
                     opn2.kind = FLOAT_LITERAL;
-                    opn2.const_int = initarray->type_int;
+                    opn2.const_float = initarray->type_int;
                 }
                 else if (initarray->kind == FLOAT_LITERAL)
                 {
                     opn2.kind = FLOAT_LITERAL;
-                    opn2.const_int = initarray->type_float;
+                    opn2.const_float = initarray->type_float;
                 }
                 else //复杂的Exp了
                 {
@@ -873,7 +857,6 @@ void int_exp(struct node *T)
     T->place = temp_add(newTemp(), LEV, T->kind, TEMP_VAR); //为整常量生成一个临时变量
     T->type = T->kind;
     opn1.kind = T->kind;
-    opn1.kind = T->kind;
     if (T->kind == LITERAL)
         opn1.const_int = T->type_int;
     else if (T->kind == FLOAT_LITERAL)
@@ -892,7 +875,8 @@ void op_exp(struct node *T)
     T->place = temp_add(newTemp(), LEV, T->type, TEMP_VAR); //声明临时变量
     result.kind = ID;
     strcpy(result.id, symbolTable.symbols[T->place].alias);
-    //常量
+
+    //左子树
     if (T->ptr[0]->kind == LITERAL) //左子树为整数常数
     {
         T->ptr[0]->code = NULL;
@@ -918,6 +902,7 @@ void op_exp(struct node *T)
         }
 #endif
     }
+    //右子树
     if (T->ptr[1]->kind == LITERAL)
     {
         T->ptr[1]->code = NULL;
@@ -945,17 +930,22 @@ void op_exp(struct node *T)
     }
     T->code = merge(3, T->ptr[0]->code, T->ptr[1]->code, genIR(T->kind, opn1, opn2, result));
 }
-//单
+//单目运算，只有三种可能，+ - !
 void unaryexp(struct node *T)
 {
     struct opn opn1, opn2, result;
     Exp(T->ptr[1]);
     //判断T->ptr[0]，T->ptr[1]类型是否正确，可能根据运算符生成不同形式的代码，给T的type赋值
     //下面的类型属性计算，没有考虑错误处理情况
+    if (T->ptr[0]->kind == TOK_ADD) //如果是+
+    {
+        T->place = T->ptr[1]->place;
+        return;
+    }
+    opn2.kind = ID;
+    strcpy(opn2.id, symbolTable.symbols[T->ptr[1]->place].alias);
     T->type = TOK_INT;
     T->place = temp_add(newTemp(), LEV, T->type, TEMP_VAR);
-    opn1.kind = ID;
-    strcpy(opn1.id, symbolTable.symbols[T->ptr[1]->place].alias);
 #ifdef DD
     if (symbolTable.symbols[T->ptr[1]->place].flag != TEMP_VAR)
     {
@@ -963,7 +953,8 @@ void unaryexp(struct node *T)
         strcpy(opn1.alice, symbolTable.symbols[T->ptr[1]->place].alias);
     }
 #endif
-    opn2.kind = NONE;
+    opn1.kind = LITERAL;
+    opn1.const_int = 0;
     result.kind = ID;
     strcpy(result.id, symbolTable.symbols[T->place].alias);
     T->code = merge(2, T->ptr[1]->code, genIR(T->ptr[0]->kind, opn1, opn2, result));

@@ -30,9 +30,10 @@ void Driver(struct node *T)
   int width = get_array_infunc("main");
   basic_block(T->code); //划分基本块
   // get_count_var(head_block);
-  check_immes(head_block); //检验立即数合法性
-  all_fun_reg(head_block); //进行活跃变量分析
-  add_label_block(head_block);//
+  check_immes(head_block);     //检验立即数合法性
+  make_uid_block(head_block);  //在进入arm翻译前最后一次调整编号
+  all_fun_reg(head_block);     //进行活跃变量分析
+  add_label_block(head_block); //
   Blocks *cur_blocks = head_block;
   while (cur_blocks)
   {
@@ -46,7 +47,7 @@ void Driver(struct node *T)
   // printf("optimize\n");
   // // invariant_Extrapolation(head_block);
   // // dag_optimize(head_block);
-  // make_uid_block(head_block); //在进入arm翻译前最后一次调整编号
+
   // // // all_fun(head_block);
   // Blocks *cur_blocks = head_block;
   // while (cur_blocks)
