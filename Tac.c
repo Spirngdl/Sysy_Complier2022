@@ -168,6 +168,9 @@ void print_IR(struct codenode *head)
         case ARRAY_ASSIGN:
             printf("  %s[%s] := %s\n", resultstr, opnstr1, opnstr2);
             break;
+        case ARRAY_DEC:
+            printf("  %s[%s] \n", resultstr, opnstr1);
+            break;
         case TOK_ADD:
         case TOK_MUL:
         case TOK_SUB:

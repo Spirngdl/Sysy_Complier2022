@@ -202,6 +202,27 @@ struct node *mkunarynode(int kind, struct node *first, struct node *second, int 
         return T;
     }
 }
+//求数组的下标
+int const_index(struct node *T, int index, int width[])
+{
+    int offset = width[index];
+    int result = const_exp(T->ptr[0]);
+    if (T->ptr[1] != NULL) //如果有下一维
+    {
+        int temp = const_index(T->ptr[1], index + 1, width);
+        return result * offset + temp;
+    }
+    else
+    {
+        return result * offset;
+    }
+}
+/**
+ * @brief 保证可以求值的运算
+ *
+ * @param T
+ * @return float
+ */
 float const_exp(struct node *T)
 {
     float left = 0, right = 0;
@@ -211,7 +232,7 @@ float const_exp(struct node *T)
         return T->type_int;
     else if (T->kind == FLOAT_LITERAL)
         return T->type_float;
-    if (T->kind == ID) //如果是变量，只能是CONST 去符号表中取
+    if (T->kind == ID) //如果是变量，如果当前还在函数外，即全局变量，那可以求出正确值，如果是CONST也能求出正确值 去符号表中取
     {
         int place = searchSymbolTable(T->type_id);
         if (place == -1)
@@ -220,6 +241,20 @@ float const_exp(struct node *T)
             return 0;
         }
         return symbolTable.symbols[place].const_value;
+    }
+    if (T->kind == EXP_ARRAY) //如果找数组，比较麻烦要求下标
+    {
+        int rtn = searchSymbolTable(T->type_id); //先处理数组ID
+        int width[10];
+        width[symbolTable.symbols[rtn].array_dimension - 1] = 1;
+        for (int i = symbolTable.symbols[rtn].array_dimension - 1; i > 0; i--)
+        {
+            width[i - 1] = width[i] * symbolTable.symbols[rtn].length[i];
+        }
+        int index = const_index(T->ptr[0], 0, width); //处理下标
+        void *element;
+        ListGetAt(symbolTable.symbols[rtn].value, index, &element);
+        return ((ArrayValue *)element)->kind == LITERAL ? ((ArrayValue *)element)->v_int : ((ArrayValue *)element)->v_float;
     }
     left = const_exp(T->ptr[0]);
     right = const_exp(T->ptr[1]);

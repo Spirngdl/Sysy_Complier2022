@@ -179,9 +179,15 @@ void array_decl(struct node *T)
                  // 2022/8/3: 局部变量初始化和全局初始化的不同在于，如果没有显示初始化，对应位置全局变量是置为0而局部不设置
             {
                 initarray = initarray->ptr[0];
-                T->code = merge(2, T->code, arrayinit_bracker(value_list, initarray, brace_num, &array_offset, temp_width, array_dimension, T->type, T->type_id));
-                symbolTable.symbols[rtn].value = value_list;
-                arrayTalbe.symbols[arr_rtn].value = value_list;
+                struct opn result, opn1, opn2;
+                result.kind = ID;
+                strcpy(result.id, T->type_id);
+                opn1.kind = LITERAL;
+                opn1.const_int = width;
+                opn2.kind = NONE;
+                T->code = merge(3, T->code, genIR(ARRAY_DEC, opn1, opn2, result), arrayinit_bracker_part(initarray, brace_num, &array_offset, temp_width, array_dimension, T->type, T->type_id));
+                // symbolTable.symbols[rtn].value = value_list;
+                // arrayTalbe.symbols[arr_rtn].value = value_list;
             }
         }
     }
@@ -227,41 +233,44 @@ struct codenode *arrayinit_bracker(List *value_list, struct node *T, int brace_n
             while (initarray != NULL && initarray->kind != INITARRAY)
             {
                 ArrayValue *value = (ArrayValue *)malloc(sizeof(ArrayValue));
-                int const_value;
-                if (initarray->kind == ID) //如果是变量，考虑查找值,如果是全局的话可以直接拿到对应的值
-                {
-                    int place = searchSymbolTable(T->type_id);
-                    if (place != -1 && symbolTable.symbols[place].flag == CONST_VAR) //找到了全局变量 且是CONST
-                    {
-                        //直接取值
-                        value->kind = LITERAL;
-                        const_value = symbolTable.symbols[place].const_value;
-                    }
-                    else //
-                    {
-                        value->kind = ID;
-                        strcpy(value->var_name, initarray->type_id);
-                    }
-                }
-                else if (initarray->kind == EXP_ARRAY) //不处理了直接返回ARRAY_ASSIGN
-                {
-                    rval_array(initarray);
-                    struct opn opn1, opn2, result;
-                    result.kind = ID;
-                    strcpy(result.id, array_name);
-                    opn1.kind = LITERAL;
-                    opn1.const_int = *array_offset;
-                    opn2.kind = ID;
-                    strcpy(opn2.id, symbolTable.symbols[initarray->place].alias);
-                    tcode = merge(3, tcode, initarray->code, genIR(ARRAY_ASSIGN, opn1, opn2, result));
-                    value->kind = LITERAL;
-                    value->v_int = 0;
-                }
-                else
-                {
-                    value->kind = LITERAL;
-                    value->v_int = const_exp(initarray);
-                }
+                value->kind = LITERAL;
+                value->v_int = const_exp(initarray);
+                // if (initarray->kind == ID) //如果是变量，考虑查找值,如果是全局的话可以直接拿到对应的值
+                // {
+                //     // int place = searchSymbolTable(T->type_id);
+                //     // if (place != -1) //找到了全局变量 不用考虑是不是const
+                //     // {
+                //     //     //直接取值
+                //     //     value->kind = LITERAL;
+                //     //     const_value = symbolTable.symbols[place].const_value;
+                //     // }
+                //     // else //
+                //     // {
+                //     //     value->kind = ID;
+                //     //     strcpy(value->var_name, initarray->type_id);
+                //     // }
+                //     value->kind == LITERAL;
+                //     value->v_int = const_exp(initarray);
+                // }
+                // else if (initarray->kind == EXP_ARRAY) //不处理了直接返回ARRAY_ASSIGN
+                // {
+                //     // rval_array(initarray);
+                //     // struct opn opn1, opn2, result;
+                //     // result.kind = ID;
+                //     // strcpy(result.id, array_name);
+                //     // opn1.kind = LITERAL;
+                //     // opn1.const_int = *array_offset;
+                //     // opn2.kind = ID;
+                //     // strcpy(opn2.id, symbolTable.symbols[initarray->place].alias);
+                //     // tcode = merge(3, tcode, initarray->code, genIR(ARRAY_ASSIGN, opn1, opn2, result));
+                //     value->kind = LITERAL;
+                //     value->v_int = const_exp(initarray);
+                // }
+                // else
+                // {
+                //     value->kind = LITERAL;
+                //     value->v_int = const_exp(initarray);
+                // }
                 ListPushBack(value_list, value);
                 // push_initvalue(const_value, value_list);
                 (*array_offset)++;
@@ -273,41 +282,42 @@ struct codenode *arrayinit_bracker(List *value_list, struct node *T, int brace_n
             while (initarray != NULL && initarray->kind != INITARRAY)
             {
                 ArrayValue *value = (ArrayValue *)malloc(sizeof(ArrayValue));
-                float const_value;
-                if (initarray->kind == ID) //如果是变量，考虑查找值
-                {
-                    int place = searchSymbolTable(T->type_id);
-                    if (place != -1 && symbolTable.symbols[place].flag == CONST_VAR) //找到了全局变量 且是CONST
-                    {
-                        //直接取值
-                        value->kind = FLOAT_LITERAL;
-                        const_value = symbolTable.symbols[place].const_value;
-                    }
-                    else //
-                    {
-                        value->kind = ID;
-                        strcpy(value->var_name, initarray->type_id);
-                    }
-                }
-                else if (initarray->kind == EXP_ARRAY) //不处理了直接返回ARRAY_ASSIGN
-                {
-                    rval_array(initarray);
-                    struct opn opn1, opn2, result;
-                    result.kind = ID;
-                    strcpy(result.id, array_name);
-                    opn1.kind = LITERAL;
-                    opn1.const_int = *array_offset; //下标
-                    opn2.kind = ID;
-                    strcpy(opn2.id, symbolTable.symbols[initarray->place].alias);
-                    tcode = merge(3, tcode, initarray->code, genIR(ARRAY_ASSIGN, opn1, opn2, result));
-                    value->kind = LITERAL;
-                    value->v_int = 0;
-                }
-                else
-                {
-                    value->kind = FLOAT_LITERAL;
-                    value->v_float = const_exp(initarray);
-                }
+                value->kind = FLOAT_LITERAL;
+                value->v_float = const_exp(initarray);
+                // if (initarray->kind == ID) //如果是变量，考虑查找值
+                // {
+                //     int place = searchSymbolTable(T->type_id);
+                //     if (place != -1 && symbolTable.symbols[place].flag == CONST_VAR) //找到了全局变量 且是CONST
+                //     {
+                //         //直接取值
+                //         value->kind = FLOAT_LITERAL;
+                //         const_value = symbolTable.symbols[place].const_value;
+                //     }
+                //     else //
+                //     {
+                //         value->kind = ID;
+                //         strcpy(value->var_name, initarray->type_id);
+                //     }
+                // }
+                // else if (initarray->kind == EXP_ARRAY) //不处理了直接返回ARRAY_ASSIGN
+                // {
+                //     rval_array(initarray);
+                //     struct opn opn1, opn2, result;
+                //     result.kind = ID;
+                //     strcpy(result.id, array_name);
+                //     opn1.kind = LITERAL;
+                //     opn1.const_int = *array_offset; //下标
+                //     opn2.kind = ID;
+                //     strcpy(opn2.id, symbolTable.symbols[initarray->place].alias);
+                //     tcode = merge(3, tcode, initarray->code, genIR(ARRAY_ASSIGN, opn1, opn2, result));
+                //     value->kind = LITERAL;
+                //     value->v_int = 0;
+                // }
+                // else
+                // {
+                //     value->kind = FLOAT_LITERAL;
+                //     value->v_float = const_exp(initarray);
+                // }
                 ListPushBack(value_list, value);
                 // push_initvalue(const_value, value_list);
                 (*array_offset)++;
@@ -346,9 +356,172 @@ struct codenode *arrayinit_bracker(List *value_list, struct node *T, int brace_n
     }
     return tcode;
 }
-
-struct codenode *arrayinit_bracker_part(List *value_list, struct node *T, int brace_num, int *array_offset, int width[], int dimension, int type, char *array_name)
+/**
+ * @brief 处理局部
+ *
+ * @param value_list
+ * @param T
+ * @param brace_num
+ * @param array_offset
+ * @param width
+ * @param dimension
+ * @param type
+ * @param array_name
+ * @return struct codenode*
+ */
+struct codenode *arrayinit_bracker_part(struct node *T, int brace_num, int *array_offset, int width[], int dimension, int type, char *array_name)
 {
+    if (T == NULL)
+        return NULL;
+    struct codenode *tcode = NULL;
+    if (T->kind == INITARRAY) //表示一个大括号
+    {
+        brace_num++;
+        tcode = merge(2, tcode, arrayinit_bracker_part(T->ptr[0], brace_num, array_offset, width, dimension, type, array_name));
+        brace_num--;
+        tcode = merge(2, tcode, arrayinit_bracker_part(T->ptr[1], brace_num, array_offset, width, dimension, type, array_name));
+    }
+    else
+    {
+        struct node *initarray = T;
+        int temp_width = width[brace_num - 1];
+        while (*array_offset >= temp_width)
+        {
+            temp_width += width[brace_num - 1];
+        }
+        int final_offset = temp_width;
+        struct opn opn1, opn2, result;
+        result.kind = ID;
+        opn1.kind = LITERAL;
+        strcpy(result.id, array_name);
+
+        if (type == TOK_INT)
+        {
+            while (initarray != NULL && initarray->kind != INITARRAY)
+            {
+
+                if (initarray->kind == ID) //如果是变量，考虑查找值,如果是全局的话可以直接拿到对应的值
+                {
+                    int place = searchSymbolTable(T->type_id);
+                    if (place != -1 && symbolTable.symbols[place].flag == CONST_VAR) //找到了变量 且是CONST
+                    {
+                        //直接取值
+                        opn2.kind = LITERAL;
+                        opn2.const_int = symbolTable.symbols[place].const_value;
+                    }
+                    else //
+                    {
+                        opn2.kind = ID;
+                        strcpy(opn2.id, initarray->type_id);
+                    }
+                }
+                else if (initarray->kind == EXP_ARRAY) //不处理了直接返回ARRAY_ASSIGN
+                {
+                    rval_array(initarray);
+                    opn2.kind = ID;
+                    strcpy(opn2.id, symbolTable.symbols[initarray->place].alias);
+                }
+                else if (initarray->kind == LITERAL)
+                {
+                    opn2.kind = LITERAL;
+                    opn2.const_int = initarray->type_int;
+                }
+                else if (initarray->kind == FLOAT_LITERAL)
+                {
+                    opn2.kind = LITERAL;
+                    opn2.const_int = initarray->type_float;
+                }
+                else //复杂的Exp了
+                {
+                    semantic_Analysis(initarray);
+                    opn2.kind = ID;
+                    strcpy(opn2.id, symbolTable.symbols[initarray->place].alias);
+                }
+                opn1.const_int = *array_offset;
+                tcode = merge(3, tcode, initarray->code, genIR(ARRAY_ASSIGN, opn1, opn2, result));
+                (*array_offset)++;
+                initarray = initarray->ptr[1];
+            }
+        }
+        else if (type == TOK_FLOAT)
+        {
+            while (initarray != NULL && initarray->kind != INITARRAY)
+            {
+
+                if (initarray->kind == ID) //如果是变量，考虑查找值,如果是全局的话可以直接拿到对应的值
+                {
+                    int place = searchSymbolTable(T->type_id);
+                    if (place != -1 && symbolTable.symbols[place].flag == CONST_VAR) //找到了变量 且是CONST
+                    {
+                        //直接取值
+                        opn2.kind = FLOAT_LITERAL;
+                        opn2.const_int = symbolTable.symbols[place].const_value;
+                    }
+                    else //
+                    {
+                        opn2.kind = ID;
+                        strcpy(opn2.id, initarray->type_id);
+                    }
+                }
+                else if (initarray->kind == EXP_ARRAY) //不处理了直接返回ARRAY_ASSIGN
+                {
+                    rval_array(initarray);
+                    opn2.kind = ID;
+                    strcpy(opn2.id, symbolTable.symbols[initarray->place].alias);
+                }
+                else if (initarray->kind == LITERAL)
+                {
+                    opn2.kind = FLOAT_LITERAL;
+                    opn2.const_int = initarray->type_int;
+                }
+                else if (initarray->kind == FLOAT_LITERAL)
+                {
+                    opn2.kind = FLOAT_LITERAL;
+                    opn2.const_int = initarray->type_float;
+                }
+                else //复杂的Exp了
+                {
+                    semantic_Analysis(initarray);
+                    opn2.kind = ID;
+                    strcpy(opn2.id, symbolTable.symbols[initarray->place].alias);
+                }
+                opn1.const_int = *array_offset;
+                tcode = merge(3, tcode, initarray->code, genIR(ARRAY_ASSIGN, opn1, opn2, result));
+                (*array_offset)++;
+                initarray = initarray->ptr[1];
+            }
+        }
+        if (initarray == NULL) //没有赋值了，
+        {
+            if (*array_offset > final_offset)
+            {
+                semantic_error(T->pos, "初始值设定项值太多", ".");
+            }
+            else
+            {
+                if (brace_num > 1) //大括号数量大于1 好像大括号为1的没补，为啥 因为可能后面还有大括号
+                {
+                    // for (int i = 0; i < final_offset - *array_offset; i++) //局部变量不需要补0
+                    // {
+                    //     ArrayValue *value = (ArrayValue *)malloc(sizeof(ArrayValue));
+                    //     value->kind = LITERAL;
+                    //     value->v_int = 0;
+                    //     ListPushBack(value_list, value);
+                    //     // push_initvalue(0, value_list);
+                    // }
+                    (*array_offset) = final_offset;
+                }
+            }
+        }
+        else if (initarray->kind == INITARRAY)
+        {
+            if (brace_num + 1 > dimension)
+                semantic_error(T->pos, "多余大括号", ".");
+            else
+                tcode = merge(2, tcode, arrayinit_bracker_part(initarray, brace_num, array_offset, width, dimension, type, array_name));
+        }
+    }
+    return tcode;
 }
 int array_index(struct node *T, int i, int offset) //生成数组下标
 {

@@ -236,7 +236,7 @@ void rval_array(struct node *T);
 void push_initvalue(int i, List *node);
 int find_initvalue_arr(int symbol_index, int offset);
 struct codenode *arrayinit_bracker(List *value_list, struct node *T, int brace_num, int *array_offset, int width[], int dimension, int type, char *array_name);
-
+struct codenode *arrayinit_bracker_part(struct node *T, int brace_num, int *array_offset, int width[], int dimension, int type, char *array_name);
 void test_array();
 void push_initarray(struct node *T, struct node *newnode);
 

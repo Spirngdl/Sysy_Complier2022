@@ -1,21 +1,14 @@
-int d[10];
-int c[10]={10};
-int a=3;
-int b=0;
-//float f[10]={10.0};
-
-int func(int i,int j)
-{
-    int m=0;
-    j=m+a;
-
-    return i+j;
-}
-
-int main()
-{
-    int k;
-    int j=0;
-    int l=func(j,2);
-    return k;
+int main() {
+    int a, b;
+    a = 070;
+    b = 0x4;
+    a = a - - 4 + + b;
+    if (+-!!!a) {
+        a = - - -1;
+    }
+    else {
+        a = 0 + + b;
+    }
+    putint(a);
+    return 0;
 }
