@@ -100,8 +100,6 @@ DAGnode *findnode_symbol(DAG *dag, char *target)
     while (nodelist->next(nodelist, &node))
     {
         DAGnode *debug_node = (DAGnode *)node;
-        if (debug_node->ID == 1)
-            deb = debug_node;
         List *list = debug_node->symList;
         void *element;
         ListFirst(list, false);
@@ -211,18 +209,23 @@ bool isLiteralNode(DAG *dag, char *symbol)
     DAGnode *n = findnode_symbol(dag, symbol);
     if (n == NULL)
         return false;
+    if (n->kind == LITERAL || n->kind == FLOAT_LITERAL)
+        return true;
     if (n->left != NULL && n->right == NULL && n->tri == NULL) //如果只存在左子节点，且左子节点为LITERAL 或者FLOAT_LITERAL
     {
         if (n->left->kind == LITERAL)
         {
             n->kind = LITERAL;
             n->v_num = n->left->v_num;
+            n->left = NULL;
             return true;
         }
         else if (n->left->kind == FLOAT_LITERAL)
         {
             n->kind = FLOAT_LITERAL;
             n->v_float = n->left->v_float;
+            n->left = NULL;
+            return true;
         }
         // void *node;
         // dag->nodes->get_at(dag->nodes, n->left, &node);
@@ -264,6 +267,8 @@ bool isActivenNode(DAGnode *n, int out_count, char *outActive[])
     if (isLeaf(n))
         return false;
     if (n->kind == ARRAY_ASSIGN)
+        return true;
+    if (n->kind == TOK_RETURN)
         return true;
     //如果symlist中存在outactivate
     void *element;
@@ -318,9 +323,9 @@ int readquad(DAG *dag, struct codenode *T)
     {
         return 0;
     }
-    //跳转指令不处理
-    if (T->op == GOTO || T->op == JLE || T->op == JLT || T->op == JGE || T->op == JGT || T->op == EQ || T->op == NEQ || T->op == TOK_RETURN)
+    switch (T->op)
     {
+    case GOTO: //跳转指令不处理
         if (dag->jumperRec == NULL)
         {
             T->prior = T;
@@ -332,37 +337,91 @@ int readquad(DAG *dag, struct codenode *T)
             dag->jumperRec->prior = T;
             T->prior = dag->jumperRec;
         }
-
         return 0;
-    }
-    if (T->op == FUNCTION)
-    {
+        break;
+    case FUNCTION:
         dag->functionrec = T;
-        // T->next = NULL;
         return 0;
-    }
-    if (T->op == END)
-    {
+        break;
+    case END:
         dag->endfunction = T;
         // T->prior = NULL;
         return 0;
-    }
-    if (T->op == TOK_ASSIGN)
-    {
+        break;
+    case TOK_ASSIGN:
         return readquad0(dag, T);
-    }
-    else if (T->op == TOK_ADD || T->op == TOK_SUB || T->op == TOK_DIV || T->op == TOK_MUL || T->op == TOK_MODULO || T->op == EXP_ARRAY)
-    {
+        break;
+    case TOK_RETURN:
+        return readquad1(dag, T);
+        break;
+    case TOK_ADD:
+    case TOK_SUB:
+    case TOK_DIV:
+    case TOK_MUL:
+    case TOK_MODULO:
+    case EXP_ARRAY:
+    case JLE:
+    case JLT:
+    case JGE:
+    case JGT:
+    case EQ:
+    case NEQ:
         return readquad2(dag, T);
-    }
-    else if (T->op == ARRAY_ASSIGN) // 数组赋值
-    {
+        break;
+    case ARRAY_ASSIGN: //数组赋值
         return readquad3(dag, T);
-    }
-    else if (T->op == ARG || T->op == CALL) //函数调用
-    {
+        break;
+    case ARG:
+    case CALL:
         return readquad4(dag, T);
+        break;
+    default:
+        break;
     }
+
+    // if (T->op == GOTO || T->op == TOK_RETURN)
+    // {
+    //     if (dag->jumperRec == NULL)
+    //     {
+    //         T->prior = T;
+    //         dag->jumperRec = T;
+    //     }
+    //     else
+    //     {
+    //         dag->jumperRec->next = T;
+    //         dag->jumperRec->prior = T;
+    //         T->prior = dag->jumperRec;
+    //     }
+    //     return 0;
+    // }
+    // if (T->op == FUNCTION)
+    // {
+    //     dag->functionrec = T;
+    //     // T->next = NULL;
+    //     return 0;
+    // }
+    // if (T->op == END)
+    // {
+    //     dag->endfunction = T;
+    //     // T->prior = NULL;
+    //     return 0;
+    // }
+    // if (T->op == TOK_ASSIGN)
+    // {
+    //     return readquad0(dag, T);
+    // }
+    // else if (T->op == TOK_ADD || T->op == TOK_SUB || T->op == TOK_DIV || T->op == TOK_MUL || T->op == TOK_MODULO || T->op == EXP_ARRAY || T->op == JLE || T->op == JLT || T->op == JGE || T->op == JGT || T->op == EQ || T->op == NEQ)
+    // {
+    //     return readquad2(dag, T);
+    // }
+    // else if (T->op == ARRAY_ASSIGN) // 数组赋值
+    // {
+    //     return readquad3(dag, T);
+    // }
+    // else if (T->op == ARG || T->op == CALL) //函数调用
+    // {
+    //     return readquad4(dag, T);
+    // }
 }
 //赋值
 int readquad0(DAG *dag, struct codenode *T) // 0型暂时不考虑数组
@@ -432,8 +491,53 @@ int readquad0(DAG *dag, struct codenode *T) // 0型暂时不考虑数组
     }
     return 0;
 }
+/**
+ * @brief 处理return
+ * @return int
+ */
+int readquad1(DAG *dag, struct codenode *T)
+{
+    DAGnode *n1 = NULL, *n = NULL;
+    if (T->result.kind == ID)
+    {
 
-//(op, a1, a2, a3)
+        if (isLiteralNode(dag, T->result.id))
+        {
+            n1 = findnode_symbol(dag, T->result.id);
+        }
+        if (n1 == NULL)
+        {
+            n1 = findNode_value(dag, T->result.id, -1, -1, -1);
+            if (n1 == NULL)
+            {
+                n1 = create_dagnode();
+                n1->kind = ID;
+                strcpy(n1->v_id, T->result.id);
+                ListPushBack(dag->nodes, n1);
+            }
+        }
+    }
+    else if (T->result.kind == LITERAL)
+    {
+        n1 = create_dagnode();
+        n1->kind = LITERAL;
+        n1->v_num = T->result.const_int;
+        ListPushBack(dag->nodes, n1);
+    }
+    else if (T->result.kind == FLOAT_LITERAL)
+    {
+        n1 = create_dagnode();
+        n1->kind = FLOAT_LITERAL;
+        n1->v_float = T->result.const_float;
+        ListPushBack(dag->nodes, n1);
+    }
+    n = create_dagnode();
+    n->kind = TOK_RETURN;
+    n->left = n1;
+    ListPushBack(dag->nodes, n);
+    return 0;
+}
+//(op, a1, a2, a3) 条件跳转也算read2
 //要做隐式强制转换，好麻烦
 int readquad2(DAG *dag, struct codenode *T)
 {
@@ -474,7 +578,7 @@ int readquad2(DAG *dag, struct codenode *T)
     else if (T->opn2.kind == ID)
         if (isLiteralNode(dag, T->opn2.id))
         {
-            n2Literal = true;
+            n3Literal = true;
             n3 = findnode_symbol(dag, T->opn2.id);
             if (n3->kind == LITERAL)
                 val2 = n3->v_num;
@@ -530,7 +634,7 @@ int readquad2(DAG *dag, struct codenode *T)
             dag->nodes->push_back(dag->nodes, n1);
         }
     }
-    else
+    else //存在变量
     {
         // opn1
         if (T->opn1.kind == LITERAL)
@@ -609,6 +713,15 @@ int readquad2(DAG *dag, struct codenode *T)
             }
         }
         // result
+        if (T->op >= JLT) //如果是条件跳转
+        {
+            n1 = create_dagnode();
+            n1->left = n2, n1->right = n3;
+            n1->kind = T->op;
+            n1->v_num = T->result.const_int;
+            ListPushBack(dag->nodes, n1);
+            return 0;
+        }
         n1 = findNode_OP_value(dag, T->op, n2->ID, n3->ID, -1);
 
         if (n1 != NULL && !n1->isKilled)
@@ -1029,6 +1142,51 @@ struct codenode *to_code(DAG *dag, DAGnode *n, int out_count, char *outActive[])
         struct codenode *e = genIR(n->kind, result, opn2, opn1);
         return e;
     }
+    if (n->kind == TOK_RETURN)
+    {
+        struct opn result, opn1, opn2;
+        result.kind = opn1.kind = opn2.kind = NONE;
+        void *elem;
+        if (n->left != NULL) //左子树不为空
+        {
+            if (isLeaf(n->left))
+            {
+                //叶子节点也有可能是LITERAL或者ID
+                result.kind = n->left->kind;
+                if (result.kind == ID)
+                {
+                    strcpy(result.id, n->left->v_id);
+                }
+                else if (result.kind == LITERAL)
+                {
+                    result.const_int = n->left->v_num;
+                }
+                else if (result.kind == FLOAT_LITERAL)
+                {
+                    result.const_float = n->left->v_float;
+                }
+            }
+            else if (isFutileASSIGN(dag, n->left, out_count, outActive)) // TODO: 检验活跃变量
+            {
+                DAGnode *temp = n->left->left;
+                opn1.kind = temp->kind;
+                if (temp->kind == LITERAL)
+                    opn1.const_int = temp->v_num;
+                else if (temp->kind == FLOAT_LITERAL)
+                    opn1.const_float = temp->v_float;
+                else if (temp->kind == ID)
+                    strcpy(opn1.id, temp->v_id);
+            }
+            else //不是叶子节点
+            {
+                opn1.kind = ID;
+                ListGetFront(n->left->symList, &elem);
+                strcpy(opn1.id, (char *)elem);
+            }
+        }
+        struct codenode *e = genIR(n->kind, opn1, opn2, result);
+        return e;
+    }
     void *elem;
     struct opn result, opn1, opn2;
     opn1.kind = opn2.kind = NONE;
@@ -1184,71 +1342,6 @@ struct codenode *genOptimizedCode(DAG *dag, int out_count, char *outActive[])
     bool changed = true;
     List *root_list = ListInit();
     void *elem = NULL;
-    // TODO: 删除不活跃的根节点需要活跃变量分析，可能得寄存器分配的数据
-    while (changed)
-    {
-        changed = false;
-        List *nodes = dag->nodes;
-        void *elem;
-        nodes->first(nodes, false);
-        while (nodes->next(nodes, &elem))
-        {
-            DAGnode *tnode = (DAGnode *)elem;
-            if (isRoot(dag, tnode) && isActivenNode(tnode, out_count, outActive)) //如果是根节点，且不活跃
-            {
-                // TODO: 从nodelist中删除
-                //  ListRemove(dag->nodes,)
-                //  dagnode = NULL; // TODO: 暂时懒得改，修改这玩意是不是太麻烦了
-                //  changed = true;
-            }
-        }
-    }
-
-    //清楚不活跃的标识符，为标识符为空的节点新增一个 si 标识符
-    dag->nodes->first(dag->nodes, false);
-    while (dag->nodes->next(dag->nodes, &elem))
-    {
-        DAGnode *temp_node = (DAGnode *)elem;
-        // if(ARRAY)
-        // continue;
-        if (temp_node->kind == ARRAY_ASSIGN)
-            continue;
-        // TODO: 判断sym是否在活跃变量内，如果不是，删除
-
-        //为不是叶节点的节点添加临时变量
-        if (!isLeaf(temp_node) && temp_node->symList->size(temp_node->symList) == 0)
-        {
-            // char temp_name[33];
-            // strcpy(temp_name,newTemp());
-            char *temp_name = (char *)malloc(sizeof(char) * 6);
-            strcpy(temp_name, newTemp());
-            addSymbol(temp_node, temp_name);
-            temp_name = NULL;
-        }
-    }
-    size_t symSerial = 0;
-    // TODO: 啦啦啦
-    //  for (auto &&node : nodes)
-    //  {
-    //      if (node == nullptr)
-    //          continue;
-    //      if (node->value == "TAR")
-    //          continue;
-
-    //     for (auto it = node->symList.begin(); it < node->symList.end();)
-    //     {
-    //         if (!contain(outActive, *it))
-    //             it = node->symList.erase(it);
-    //         else
-    //             ++it;
-    //     }
-
-    //     if (!node->isLeaf() && node->symList.empty())
-    //         node->symList.emplace_back(std::string{"S" + std::to_string(symSerial++)});
-    // }
-
-    // DFS自下而上生成代码
-    //查找根节点  好蠢的操作
     dag->nodes->first(dag->nodes, false);
     while (dag->nodes->next(dag->nodes, &elem))
     {
@@ -1266,6 +1359,70 @@ struct codenode *genOptimizedCode(DAG *dag, int out_count, char *outActive[])
         }
     }
     cur_dagnode = head_dagnode;
+    // TODO: 删除不活跃的根节点需要活跃变量分析，可能得寄存器分配的数据
+    // while (changed)
+    // {
+    //     changed = false;
+    //     while (cur_dagnode)
+    //     {
+    //         DAGnode *tnode = cur_dagnode;
+    //         if (isRoot(dag, tnode) && !isActivenNode(tnode, out_count, outActive)) //如果是根节点，且不活跃
+    //         {
+    //             // TODO: 从nodelist中删除
+    //             tnode->isvisited = 0;
+    //             changed = true;
+    //             //  ListRemove(dag->nodes,)
+    //             //  dagnode = NULL; // TODO: 暂时懒得改，修改这玩意是不是太麻烦了
+    //             //  changed = true;
+    //         }
+    //         cur_dagnode = cur_dagnode->next;
+    //     }
+    // }
+    cur_dagnode = head_dagnode;
+    //清楚不活跃的标识符，为标识符为空的节点新增一个 si 标识符
+    dag->nodes->first(dag->nodes, false);
+    while (dag->nodes->next(dag->nodes, &elem))
+    {
+        DAGnode *temp_node = (DAGnode *)elem;
+        // if(ARRAY)
+        // continue;
+        if (temp_node->kind == ARRAY_ASSIGN)
+            continue;
+        // TODO: 判断sym是否在活跃变量内，如果不是，删除
+
+        //为不是叶节点的节点添加临时变量
+        if (!isLeaf(temp_node) && temp_node->symList->size(temp_node->symList) == 0)
+        {
+            // char temp_name[33];
+            // strcpy(temp_name,newTemp());
+            char *temp_name = (char *)malloc(sizeof(char) * 10);
+            strcpy(temp_name, newTemp());
+            addSymbol(temp_node, temp_name);
+            // temp_name = NULL;
+        }
+    }
+    size_t symSerial = 0;
+    // TODO: 啦啦啦
+    //  for (auto &&node : nodes)
+    //  {
+    //      if (node == nullptr)
+    //          continue;
+    //      if (node->value == "TAR")
+    //          continue;
+    //     for (auto it = node->symList.begin(); it < node->symList.end();)
+    //     {
+    //         if (!contain(outActive, *it))
+    //             it = node->symList.erase(it);
+    //         else
+    //             ++it;
+    //     }
+    //     if (!node->isLeaf() && node->symList.empty())
+    //         node->symList.emplace_back(std::string{"S" + std::to_string(symSerial++)});
+    // }
+
+    // DFS自下而上生成代码
+    //查找根节点  好蠢的操作
+
     while (cur_dagnode != NULL)
     {
         bool isroot = isRoot(dag, cur_dagnode);
@@ -1400,7 +1557,11 @@ struct codenode *genOptimizedCode(DAG *dag, int out_count, char *outActive[])
     // result->prior->next = NULL;
     return result;
 }
-
+/**
+ * @brief DAG优化，
+ *
+ * @param blocks
+ */
 void dag_optimize(Blocks *blocks)
 {
     Blocks *cur_blocks = blocks;
@@ -1410,7 +1571,7 @@ void dag_optimize(Blocks *blocks)
         for (int i = 0; i < cur_blocks->count; i++)
         {
             char *outActive[100];
-            int out_count;
+            int out_count = search_out(cur_blocks->name, cur_blocks->block[i]->id, outActive);
             //  out_count = ii(outlive);//获取活跃变量
             struct codenode *tcode = cur_blocks->block[i]->tac_list;
             DAG *dag = creat_dag();

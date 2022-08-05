@@ -13,6 +13,7 @@ int temp_add(char *name, int level, int type, int flag)
     symbolTable.symbols[symbolTable.index].type = type;
     symbolTable.symbols[symbolTable.index].flag = flag;
     // symbolTable.symbols[symbolTable.index].offset = offset;
+    AliasTableADD(name, type);
     return symbolTable.index++; //返回的是临时变量在符号表中的位置序号
 }
 

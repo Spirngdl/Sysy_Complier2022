@@ -29,11 +29,12 @@ void Driver(struct node *T)
   print_IR(T->code);     //打印比较初始的三地址代码
   int width = get_array_infunc("main");
   basic_block(T->code); //划分基本块
-  // get_count_var(head_block);
-  check_immes(head_block);     //检验立即数合法性
-  make_uid_block(head_block);  //在进入arm翻译前最后一次调整编号
-  all_fun_reg(head_block);     //进行活跃变量分析
-  add_label_block(head_block); //
+                        // get_count_var(head_block);
+                        // invariant_Extrapolation(head_block);
+  printf("optimize\n");
+  dag_optimize(head_block);   // DAG优化
+  make_uid_block(head_block); //在进入arm翻译前最后一次调整编号
+
   Blocks *cur_blocks = head_block;
   while (cur_blocks)
   {
@@ -43,8 +44,12 @@ void Driver(struct node *T)
     }
     cur_blocks = cur_blocks->next;
   }
-  arminterface(head_block);
-  // printf("optimize\n");
+  // check_immes(head_block);     //检验立即数合法性
+  // all_fun_reg(head_block);     //进行活跃变量分析
+  // add_label_block(head_block); //
+
+  // arminterface(head_block);
+
   // // invariant_Extrapolation(head_block);
   // // dag_optimize(head_block);
 
@@ -61,11 +66,6 @@ void Driver(struct node *T)
 
   // // print_vars();
 
-  // make_uid_block(head_block); //在进入arm翻译前最后一次调整编号
-  // for (int i = 0; i < head_block->count; i++)
-  // {
-  //   print_IR(head_block->block[i]->tac_list); //打印一下
-  // }
   printf("ending\n");
   // struct Block *block = divide_block(T->code);
 }

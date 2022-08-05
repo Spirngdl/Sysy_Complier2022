@@ -75,6 +75,7 @@ void removeSymbol(DAG *dag, char *symbol);                                     /
 int findnode_depend_on(DAG *dag, DAGnode *n, int vector[]);                    //查找DAG上所有依赖于n的结点
 int readquad(DAG *dag, struct codenode *T);                                    //读取三地址代码
 int readquad0(DAG *dag, struct codenode *T);                                   // 0型
+int readquad1(DAG *dag, struct codenode *T);                                   // 1型 暂时是return
 int readquad2(DAG *dag, struct codenode *T);                                   // 2型
 int readquad3(DAG *dag, struct codenode *T);                                   // 3型 数组赋值
 int readquad4(DAG *dag, struct codenode *T);                                   // 4型我定义为函数调用

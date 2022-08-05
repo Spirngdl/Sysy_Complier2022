@@ -548,39 +548,30 @@ void var_decl(struct node *T) //变量声明 -- kind -- NAME --TYPE
             {
                 opn1.kind = LITERAL;
                 opn1.const_int = T->ptr[0]->type_int;
-                result.kind = ID;
-                strcpy(result.id, symbolTable.symbols[T->place].alias); //赋上别名
-
-#ifdef DD
-                if (symbolTable.symbols[T->place].flag != TEMP_VAR)
-                {
-                    strcpy(result.id, symbolTable.symbols[T->place].name);
-                    strcpy(result.alice, symbolTable.symbols[T->place].alias);
-                }
-#endif
-                T->code = merge(2, T->code, genIR(TOK_ASSIGN, opn1, opn2, result)); //合并三地址代码
-                if (LEV == 0)                                                       //如果是全局变量,这边直接加
+                if (LEV == 0) //如果是全局变量,这边直接加
                 {
                     symbolTable.symbols[rtn].const_value = opn1.const_int;
+                }
+                else
+                {
+                    result.kind = ID;
+                    strcpy(result.id, symbolTable.symbols[T->place].alias);             //赋上别名
+                    T->code = merge(2, T->code, genIR(TOK_ASSIGN, opn1, opn2, result)); //合并三地址代码
                 }
             }
             else if (T->ptr[0]->kind == FLOAT_LITERAL) //给整型赋值浮点，直接转
             {
                 opn1.kind = LITERAL;
                 opn1.const_int = T->ptr[0]->type_float; //转换
-                result.kind = ID;
-                strcpy(result.id, symbolTable.symbols[T->place].alias); //赋上别名
-#ifdef DD
-                if (symbolTable.symbols[T->place].flag != TEMP_VAR)
-                {
-                    strcpy(result.id, symbolTable.symbols[T->place].name);
-                    strcpy(result.alice, symbolTable.symbols[T->place].alias);
-                }
-#endif
-                T->code = merge(2, T->code, genIR(TOK_ASSIGN, opn1, opn2, result)); //合并三地址代码
-                if (LEV == 0)                                                       //如果是全局变量,这边直接加
+                if (LEV == 0)                           //如果是全局变量,这边直接加
                 {
                     symbolTable.symbols[rtn].const_value = opn1.const_int;
+                }
+                else
+                {
+                    result.kind = ID;
+                    strcpy(result.id, symbolTable.symbols[T->place].alias);             //赋上别名
+                    T->code = merge(2, T->code, genIR(TOK_ASSIGN, opn1, opn2, result)); //合并三地址代码
                 }
             }
             else if (T->ptr[0]->kind == ID) //是变量赋初始值
@@ -596,10 +587,10 @@ void var_decl(struct node *T) //变量声明 -- kind -- NAME --TYPE
                     opn1.kind = ID;
                     Exp(T->ptr[0]);
                     strcpy(opn1.id, symbolTable.symbols[T->ptr[0]->place].alias); //赋上别名
+                    result.kind = ID;
+                    strcpy(result.id, symbolTable.symbols[T->place].alias);             //赋上别名
+                    T->code = merge(2, T->code, genIR(TOK_ASSIGN, opn1, opn2, result)); //合并三地址代码
                 }
-                result.kind = ID;
-                strcpy(result.id, symbolTable.symbols[T->place].alias);             //赋上别名
-                T->code = merge(2, T->code, genIR(TOK_ASSIGN, opn1, opn2, result)); //合并三地址代码
             }
             else
             {
@@ -615,13 +606,6 @@ void var_decl(struct node *T) //变量声明 -- kind -- NAME --TYPE
                     struct codenode *lassign = T->ptr[0]->code->prior; //右值语句的最后一句
                     strcpy(lassign->result.id, symbolTable.symbols[T->place].alias);
                 }
-#ifdef DD
-                if (symbolTable.symbols[T->place].flag != TEMP_VAR)
-                {
-                    strcpy(result.id, symbolTable.symbols[T->place].name);
-                    strcpy(result.alice, symbolTable.symbols[T->place].alias);
-                }
-#endif
                 T->code = merge(2, T->code, T->ptr[0]->code);
             }
         }
@@ -632,38 +616,30 @@ void var_decl(struct node *T) //变量声明 -- kind -- NAME --TYPE
 
                 opn1.kind = FLOAT_LITERAL;
                 opn1.const_float = T->ptr[0]->type_int; //转换
-                result.kind = ID;
-                strcpy(result.id, symbolTable.symbols[T->place].alias); //赋上别名
-#ifdef DD
-                if (symbolTable.symbols[T->place].flag != TEMP_VAR)
-                {
-                    strcpy(result.id, symbolTable.symbols[T->place].name);
-                    strcpy(result.alice, symbolTable.symbols[T->place].alias);
-                }
-#endif
-                T->code = merge(2, T->code, genIR(TOK_ASSIGN, opn1, opn2, result)); //合并三地址代码
                 if (LEV == 0)
                 {
                     symbolTable.symbols[rtn].const_value = opn1.const_float;
+                }
+                else
+                {
+                    result.kind = ID;
+                    strcpy(result.id, symbolTable.symbols[T->place].alias);             //赋上别名
+                    T->code = merge(2, T->code, genIR(TOK_ASSIGN, opn1, opn2, result)); //合并三地址代码
                 }
             }
             else if (T->ptr[0]->kind == FLOAT_LITERAL) //
             {
                 opn1.kind = FLOAT_LITERAL;
                 opn1.const_float = T->ptr[0]->type_float;
-                result.kind = ID;
-                strcpy(result.id, symbolTable.symbols[T->place].alias); //赋上别名
-#ifdef DD
-                if (symbolTable.symbols[T->place].flag != TEMP_VAR)
-                {
-                    strcpy(result.id, symbolTable.symbols[T->place].name);
-                    strcpy(result.alice, symbolTable.symbols[T->place].alias);
-                }
-#endif
-                T->code = merge(2, T->code, genIR(TOK_ASSIGN, opn1, opn2, result)); //合并三地址代码
                 if (LEV == 0)
                 {
                     symbolTable.symbols[rtn].const_value = opn1.const_float;
+                }
+                else
+                {
+                    result.kind = ID;
+                    strcpy(result.id, symbolTable.symbols[T->place].alias);             //赋上别名
+                    T->code = merge(2, T->code, genIR(TOK_ASSIGN, opn1, opn2, result)); //合并三地址代码
                 }
             }
             else if (T->ptr[0]->kind == ID)
@@ -679,10 +655,10 @@ void var_decl(struct node *T) //变量声明 -- kind -- NAME --TYPE
                     opn1.kind = ID;
                     Exp(T->ptr[0]);
                     strcpy(opn1.id, symbolTable.symbols[T->ptr[0]->place].alias); //赋上别名
+                    result.kind = ID;
+                    strcpy(result.id, symbolTable.symbols[T->place].alias);             //赋上别名
+                    T->code = merge(2, T->code, genIR(TOK_ASSIGN, opn1, opn2, result)); //合并三地址代码
                 }
-                result.kind = ID;
-                strcpy(result.id, symbolTable.symbols[T->place].alias);             //赋上别名
-                T->code = merge(2, T->code, genIR(TOK_ASSIGN, opn1, opn2, result)); //合并三地址代码
             }
             else
             {
@@ -698,13 +674,6 @@ void var_decl(struct node *T) //变量声明 -- kind -- NAME --TYPE
                     struct codenode *lassign = T->ptr[0]->code->prior; //右值语句的最后一句
                     strcpy(lassign->result.id, symbolTable.symbols[T->place].alias);
                 }
-#ifdef DD
-                if (symbolTable.symbols[T->place].flag != TEMP_VAR)
-                {
-                    strcpy(result.id, symbolTable.symbols[T->place].name);
-                    strcpy(result.alice, symbolTable.symbols[T->place].alias);
-                }
-#endif
                 T->code = merge(2, T->code, T->ptr[0]->code);
             }
         }
@@ -835,6 +804,7 @@ void Exp(struct node *T)
         }
     }
 }
+//变量
 void id_exp(struct node *T)
 {
     int rtn;
@@ -871,22 +841,19 @@ void op_exp(struct node *T)
     struct opn opn1, opn2, result;
     //下面的类型属性计算，没有考虑错误处理情况
     // TODO: 处理float
-    T->type = TOK_INT;
+    // T->type = TOK_INT;
     T->place = temp_add(newTemp(), LEV, T->type, TEMP_VAR); //声明临时变量
     result.kind = ID;
     strcpy(result.id, symbolTable.symbols[T->place].alias);
 
     //左子树
-    if (T->ptr[0]->kind == LITERAL) //左子树为整数常数
+    opn1.kind = T->ptr[0]->kind;
+    if (opn1.kind == LITERAL) //左子树为整数常数
     {
-        T->ptr[0]->code = NULL;
-        opn1.kind = LITERAL;
         opn1.const_int = T->ptr[0]->type_int;
     }
-    else if (T->ptr[0]->kind == FLOAT_LITERAL) //右子树为浮点数
+    else if (opn1.kind == FLOAT_LITERAL) //右子树为浮点数
     {
-        T->ptr[0]->code = NULL;
-        opn1.kind = FLOAT_LITERAL;
         opn1.const_float = T->ptr[0]->type_float;
     }
     else
@@ -966,26 +933,35 @@ void assignop_exp(struct node *T)
     opn2.kind = NONE;
     if (T->ptr[0]->kind == ID)
     {
-        Exp(T->ptr[0]);                 //处理左值，例中仅为变量
+        Exp(T->ptr[0]);                 //处理左值，例中仅为变量 拿到place type
         if (T->ptr[1]->kind == LITERAL) // 右值是整型常量
         {
-            opn1.kind = LITERAL;
-            opn1.const_int = T->ptr[1]->type_int;
+            if (T->ptr[0]->type == TOK_INT)
+            {
+                opn1.kind = LITERAL;
+                opn1.const_int = T->ptr[1]->type_int;
+            }
+            else if (T->ptr[0]->type == TOK_FLOAT)
+            {
+                opn1.kind = FLOAT_LITERAL;
+                opn1.const_float = T->ptr[1]->type_int;
+            }
             result.kind = ID;
             strcpy(result.id, symbolTable.symbols[T->ptr[0]->place].alias);
-#ifdef DD
-            if (symbolTable.symbols[T->ptr[0]->place].flag != TEMP_VAR)
-            {
-                strcpy(result.id, symbolTable.symbols[T->ptr[0]->place].name);
-                strcpy(result.alice, symbolTable.symbols[T->ptr[0]->place].alias);
-            }
-#endif
             T->code = merge(2, T->ptr[0]->code, genIR(TOK_ASSIGN, opn1, opn2, result));
         }
         else if (T->ptr[1]->kind == FLOAT_LITERAL) //右值是浮点型常量
         {
-            opn1.kind = FLOAT_LITERAL;
-            opn1.const_float = T->ptr[1]->type_float;
+            if (T->ptr[0]->type == TOK_INT)
+            {
+                opn1.kind = FLOAT_LITERAL;
+                opn1.const_int = T->ptr[1]->type_float;
+            }
+            else if (T->ptr[0]->type = TOK_FLOAT)
+            {
+                opn1.kind = FLOAT_LITERAL;
+                opn1.const_float = T->ptr[1]->type_float;
+            }
             result.kind = ID;
             strcpy(result.id, symbolTable.symbols[T->ptr[0]->place].alias);
             T->code = merge(2, T->ptr[0]->code, genIR(TOK_ASSIGN, opn1, opn2, result));
@@ -995,88 +971,30 @@ void assignop_exp(struct node *T)
             T->type = T->ptr[1]->type;
             result.kind = ID;
             strcpy(result.id, symbolTable.symbols[T->ptr[0]->place].alias);
-#ifdef DD
-            if (symbolTable.symbols[T->ptr[0]->place].flag != TEMP_VAR)
-            {
-                strcpy(result.id, symbolTable.symbols[T->ptr[0]->place].name);
-                strcpy(result.alice, symbolTable.symbols[T->ptr[0]->place].alias);
-            }
-#endif
             Exp(T->ptr[1]);
             opn1.kind = ID;
             strcpy(opn1.id, symbolTable.symbols[T->ptr[1]->place].alias);
-#ifdef DD
-            if (symbolTable.symbols[T->ptr[1]->place].flag != TEMP_VAR)
-            {
-                strcpy(opn1.id, symbolTable.symbols[T->ptr[1]->place].name);
-                strcpy(opn1.alice, symbolTable.symbols[T->ptr[1]->place].alias);
-            }
-#endif
             T->code = merge(2, T->ptr[0]->code, genIR(TOK_ASSIGN, opn1, opn2, result));
         }
-        else //右值有可能是数组，是函数调用
+        else //右值有可能是数组，是函数调用，是exp
         {
+            T->ptr[1]->type = T->ptr[0]->type;
             Exp(T->ptr[1]); //处理右值
-            T->type = T->ptr[1]->type;
+            T->type = T->ptr[0]->type;
             opn1.kind = ID;
             struct codenode *lassign = T->ptr[1]->code->prior; //右值语句的最后一句
             strcpy(lassign->result.id, symbolTable.symbols[T->ptr[0]->place].alias);
-#ifdef DD
-            if (symbolTable.symbols[T->ptr[0]->place].flag != TEMP_VAR)
-            {
-                strcpy(lassign->result.id, symbolTable.symbols[T->ptr[0]->place].name);
-                strcpy(lassign->result.alice, symbolTable.symbols[T->ptr[0]->place].alias);
-            }
-#endif
             // strcpy(opn1.id, symbolTable.symbols[T->ptr[1]->place].alias); //右值一定是个变量或临时变量
             T->code = merge(2, T->ptr[0]->code, T->ptr[1]->code);
         }
-    }
-    else if (T->ptr[0]->kind == EXP_ARRAY) //数组作为左值 没这个东西 不敢删 先留着
-    {
-        exp_array(T->ptr[0]); //处理左值
-        T->type = T->ptr[0]->type;
-
-        //处理下标 下标只能是整型
-        if (symbolTable.symbols[T->ptr[0]->ptr[0]->place].type == LITERAL)
-        {
-            opn1.kind = LITERAL;
-            opn1.const_int = symbolTable.symbols[T->ptr[0]->ptr[0]->place].array_dimension;
-        }
-        else
-        {
-            opn1.kind = ID;
-            strcpy(opn1.id, symbolTable.symbols[T->ptr[0]->ptr[0]->place].alias); // index
-        }
-        //对右值做个简单优化
-        if (T->ptr[1]->kind == LITERAL)
-        {
-            opn2.kind = LITERAL;
-            opn2.const_int = T->ptr[1]->type_int;
-        }
-        else if (T->ptr[1]->kind == FLOAT_LITERAL)
-        {
-            opn2.kind = FLOAT_LITERAL;
-            opn2.const_float = T->ptr[1]->type_float;
-        }
-        else
-        {
-            Exp(T->ptr[1]);
-            opn2.kind = ID;
-            strcpy(opn2.id, symbolTable.symbols[T->ptr[1]->place].alias); //右值一定是个变量或临时变量
-        }
-
-        result.kind = ID;
-        strcpy(result.id, symbolTable.symbols[T->ptr[0]->place].alias);
-
-        T->code = merge(3, T->ptr[0]->code, T->ptr[1]->code, genIR(ARRAY_ASSIGN, opn1, opn2, result));
     }
     else
     {
         semantic_error(T->pos, "", "赋值语句没有左值，语义错误");
     }
 }
-void rval_array(struct node *T) //数组作为右值
+//数组作为右值
+void rval_array(struct node *T)
 {
     exp_array(T); //先进这边处理，下面基本只是凑 temp = arr[t];
     struct opn opn1, opn2, result;
@@ -1096,7 +1014,7 @@ void rval_array(struct node *T) //数组作为右值
         strcpy(opn2.id, symbolTable.symbols[T->ptr[0]->place].alias); // index
     }
     T->code = merge(2, T->code, genIR(ARRAY_EXP, opn1, opn2, result));
-    T->place = place;
+    // T->place = place;
 }
 /**
  * @brief 数组处理比较核心的地方
@@ -1187,7 +1105,7 @@ int exp_index(struct node *T, int index, int width[]) //处理数组引用的下
             }
             opn1.kind = ID;
             strcpy(opn1.id, symbolTable.symbols[place].alias);
-
+            result.kind = ID;
             place = temp_add(newTemp(), LEV, TOK_INT, TEMP_VAR);
             strcpy(result.id, symbolTable.symbols[place].alias);
 
@@ -1535,7 +1453,7 @@ void param_array(struct node *T)
     {
         T->place = rtn; //用place记录在符号表中的位置
         symbolTable.symbols[rtn].array_dimension = array_dimension;
-        memcpy(astsymbol.symbols[T->place].length, length, array_dimension * sizeof(int)); //数组复制
+        memcpy(symbolTable.symbols[T->place].length, length, array_dimension * sizeof(int)); //数组复制
     }
     T->type_int = 1;
     result.kind = ID;
@@ -1703,17 +1621,19 @@ void return_dec(struct node *T) //
                 result.kind = FLOAT_LITERAL;
             }
         }
-        else
+        else // 可能是变量，是表达式
         {
+            T->ptr[0]->type = symbolTable.symbols[num].type;
             Exp(T->ptr[0]);
-            int type = T->ptr[0]->type;
-            int func_type = symbolTable.symbols[num].type;
-            if (T->ptr[0]->type != symbolTable.symbols[num].type) //类型检查
-            {
-                semantic_error(T->pos, "返回值类型错误，语义错误", "");
-                T->code = NULL;
-                return;
-            }
+            // int type = T->ptr[0]->type;
+            // int func_type = symbolTable.symbols[num].type;
+            //我觉得反正有转换，那就不做类型检查了吧，
+            // if (T->ptr[0]->type != symbolTable.symbols[num].type) //类型检查
+            // {
+            //     semantic_error(T->pos, "返回值类型错误，语义错误", "");
+            //     T->code = NULL;
+            //     return;
+            // }
             result.kind = ID;
             strcpy(result.id, symbolTable.symbols[T->ptr[0]->place].alias);
         }

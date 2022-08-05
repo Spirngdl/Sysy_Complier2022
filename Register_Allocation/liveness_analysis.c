@@ -56,7 +56,7 @@ void one_block_use_def (char* use[], char* def[], int size, Block block, char* f
     while (p != NULL) {
         //printf("\n*%d*", p->op);
         
-        if (p->op != FUNCTION) {
+        if (p->op != FUNCTION && p->op != CALL) {
             if (p->result.kind == ID && search_alias(p->result.id) != -1 && exist_gobal(p->result.id, fun_name, gobal_cnt) == 0) {
                 strcpy(gobals[gobal_cnt].name, p->result.id);
                 strcpy(gobals[gobal_cnt].fun_name, fun_name);
@@ -75,14 +75,14 @@ void one_block_use_def (char* use[], char* def[], int size, Block block, char* f
         }
             
         // LDR语句
-        /*if (p->op == TOK_LDR) {
+        if (p->op == TOK_LDR) {
             if (p->result.kind == ID) {
                 if (!id_exist_strs(p->result.id, param, param, param_num) && !id_exist_strs(p->result.id, use, def, size) && search_alias(p->result.id) == -1 && _search_var(fun_name, p->result.id) == -2) {
                     def[def_num] = p->result.id;
                     def_num++;
                 }
             }
-        }*/
+        }
         // return返回语句
         if (p->op == TOK_RETURN) {
             if (p->result.kind == ID) {
@@ -286,7 +286,7 @@ void one_block_out (char* out[], char* in1[], char* in2[], int size, int succ_nu
     int i = 0, symbol = 0, cnt = 0;
     for (i = 0; i < size; i++) {
         temp[i] = in1[i];
-        cnt++;
+        if(temp[i] != NULL) cnt++;
     }
     if (succ_num == 2) {
         for (i = 0; i < size; i++) {
@@ -296,11 +296,13 @@ void one_block_out (char* out[], char* in1[], char* in2[], int size, int succ_nu
             continue;
         }
         temp[cnt] = in2[i];
+        //printf("\ttemp %d: %s", cnt, temp[cnt]);
         cnt++; 
         }
     }
     for (i = 0; i < size; i++) {
         out[i] = temp[i];
+        //if(out[i] != NULL && succ_num == 2) printf("\t%s", out[i]);
     }
 }
 
@@ -414,6 +416,17 @@ void one_block_tac_liveness (Block* cntr, char* block_in[], char* block_out[], c
 
     // 此时分配寄存器已考虑块间变量占用的问题
     graph_coloring(in, out, num_tac, reg_cnt, fun_add, reg);
+    
+    /*for (i = 0; i < num_tac; i++) {
+        free(use[i]);
+        free(def[i]);
+        free(in[i]);
+        free(out[i]);
+    }
+    free(def);
+    free(use);
+    free(in);
+    free(out);*/
 }
 
 void get_param (char* param[], int* param_num, Block block) {
@@ -555,6 +568,17 @@ void all_block_liveness (Block* cntr[], int num_block, char* fun_add) {
     for (i = 0; i < num_block; i++) {
         one_block_tac_liveness(cntr[i], in[i], out[i], fun_add, param, param_num);
     }
+    
+    /*for (i = 0; i < num_block; i++) {
+        free(use[i]);
+        free(def[i]);
+        free(in[i]);
+        free(out[i]);
+    }
+    free(def);
+    free(use);
+    free(in);
+    free(out);*/
 }
 
 // 遍历所有的函数，对每一个函数进行liveness分析与寄存器分配
@@ -579,21 +603,284 @@ int search_func_gvar (char* funcname, char** gvartable) {
     return cnt;
 }
 
-// 具体是哪个函数？
-// block_num -> 基本块序号，char* temp[] -> 存入该基本块OUT活跃变量
+void _one_block_use_def (char* use[], char* def[], int size, Block block) {
+    struct codenode* p = block.tac_list;
+    int use_num = 0, def_num = 0;
+    while (p != NULL) {
+
+        // LDR语句
+        if (p->op == TOK_LDR) {
+            if (p->result.kind == ID) {
+                if (!id_exist_strs(p->result.id, use, def, size)) {
+                    def[def_num] = p->result.id;
+                    def_num++;
+                }
+            }
+        }
+        // return返回语句
+        if (p->op == TOK_RETURN) {
+            if (p->result.kind == ID) {
+                if (!id_exist_strs(p->result.id, use, def, size)) {
+                use[use_num] = p->result.id;
+                use_num++;
+                }
+            }     
+        }    
+        // if判断语句
+        if (p->op == JLT || p->op == JLE || p->op == JGT || p->op == JGE || p->op == EQ || p->op == NEQ ) {
+            if (p->opn1.kind == ID) {
+                if (!id_exist_strs(p->opn1.id, use, def, size)) { 
+                use[use_num] = p->opn1.id;
+                use_num++;
+                }
+            }
+            if (p->opn2.kind == ID) {
+                if (!id_exist_strs(p->opn2.id, use, def, size)) {
+                use[use_num] = p->opn2.id;
+                use_num++;
+                }
+            } 
+        }
+        // 赋值语句
+        if (p->op == TOK_ASSIGN) {
+            //printf("\n*%d*", p->op);
+            //printf("\n%d, %d", p->result.kind, p->opn1.kind);
+            if (p->opn1.kind == ID) {
+                if (!id_exist_strs(p->opn1.id, use, def, size)) {
+                    use[use_num] = p->opn1.id;
+                    use_num++;
+                }
+            }
+            if (p->result.kind == ID) {
+                if (!id_exist_strs(p->result.id, use, def, size)) {
+                    def[def_num] = p->result.id;
+                    def_num++;
+                }
+            }
+        }
+        // 加减乘除语句
+        if (p->op == TOK_ADD || p->op == TOK_MUL || p->op == TOK_SUB || p->op == TOK_DIV || p->op == TOK_MODULO) {
+            if (p->opn1.kind == ID) {
+                if (!id_exist_strs(p->opn1.id, use, def, size)) {
+                    use[use_num] = p->opn1.id;
+                    use_num++;
+                }    
+            }
+            if (p->opn2.kind == ID) {
+                if (!id_exist_strs(p->opn2.id, use, def, size)) {
+                    use[use_num] = p->opn2.id;
+                    use_num++;
+                }
+            }
+            if (p->result.kind == ID) {
+                if (!id_exist_strs(p->result.id, use, def, size)) {
+                    def[def_num] = p->result.id;
+                    def_num++;
+                }
+            }
+        }
+        // 数组赋值语句（数组下标为 use，数组名不做处理）
+       if (p->op == ARRAY_ASSIGN) {
+            if (p->opn1.kind == ID) {
+                if (!id_exist_strs(p->opn1.id, use, def, size)) {
+                    use[use_num] = p->opn1.id;
+                    use_num++;
+                }    
+            }
+            if (p->opn2.kind == ID) {
+                if (!id_exist_strs(p->opn2.id, use, def, size)) {
+                    use[use_num] = p->opn2.id;
+                    use_num++;
+                }
+            }
+            if (p->result.kind == ID) {
+                if (!id_exist_strs(p->result.id, use, def, size)) {
+                    use[use_num] = p->result.id;
+                    use_num++;
+                }
+            }
+        }
+        // 数组引用语句（数组下标为 use，数组名不做处理）
+        if (p->op == ARRAY_EXP) {
+            if (p->opn1.kind == ID) {
+                if (!id_exist_strs(p->opn1.id, use, def, size)) {
+                    use[use_num] = p->opn1.id;
+                    use_num++;
+                }    
+            }
+            if (p->opn2.kind == ID) {
+                if (!id_exist_strs(p->opn2.id, use, def, size)) {
+                    use[use_num] = p->opn2.id;
+                    use_num++;
+                }
+            }
+            if (p->result.kind == ID) {
+                if (!id_exist_strs(p->result.id, use, def, size)) {
+                    def[def_num] = p->result.id;
+                    def_num++;
+                }
+            }
+        }
+        // 函数调用语句
+        if (p->op == CALL) {
+            /*if (p->opn1.kind == ID) {
+                nop; // 函数名不是变量，不作处理
+            }*/
+            if (p->result.kind == ID) {
+                if (!id_exist_strs(p->result.id, use, def, size)) {
+                    def[def_num] = p->result.id;
+                    def_num++;
+                }
+            }
+        }
+        // goto跳转语句
+        /*if (p->op == GOTO) {
+            nop;
+        }*/
+        // 函数声明语句
+        /*if (p->op == FUNCTION) {
+            nop;
+        }*/
+        // 形参语句
+        /*if (p->op == PARAM) {
+            nop;
+        }*/
+        // 实参语句
+        if (p->op == ARG) {
+            if (p->result.kind == ID) {
+                if (!id_exist_strs(p->result.id, use, def, size)) {
+                    use[use_num] = p->result.id;
+                    use_num++;
+                }
+            }
+        }
+        // 结束语句
+        /*if (p->op == END) {
+            nop;
+        }*/
+
+        p = p->next;
+    }
+}
+
+// block_index -> 基本块序号，char** out -> 存入该基本块OUT活跃变量
 // 返回值为数组中的变量个数
-// 全局变量皆视为活跃变量
-/*int search_out (char* fun_name, int block_num, char* out[]) {
-    int cnt = 0;
-    int flag = 0;
+int search_out (char* fun_name, int block_index, char* _out[]) {
+    int _cnt = 0;
+    int _flag = 0;
     Blocks* p = head_block;
     while (p != NULL) {
         if (strcmp(fun_name, p->block[0]->tac_list->result.id) == 0) {
-            flag = 1;
+            _flag = 1;
+            break;
         }
         p = p->next;
     }
-    if (flag == 0) return -1;
-    cnt++;
-    return cnt;
-}*/
+    if (_flag == 0) {
+        return -1;
+    }
+
+    int num_block = p->count;
+    int flag = 1;
+    int i = 0, j = 0;
+    int in1 = -1, in2 = -1;
+    char*** use = (char***)malloc(sizeof(char**) * num_block);
+    char*** def = (char***)malloc(sizeof(char**) * num_block);
+    char*** in = (char***)malloc(sizeof(char**) * num_block);
+    char*** out = (char***)malloc(sizeof(char**) * num_block);
+    // 初始化每个基本块的use、def、in、out集合
+    for (i = 0; i < num_block; i++) {
+        use[i] = (char**)malloc(sizeof(char*) * MAX_VAR);
+        def[i] = (char**)malloc(sizeof(char*) * MAX_VAR);
+        in[i] = (char**)malloc(sizeof(char*) * MAX_VAR);
+        out[i] = (char**)malloc(sizeof(char*) * MAX_VAR);
+        for (j = 0; j < MAX_VAR; j++) {
+            use[i][j] = NULL;
+            def[i][j] = NULL;
+            in[i][j] = NULL;
+            out[i][j] = NULL;
+        }
+    }
+    // 分析得到每个基本块的use、def集合
+    for (i = 0; i < num_block; i++) {
+        _one_block_use_def(use[i], def[i], MAX_VAR, *(p->block[i]));
+    }
+    // 分析得到每个基本块的in、out集合
+    while (flag == 1) {
+        flag = 0;
+        // 执行liveness算法
+        for (i = num_block - 1; i >= 0; i--) {
+            if (p->block[i]->num_children == 1) {
+                in1 = p->block[i]->children[0]->id;
+                //printf("\nblock %d: in1 = %d", i, in1);
+                one_block_out(out[i], in[in1], NULL, MAX_VAR, 1);
+            }
+            if (p->block[i]->num_children == 2) {
+                in1 = p->block[i]->children[0]->id;
+                in2 = p->block[i]->children[1]->id;
+                //printf("\nblock %d: in1 = %d, in2 = %d", i, in1, in2);
+                one_block_out(out[i], in[in1], in[in2], MAX_VAR, 2);
+            }
+            one_block_in(use[i], def[i], in[i], out[i], MAX_VAR, &flag);
+        }
+    }
+
+    // 对于use、def、in、out集合进行打印输出
+    /*for (i = 0; i < num_block; i++) {
+        printf("\nBlock%d:\n", i);
+        printf("\tUSE\t\t");
+        for (j = 0; j < MAX_VAR; j++) {
+            if (use[i][j] != NULL) {
+                printf("%s\t", use[i][j]);
+            }
+        }
+        printf("\n");
+        printf("\tDEF\t\t");
+        for (j = 0; j < MAX_VAR; j++) {
+            if (def[i][j] != NULL) {
+                printf("%s\t", def[i][j]);
+            }
+        }
+        printf("\n");
+        printf("\tIN\t\t");
+        for (j = 0; j < MAX_VAR; j++) {
+            if (in[i][j] != NULL) {
+                printf("%s\t", in[i][j]);
+            }
+        }
+        printf("\n");
+        printf("\tOUT\t\t");
+        for (j = 0; j < MAX_VAR; j++) {
+            if (out[i][j] != NULL) {
+                printf("%s\t", out[i][j]);
+            }
+        }
+        printf("\n");
+    }*/
+
+    for (i = 0; i < num_block; i++) {
+        for (j = 0; j < MAX_VAR; j++) {
+            if (in[i][j] == NULL) {
+                in[i][j] = (char*)malloc(sizeof(char) * 32);
+                strcpy(in[i][j], "");
+            }
+            if (out[i][j] == NULL) {
+                out[i][j] = (char*)malloc(sizeof(char) * 32);
+                strcpy(out[i][j], "");
+            }
+        }
+    }
+
+    /*for (i = 0; i < MAX_VAR; i++) {
+        printf("\t%s", out[block_index][i]);
+    }*/
+
+    for (i = 0; i < MAX_VAR; i++) {
+        if (strcmp(out[block_index][i], "") != 0) {
+            _out[_cnt] = out[block_index][i];
+            _cnt++;
+        }
+    }
+
+    return _cnt;
+}

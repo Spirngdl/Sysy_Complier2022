@@ -46,3 +46,7 @@ void all_block_liveness (Block* cntr[], int num_block, char* fun_add);
 void all_fun_reg (Blocks* head_fun);
 
 int search_func_gvar (char* funcname, char** gvartable);
+
+void _one_block_use_def (char* use[], char* def[], int size, Block block);
+
+int search_out (char* fun_name, int block_index, char* _out[]);

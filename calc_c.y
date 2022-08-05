@@ -133,7 +133,7 @@ funcfparams: funcfparam TOK_COMMA funcfparams                   {$$ = mknode(PAR
 funcfparam: btype IDENT TOK_LSQUARE TOK_RSQUARE funcfparam_     {struct node*temp = mkparray(PARAM_ARRAY,$2,$5,yylineno);temp->type = $1->kind;strcpy(temp->type_id,$2);$$ = temp;}
           | btype IDENT                                         {struct node*temp = mknode(PARAM_DEC,NULL,NULL,NULL,yylineno); strcpy(temp->type_id,$2);temp->type = $1->kind;$$ = temp;}               
           ;
-funcfparam_: TOK_LSQUARE INTCONST TOK_RSQUARE funcfparam_      {struct node * temp = mknode(TOK_INT,NULL,NULL,NULL,yylineno);temp->type_int = $2;temp->ptr[0] = $4;$$= temp;}
+funcfparam_: TOK_LSQUARE constexp TOK_RSQUARE funcfparam_      {struct node * temp = mknode(TOK_INT,$4,NULL,NULL,yylineno);temp->type_int = const_exp($2);$$= temp;}
             |                                                   {$$ = NULL;}
             ;          
 

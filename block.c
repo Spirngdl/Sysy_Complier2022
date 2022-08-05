@@ -171,7 +171,7 @@ void basic_block(struct codenode *head)
             link_block();                //链接
             continue;
         }
-        else //全局变量
+        else //全局变量 全局变量的声明 现在后端不要了
         {
             struct codenode *hcode = code;
             while (code != NULL && code->next->op != FUNCTION)

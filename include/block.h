@@ -16,9 +16,9 @@ typedef struct _Blocks Blocks;
 typedef struct _Block Block;
 struct _Blocks //分函数的基本块
 {
-    Block *block[100];
+    Block *block[1000];
     int count;
-    char name[20]; //函数名
+    char name[32]; //函数名
     Blocks *next;
     Blocks *pre;
 };
