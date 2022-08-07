@@ -158,3 +158,17 @@ int ToIeee754(float i)
 {
     return *(int *)&i;
 }
+/**
+ * @brief 判断是否是库函数
+ *
+ * @param func_name
+ * @return true
+ * @return false
+ */
+bool isLibraryfunctions(char *func_name)
+{
+    int index = searchSymbolTable(func_name);
+    if (index <= 20)
+        return true;
+    return false;
+}

@@ -1,11 +1,11 @@
 
 //float f[10]={10.0};
-
+int arr = 10;
 
 
 int main()
 {
-    int k;
+    int k = arr;
     int j=0;
     if(j > 9)
 	{
