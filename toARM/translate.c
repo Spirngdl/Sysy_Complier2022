@@ -871,14 +871,19 @@ armcode *translatearm(Blocks *blocks)
                     func_gvar_num = search_func_gvar(funcname,func_gvar_ary);
                     armcode *gnode = gvar_node_list(func_gvar_num,func_gvar_ary);
 
-                    newnode->next = gnode;
-                    gnode->pre = newnode;
-
-                    while(gnode->next != NULL)
+                    if(gnode != NULL)
                     {
-                        gnode = gnode->next;
+                        newnode->next = gnode;
+                        gnode->pre = newnode;
+
+                        while(gnode->next != NULL)
+                        {
+                            gnode = gnode->next;
+                        }
+                        q = gnode;
                     }
-                    q = gnode;
+
+                   
 
                     free(vartbl);
                     break;

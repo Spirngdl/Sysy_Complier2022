@@ -177,6 +177,21 @@ void printarm(armcode *armnode, FILE *fp)
             }
             fprintf(fp,"}\n");
             break;
+
+        case B:
+            fprintf(fp,"\tB %s\n",p->result.str_id);
+            break;
+
+        case CMP:
+            if(p->oper2.type == IMME)
+            {
+                fprintf(fp,"\tCMP   R%d , #%d\n",p->oper1.value,p->oper2.value);
+            }
+            else if(p->oper2.type == REG)
+            {
+                fprintf(fp,"\tCMP   R%d , R%d\n",p->oper1.value,p->oper2.value);
+            }
+            break;
         
         default:
             break;
