@@ -5,6 +5,8 @@ char funcname[33];
 const int reg[5] = {0, 1, 2, 3, 14};
 //int regcountmask[16] = {0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4};
 
+int R11R12 = 3;
+
 
 bool MULFLAG = false;
 // bool FIRSTARG = false;//第一次遇到ARG时，插入压栈操作后置true，遇到call时再置false
@@ -15,7 +17,11 @@ int func_call_subindex;
 int func_enter_reg[16];
 int func_enter_regnum;
 
-int cur_stk_offset;
+int cur_stk_offset; //从高往低压，压局部溢出变量和数组时，手动改变改指针,满递减，先减再压
+
+int func_gvar_num;
+char * func_gvar_ary[500];
+int func_index=0;
 
 armcode *initnewnode()
 {
@@ -29,7 +35,11 @@ armcode *initnewnode()
 void translate(armcode *newnode, struct codenode *p, armop armop)
 {
     int rn0, rn1, rn2, rn3;
-    if ((rn0 = search_var(funcname, p->result.id)) >= 0)
+    int R_res,R_op1,R_op2;
+    int vartbl_index;
+
+    rn0 = search_var(funcname, p->result.id);
+    if (rn0 >= 0)
     {
         Reg[rn0] = p->result.id;
         newnode->op = armop;
@@ -38,9 +48,11 @@ void translate(armcode *newnode, struct codenode *p, armop armop)
         if (p->opn1.kind == LITERAL)
         {
             // armcode *movcode = (armcode *)malloc(sizeof(struct armcode_));
+
+            R_op1 = alloc_myreg();
             armcode *movcode = initnewnode();
             movcode->op = MOV;
-            movcode->result.value = R12;
+            movcode->result.value = R_op1;
             movcode->oper1.type = IMME;
             movcode->oper1.value = p->opn1.const_int;
 
@@ -50,7 +62,7 @@ void translate(armcode *newnode, struct codenode *p, armop armop)
             newnode->pre = movcode;
 
             newnode->oper1.type = REG;
-            newnode->oper1.value = R12;
+            newnode->oper1.value = R_op1;
             if (p->opn2.kind == LITERAL)
             {
                 // printf("ADD R%d ,R0 ,#%d\n", rn0, p->opn2.const_int);
@@ -59,12 +71,21 @@ void translate(armcode *newnode, struct codenode *p, armop armop)
             }
             else if (p->opn2.kind == ID)
             {
-                if ((rn2 = search_var(funcname, p->opn2.id)) >= 0)
+                rn2 = search_var(funcname, p->opn2.id);
+                if (rn2 >= 0)
                 {
                     // printf("ADD R%d ,R%d ,#%d", rn0, rn1, p->opn1.const_int);
                     Reg[rn2] = p->opn2.id;
                     newnode->oper2.type = REG;
                     newnode->oper2.value = rn2;
+                }
+                else if(rn2 == -1)
+                {
+                    
+                }
+                else if(rn2 == -2)
+                {
+
                 }
                 else
                 {
@@ -153,6 +174,20 @@ void translate(armcode *newnode, struct codenode *p, armop armop)
             newnode->oper2.type = NUL;
         }
     }
+    else if(rn0 == -1)
+    {
+
+    }
+    else if(rn0 == -2)
+    {
+
+    }
+    else
+    {
+        printf("无用赋值\n");
+    }
+
+    init_myreg();
 }
 
 armcode *translatearm(Blocks *blocks)
@@ -165,12 +200,14 @@ armcode *translatearm(Blocks *blocks)
     memset(first, 0, sizeof(struct armcode_));
 
     q = first;
+    int R_res,R_op1,R_op2;
     int rn0, rn1, rn2, rn3;
     int index,stkindex;
+    int vartable_index;
     char regname[10]={0};
     // char labelname[33];
     int paranum,spil_var_num;
-    armcode *snode,*subnode,*addnode,*strnode,*movnode,*ldmnode;
+    armcode *snode,*subnode,*addnode,*strnode,*ldrnode,*movnode,*ldmnode;
     Blocks *cur_blocks = blocks;
     struct codenode *result = NULL;
     while (cur_blocks != NULL) //遍历所有基本块
@@ -225,9 +262,9 @@ armcode *translatearm(Blocks *blocks)
 
                     spil_var_num = search_fun_spilling(funcname);
 
-                    func_enter_subindex = (spil_var_num+2)*4;       //+2为宏区
+                    func_enter_subindex = (spil_var_num+4)*4;       //+4为宏区
 
-                    cur_stk_offset = func_call_subindex -4;
+                    cur_stk_offset = func_call_subindex -4;         //从高往低压，压局部溢出变量和数组时，手动改变改指针
 
                     subnode = initnewnode();
                     subnode->op = SUB;
@@ -253,10 +290,13 @@ armcode *translatearm(Blocks *blocks)
                     break;
 
                 case TOK_ASSIGN:
-                    if ((rn0 = search_var(funcname, p->result.id)) >= 0) // The result is stored in the register
+                    
+                    rn0 = search_var(funcname, p->result.id);
+                    if (rn0 >= 0) // The result is stored in the register
                     {
-                        Reg[rn0] = p->result.id;
                         newnode->op = MOV;
+                        Reg[rn0] = p->result.id;
+                        
                         // newnode->oper1.type = REG;
                         newnode->result.value = rn0;
 
@@ -268,12 +308,33 @@ armcode *translatearm(Blocks *blocks)
                         }
                         else if (p->opn1.kind == ID)
                         {
-                            if ((rn1 = search_var(funcname, p->opn1.id)) >= 0)
+                            rn1 = search_var(funcname, p->opn1.id);
+                            if (rn1 >= 0)
                             {
                                 Reg[rn1] = p->opn1.id;
                                 //printf("MOV R%d ,R%d\n", rn0, rn1);
-                                newnode->oper2.type = REG;
-                                newnode->oper2.value = rn1;
+                                newnode->oper1.type = REG;
+                                newnode->oper1.value = rn1;
+                            }
+                            else if(rn1 == -1)
+                            {
+                                R_op1 = alloc_myreg();
+
+                               vartable_index = vartable_select(vartbl,p->opn1.id);
+                               ldrnode = create_ldrnode(R_op1,NULL,R13,vartbl->table[vartable_index].index);
+                               armlink_insert(newnode,ldrnode);
+
+                               newnode->oper1.type = REG;
+                               newnode->oper1.value = R_op1;
+
+                            }
+                            else if(rn1 == -2)
+                            {
+                                R_op1 = alloc_myreg();
+                                ldrnode = create_ldrnode(R_op1,p->opn1.id,0,0);
+                                armlink_insert(newnode,ldrnode);
+                                newnode->oper1.type = REG;
+                                newnode->oper1.value = R_op1;
                             }
                         }
                         else if (p->opn1.kind == FLOAT_LITERAL)
@@ -285,11 +346,98 @@ armcode *translatearm(Blocks *blocks)
                             newnode->oper2.type = NUL;
                         }
                     }
+                    else if(rn0 == -1)
+                    {
+                        R_res = alloc_myreg();
+                        if(p->opn1.kind == LITERAL)
+                        {
+                            newnode->op = MOV;
+                            newnode->result.value = R_res;
+                            newnode->oper1.type = IMME;
+                            newnode->oper1.value = p->opn1.const_int;
 
+                            cur_stk_offset -=4;
+                            strnode = create_strnode(R_res,R13,cur_stk_offset);
+                            vartable_insert(vartbl,p->result.id,memindex,cur_stk_offset);
+                        }
+                    }
+                    else if(rn0 == -2)
+                    {
+                        R_res = alloc_myreg();
+                        
+                        ldrnode = create_ldrnode(R_res,p->result.id,0,0);
+                        armlink_insert(newnode,ldrnode);
+                        
+                         if (p->opn1.kind == LITERAL)
+                        {
+                            R_op1 = alloc_myreg();
+
+                            movnode = create_movnode(R_op1,IMME,p->opn1.const_int);
+                            // movnode = initnewnode();
+                            // movnode->op = MOV;
+                            // movnode->result.value = R_op1;
+                            // movnode->oper1.type = IMME;
+                            // movnode->oper1.value = p->opn1.const_int; 
+                            armlink_insert(newnode,movnode);
+
+                            init_strnode(newnode,R_op1,R_res,0);
+
+                            // newnode->op = STR;
+                            // newnode->result.type = REG;
+                            // newnode->result.value = R_op1;
+                            // newnode->oper1.type = MEM;
+                            // newnode->oper1.value = R_res;
+                            // newnode->oper1.index = 0;
+
+                        }
+                        else if(p->opn1.kind == ID)
+                        {
+                            rn1 = search_var(funcname,p->opn1.id);
+                            if(rn1>=0)
+                            {
+                                init_strnode(newnode,rn1,R_res,0);
+                            }
+                            else if(rn1 == -1)
+                            {
+                                R_op1 = alloc_myreg();
+                                vartable_index = vartable_select(vartbl,p->opn1.id);
+                                ldrnode = create_ldrnode(R_op1,NULL,R13,vartbl->table[vartable_index].index);
+                                armlink_insert(newnode,ldrnode);
+
+                                init_strnode(newnode,R_op1,R_res,0);
+                            }
+                            else if(rn1 == -2)
+                            {
+                                R_op1 = alloc_myreg();
+                                ldrnode = create_ldrnode(R_op1,p->opn1.id,0,0);
+                                armlink_insert(newnode,ldrnode);
+
+                                ldrnode = create_ldrnode(R_op1,NULL,R_op1,0);
+                                armlink_insert(newnode,ldrnode);
+
+                                init_strnode(newnode,R_op1,R_res,0);
+
+                                // newnode->op = STR;
+                                // newnode->result.type = REG;
+                                // newnode->result.value = R_op1;
+                                // newnode->oper1.type = MEM;
+                                // newnode->oper1.value = R_res;
+                                // newnode->oper1.index = 0;
+
+                            }
+                            
+                        }
+                        else if(p->opn1.kind == FLOAT_LITERAL)
+                        {
+
+                        }
+                    }
+                    init_myreg();
                     break;
 
                 case TOK_LDR:
-                    if ((rn0 = search_var(funcname, p->result.id)) >= 0)
+                    rn0 = search_var(funcname, p->result.id);
+                    if (rn0 >= 0)
                     {
                         Reg[rn0] = p->result.id;
                         newnode->op = LDR;
@@ -302,9 +450,65 @@ armcode *translatearm(Blocks *blocks)
                         }
                         else
                         {
-                            printf("p->opn1.kind must be LITERAL!\n");
+                            printf("TOK_LDR:p->opn1.kind must be LITERAL!\n");
                         }
                     }
+                    else if(rn0 == -1)
+                    {
+                        R_res = alloc_myreg();
+                        newnode->op = LDR;
+                        newnode->result.value = R_res;
+
+                        if (p->opn1.kind == LITERAL)
+                        {
+                            newnode->oper1.type = ILIMME;
+                            newnode->oper1.value = p->opn1.const_int;
+                        }
+                        else
+                        {
+                            printf("TOK_LDR:p->opn1.kind must be LITERAL!\n");
+                        }
+
+                        cur_stk_offset -= 4;
+                        strnode = create_strnode(R_res,R13,cur_stk_offset);
+                        newnode->next = strnode;
+                        strnode->pre = newnode;
+                        q = strnode;
+
+                        vartable_insert(vartbl,p->result.id,memindex,cur_stk_offset);
+
+                    }
+                    else if(rn0 == -2)
+                    {
+                        R_res = alloc_myreg();
+                        ldrnode = create_ldrnode(R_res,p->result.id,0,0);
+                        armlink_insert(newnode,ldrnode);
+                        
+                        if (p->opn1.kind == LITERAL)
+                        {
+                            R_op1 = alloc_myreg();
+                            ldrnode = initnewnode();
+                            ldrnode->op = LDR;
+                            ldrnode->result.value = R_op1;
+                            ldrnode->oper1.type = ILIMME;
+                            ldrnode->oper1.value = p->opn1.const_int;
+
+                            armlink_insert(newnode,ldrnode);
+                        }
+                        else
+                        {
+                            printf("TOK_LDR:p->opn1.kind must be LITERAL!\n");
+                        }
+
+                        init_strnode(newnode,R_op1,R_res,0);
+
+                    }
+                    else
+                    {
+                        printf("无用赋值\n");
+                    }
+
+                    init_myreg();
                     break;
 
                 case TOK_ADD:
@@ -327,6 +531,8 @@ armcode *translatearm(Blocks *blocks)
                         m = m->next;
                     }
                     paranum = search_func(m->opn1.id);
+
+                    m = m->prior;   //指向最后一个参数
 
                     //int reg[5] = {0, 1, 2, 3, 14};
                     snode = mul_reg_node(STMFD,R13, reg, 5);
@@ -450,13 +656,15 @@ armcode *translatearm(Blocks *blocks)
                                     index = vartable_select(vartbl,regname);
                                     stkindex = vartbl->table[index].index;
 
-                                    strnode = initnewnode();
-                                    strnode->op = LDR;
-                                    strnode->result.value = i;
-                                    strnode->oper1.type = MEM;
-                                    strnode->oper1.value = R13;
-                                    strnode->oper1.index = stkindex;
-                                    armlink_insert(newnode, strnode);
+                                    strnode = create_ldrnode(i,NULL,R13,stkindex);
+
+                                    // strnode = initnewnode();
+                                    // strnode->op = LDR;
+                                    // strnode->result.value = i;
+                                    // strnode->oper1.type = MEM;
+                                    // strnode->oper1.value = R13;
+                                    // strnode->oper1.index = stkindex;
+                                    // armlink_insert(newnode, strnode);
                                }
                                else
                                {
@@ -485,11 +693,13 @@ armcode *translatearm(Blocks *blocks)
                         {
                             if (check_imme(p->result.const_int) == 0) //合法立即数
                             {
-                                movnode = initnewnode();
-                                movnode->op = MOV;
-                                movnode->result.value = i;
-                                movnode->oper1.type = IMME;
-                                movnode->oper1.value = p->result.const_int;
+                                // movnode = initnewnode();
+                                // movnode->op = MOV;
+                                // movnode->result.value = i;
+                                // movnode->oper1.type = IMME;
+                                // movnode->oper1.value = p->result.const_int;
+
+                                movnode = create_movnode(i,IMME,p->result.const_int);
                                 armlink_insert(newnode, movnode);
                             }
                             else
@@ -536,11 +746,13 @@ armcode *translatearm(Blocks *blocks)
                         rn0 = search_var(funcname,p->result.id);
                         if(rn0>=0)
                         {
-                            movnode = initnewnode();
-                            movnode->op = MOV;
-                            movnode->result.value = rn0;
-                            movnode->oper1.type = REG;
-                            movnode->oper1.value = R0;
+                            // movnode = initnewnode();
+                            // movnode->op = MOV;
+                            // movnode->result.value = rn0;
+                            // movnode->oper1.type = REG;
+                            // movnode->oper1.value = R0;
+
+                            movnode = create_movnode(rn0,REG,R0);
 
                             newnode->next = movnode;
                             movnode->pre = newnode;
@@ -560,18 +772,23 @@ armcode *translatearm(Blocks *blocks)
                         }
                     }
 
-                    addnode = initnewnode();
-                    addnode->op = ADD;
-                    addnode->result.value = R13;
-                    addnode->oper1.type = REG;
-                    addnode->oper1.value = R13;
-                    addnode->oper2.type = IMME;
-                    addnode->oper2.value = func_call_subindex;
-                    q->next = addnode;
-                    addnode->pre = q;
-                    q = addnode;
-                    vartable_update_all(vartbl,-func_call_subindex);
+                    if(func_call_subindex != 0)
+                    {
+                        addnode = initnewnode();
+                        addnode->op = ADD;
+                        addnode->result.value = R13;
+                        addnode->oper1.type = REG;
+                        addnode->oper1.value = R13;
+                        addnode->oper2.type = IMME;
+                        addnode->oper2.value = func_call_subindex;
+                        q->next = addnode;
+                        addnode->pre = q;
+                        q = addnode;
+                        vartable_update_all(vartbl,-func_call_subindex);
 
+                    }
+
+                    
                     //int reg[5] = {0, 1, 2, 3, 14};
                     ldmnode = mul_reg_node(LDMFD,R13,reg,5);
                     q->next = ldmnode;
@@ -651,7 +868,561 @@ armcode *translatearm(Blocks *blocks)
                     armlink_insert(newnode,ldmnode);
                     vartable_update_all(vartbl,-(func_enter_regnum*4));
 
+                    func_gvar_num = search_func_gvar(funcname,func_gvar_ary);
+                    armcode *gnode = gvar_node_list(func_gvar_num,func_gvar_ary);
+
+                    newnode->next = gnode;
+                    gnode->pre = newnode;
+
+                    while(gnode->next != NULL)
+                    {
+                        gnode = gnode->next;
+                    }
+                    q = gnode;
+
                     free(vartbl);
+                    break;
+
+                case GOTO:
+                    newnode->op = B;
+                    // 需要将 result.id 转换为对应 标号
+                    newnode->result.type = STRING;
+                    strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+                    //printf("B %s", newnode->result.str_id);
+                    break;
+
+                case JLE: // <=
+                    if ((p->opn1.kind == LITERAL) && (p->opn2.kind == LITERAL)) {
+                        if (p->opn1.const_int <= p->opn2.const_int) {
+                            newnode->op = B;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+                            //printf("B %s", newnode->result.str_id);
+                        } else {
+                            // 无效跳转
+                        }
+                    } else if ((p->opn1.kind == ID) && (p->opn2.kind == LITERAL)) {
+                        if ((rn0 = search_var(funcname, p->opn1.id)) >= 0) {
+                            
+                            newnode->op = CMP;
+                            
+                            Reg[rn0] = p->opn1.id;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = rn0;
+
+                            newnode->oper2.type = IMME;
+                            newnode->oper2.value = p->opn2.const_int;
+                            //printf("CMP R%d, #%d", newnode->oper1.value, newnode->oper2.value);
+
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            newnode->op = B;
+                            newnode->flag = LE;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+                            //printf("BLE %s", newnode->result.str_id);
+
+                        } else {
+                            // TODO 左操作数为变量且溢出
+                        }
+                    } else if ((p->opn1.kind == LITERAL) && (p->opn2.kind == ID)) {
+                        if ((rn0 = search_var(funcname, p->opn2.id)) >= 0) {
+                            
+                            newnode->op = CMP;
+                            
+                            Reg[rn0] = p->opn2.id;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = rn0;
+
+                            newnode->oper2.type = IMME;
+                            newnode->oper2.value = p->opn1.const_int;
+                            //printf("CMP R%d, #%d", newnode->oper1.value, newnode->oper2.value);
+
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            newnode->op = B;
+                            newnode->flag = GT;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+                            //printf("BGT %s", newnode->result.str_id);
+
+                        } else {
+                            // TODO 右操作数为变量且溢出
+                        }
+                    } else if ((p->opn1.kind == ID) && (p->opn2.kind == ID)) {
+                        if ((rn0 = search_var(funcname, p->opn1.id)) >= 0 && (rn1 = search_var(funcname, p->opn2.id)) >= 0) {
+                            newnode->op = CMP;
+
+                            Reg[rn0] = p->opn1.id;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = rn0;
+
+                            Reg[rn1] = p->opn2.id;
+                            newnode->oper2.type = REG;
+                            newnode->oper2.value = rn1;
+                            //printf("CMP R%d, R%d", newnode->oper1.value, newnode->oper2.value);
+
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            newnode->op = B;
+                            newnode->flag = LE;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+                            //printf("BLE %s", newnode->result.str_id);
+                        } else {
+                            // TODO 左右操作数为变量且存在溢出
+                        }
+                    }
+                    break;
+
+                case JLT: // <
+                    if ((p->opn1.kind == LITERAL) && (p->opn2.kind == LITERAL)) {
+                        if (p->opn1.const_int < p->opn2.const_int) {
+                            newnode->op = B;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+                            //printf("B %s", newnode->result.str_id);
+                        } else {
+                            // 无效跳转
+                        }
+                    } else if ((p->opn1.kind == ID) && (p->opn2.kind == LITERAL)) {
+                        if ((rn0 = search_var(funcname, p->opn1.id)) >= 0) {
+                            
+                            newnode->op = CMP;
+                            
+                            Reg[rn0] = p->opn1.id;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = rn0;
+
+                            newnode->oper2.type = IMME;
+                            newnode->oper2.value = p->opn2.const_int;
+                            //printf("CMP R%d, #%d", newnode->oper1.value, newnode->oper2.value);
+
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            newnode->op = B;
+                            newnode->flag = LT;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+                            //printf("BLT %s", newnode->result.str_id);
+
+                        } else {
+                            // TODO 左操作数为变量且溢出
+                        }
+                    } else if ((p->opn1.kind == LITERAL) && (p->opn2.kind == ID)) {
+                        if ((rn0 = search_var(funcname, p->opn2.id)) >= 0) {
+                            
+                            newnode->op = CMP;
+                            
+                            Reg[rn0] = p->opn2.id;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = rn0;
+
+                            newnode->oper2.type = IMME;
+                            newnode->oper2.value = p->opn1.const_int;
+                            //printf("CMP R%d, #%d", newnode->oper1.value, newnode->oper2.value);
+
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            newnode->op = B;
+                            newnode->flag = GE;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+                            //printf("BGE %s", newnode->result.str_id);
+
+                        } else {
+                            // TODO 右操作数为变量且溢出
+                        }
+                    } else if ((p->opn1.kind == ID) && (p->opn2.kind == ID)) {
+                        if ((rn0 = search_var(funcname, p->opn1.id)) >= 0 && (rn1 = search_var(funcname, p->opn2.id)) >= 0) {
+                            newnode->op = CMP;
+
+                            Reg[rn0] = p->opn1.id;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = rn0;
+
+                            Reg[rn1] = p->opn2.id;
+                            newnode->oper2.type = REG;
+                            newnode->oper2.value = rn1;
+                            //printf("CMP R%d, R%d", newnode->oper1.value, newnode->oper2.value);
+
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            newnode->op = B;
+                            newnode->flag = LT;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+                            //printf("BLT %s", newnode->result.str_id);
+                        } else {
+                            // TODO 左右操作数为变量且存在溢出
+                        }
+                    }
+                    break;
+
+                case JGE: // >=
+                    if ((p->opn1.kind == LITERAL) && (p->opn2.kind == LITERAL)) {
+                        if (p->opn1.const_int >= p->opn2.const_int) {
+                            newnode->op = B;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+                            //printf("B %s", newnode->result.str_id);
+                        } else {
+                            // 无效跳转
+                        }
+                    } else if ((p->opn1.kind == ID) && (p->opn2.kind == LITERAL)) {
+                        if ((rn0 = search_var(funcname, p->opn1.id)) >= 0) {
+                            
+                            newnode->op = CMP;
+                            
+                            Reg[rn0] = p->opn1.id;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = rn0;
+
+                            newnode->oper2.type = IMME;
+                            newnode->oper2.value = p->opn2.const_int;
+                            //printf("CMP R%d, #%d", newnode->oper1.value, newnode->oper2.value);
+
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            newnode->op = B;
+                            newnode->flag = GE;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+                            //printf("BGE %s", newnode->result.str_id);
+
+                        } else {
+                            // TODO 左操作数为变量且溢出
+                        }
+                    } else if ((p->opn1.kind == LITERAL) && (p->opn2.kind == ID)) {
+                        if ((rn0 = search_var(funcname, p->opn2.id)) >= 0) {
+                            
+                            newnode->op = CMP;
+                            
+                            Reg[rn0] = p->opn2.id;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = rn0;
+
+                            newnode->oper2.type = IMME;
+                            newnode->oper2.value = p->opn1.const_int;
+                            //printf("CMP R%d, #%d", newnode->oper1.value, newnode->oper2.value);
+
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            newnode->op = B;
+                            newnode->flag = LT;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+                            //printf("BLT %s", newnode->result.str_id);
+
+                        } else {
+                            // TODO 右操作数为变量且溢出
+                        }
+                    } else if ((p->opn1.kind == ID) && (p->opn2.kind == ID)) {
+                        if ((rn0 = search_var(funcname, p->opn1.id)) >= 0 && (rn1 = search_var(funcname, p->opn2.id)) >= 0) {
+                            newnode->op = CMP;
+
+                            Reg[rn0] = p->opn1.id;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = rn0;
+
+                            Reg[rn1] = p->opn2.id;
+                            newnode->oper2.type = REG;
+                            newnode->oper2.value = rn0;
+                            //printf("CMP R%d, R%d", newnode->oper1.value, newnode->oper2.value);
+
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            newnode->op = B;
+                            newnode->flag = GE;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+                            //printf("BGE %s", newnode->result.str_id);
+                        } else {
+                            // TODO 左右操作数为变量且存在溢出
+                        }
+                    }
+                    break;
+
+                case JGT: // >
+                    if ((p->opn1.kind == LITERAL) && (p->opn2.kind == LITERAL)) {
+                        if (p->opn1.const_int > p->opn2.const_int) {
+                            newnode->op = B;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+                            //printf("B %s", newnode->result.str_id);
+                        } else {
+                            // 无效跳转
+                        }
+                    } else if ((p->opn1.kind == ID) && (p->opn2.kind == LITERAL)) {
+                        if ((rn0 = search_var(funcname, p->opn1.id)) >= 0) {
+                            
+                            newnode->op = CMP;
+                            
+                            Reg[rn0] = p->opn1.id;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = rn0;
+
+                            newnode->oper2.type = IMME;
+                            newnode->oper2.value = p->opn2.const_int;
+                            //printf("CMP R%d, #%d", newnode->oper1.value, newnode->oper2.value);
+
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            newnode->op = B;
+                            newnode->flag = GT;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+                            //printf("BGT %s", newnode->result.str_id);
+
+                        } else {
+                            // TODO 左操作数为变量且溢出
+                        }
+                    } else if ((p->opn1.kind == LITERAL) && (p->opn2.kind == ID)) {
+                        if ((rn0 = search_var(funcname, p->opn2.id)) >= 0) {
+                            
+                            newnode->op = CMP;
+                            
+                            Reg[rn0] = p->opn2.id;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = rn0;
+
+                            newnode->oper2.type = IMME;
+                            newnode->oper2.value = p->opn1.const_int;
+                            //printf("CMP R%d, #%d", newnode->oper1.value, newnode->oper2.value);
+
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            newnode->op = B;
+                            newnode->flag = LE;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+                            //printf("BLE %s", newnode->result.str_id);
+
+                        } else {
+                            // TODO 右操作数为变量且溢出
+                        }
+                    } else if ((p->opn1.kind == ID) && (p->opn2.kind == ID)) {
+                        if ((rn0 = search_var(funcname, p->opn1.id)) >= 0 && (rn1 = search_var(funcname, p->opn2.id)) >= 0) {
+                            newnode->op = CMP;
+
+                            Reg[rn0] = p->opn1.id;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = rn0;
+
+                            Reg[rn1] = p->opn2.id;
+                            newnode->oper2.type = REG;
+                            newnode->oper2.value = rn0;
+                            //printf("CMP R%d, R%d", newnode->oper1.value, newnode->oper2.value);
+
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            newnode->op = B;
+                            newnode->flag = GT;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+                            //printf("BGT %s", newnode->result.str_id);
+                        } else {
+                            // TODO 左右操作数为变量且存在溢出
+                        }
+                    }
+                    break;
+
+                case EQ:  // ==
+                    if ((p->opn1.kind == LITERAL) && (p->opn2.kind == LITERAL)) {
+                        if (p->opn1.const_int == p->opn2.const_int) {
+                            newnode->op = B;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+                            //printf("B %s", newnode->result.str_id);
+                        } else {
+                            // 无效跳转
+                        }
+                    } else if ((p->opn1.kind == ID) && (p->opn2.kind == LITERAL)) {
+                        if ((rn0 = search_var(funcname, p->opn1.id)) >= 0) {
+                            
+                            newnode->op = CMP;
+                            
+                            Reg[rn0] = p->opn1.id;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = rn0;
+
+                            newnode->oper2.type = IMME;
+                            newnode->oper2.value = p->opn2.const_int;
+                            //printf("CMP R%d, #%d", newnode->oper1.value, newnode->oper2.value);
+
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            newnode->op = B;
+                            newnode->flag = EQ;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+                            //printf("BEQ %s", newnode->result.str_id);
+
+                        } else {
+                            // TODO 左操作数为变量且溢出
+                        }
+                    } else if ((p->opn1.kind == LITERAL) && (p->opn2.kind == ID)) {
+                        if ((rn0 = search_var(funcname, p->opn2.id)) >= 0) {
+                            
+                            newnode->op = CMP;
+                            
+                            Reg[rn0] = p->opn2.id;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = rn0;
+
+                            newnode->oper2.type = IMME;
+                            newnode->oper2.value = p->opn1.const_int;
+                            //printf("CMP R%d, #%d", newnode->oper1.value, newnode->oper2.value);
+
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            newnode->op = B;
+                            newnode->flag = EQ;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+                            //printf("BEQ %s", newnode->result.str_id);
+
+                        } else {
+                            // TODO 右操作数为变量且溢出
+                        }
+                    } else if ((p->opn1.kind == ID) && (p->opn2.kind == ID)) {
+                        if ((rn0 = search_var(funcname, p->opn1.id)) >= 0 && (rn1 = search_var(funcname, p->opn2.id)) >= 0) {
+                            newnode->op = CMP;
+
+                            Reg[rn0] = p->opn1.id;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = rn0;
+
+                            Reg[rn1] = p->opn2.id;
+                            newnode->oper2.type = REG;
+                            newnode->oper2.value = rn0;
+                            //printf("CMP R%d, R%d", newnode->oper1.value, newnode->oper2.value);
+
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            newnode->op = B;
+                            newnode->flag = EQ;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+                            //printf("BEQ %s", newnode->result.str_id);
+                        } else {
+                            // TODO 左右操作数为变量且存在溢出
+                        }
+                    }
+                    break;
+
+                case NEQ: // !=
+                    if ((p->opn1.kind == LITERAL) && (p->opn2.kind == LITERAL)) {
+                        if (p->opn1.const_int != p->opn2.const_int) {
+                            newnode->op = B;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+                            //printf("B %s", newnode->result.str_id);
+                        } else {
+                            // 无效跳转
+                        }
+                    } else if ((p->opn1.kind == ID) && (p->opn2.kind == LITERAL)) {
+                        if ((rn0 = search_var(funcname, p->opn1.id)) >= 0) {
+                            
+                            newnode->op = CMP;
+                            
+                            Reg[rn0] = p->opn1.id;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = rn0;
+
+                            newnode->oper2.type = IMME;
+                            newnode->oper2.value = p->opn2.const_int;
+                            //printf("CMP R%d, #%d", newnode->oper1.value, newnode->oper2.value);
+
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            newnode->op = B;
+                            newnode->flag = NE;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+                            //printf("BNE %s", newnode->result.str_id);
+
+                        } else {
+                            // TODO 左操作数为变量且溢出
+                        }
+                    } else if ((p->opn1.kind == LITERAL) && (p->opn2.kind == ID)) {
+                        if ((rn0 = search_var(funcname, p->opn2.id)) >= 0) {
+                            
+                            newnode->op = CMP;
+                            
+                            Reg[rn0] = p->opn2.id;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = rn0;
+
+                            newnode->oper2.type = IMME;
+                            newnode->oper2.value = p->opn1.const_int;
+                            //printf("CMP R%d, #%d", newnode->oper1.value, newnode->oper2.value);
+
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            newnode->op = B;
+                            newnode->flag = NE;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+                            //printf("BNE %s", newnode->result.str_id);
+
+                        } else {
+                            // TODO 右操作数为变量且溢出
+                        }
+                    } else if ((p->opn1.kind == ID) && (p->opn2.kind == ID)) {
+                        if ((rn0 = search_var(funcname, p->opn1.id)) >= 0 && (rn1 = search_var(funcname, p->opn2.id)) >= 0) {
+                            newnode->op = CMP;
+
+                            Reg[rn0] = p->opn1.id;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = rn0;
+
+                            Reg[rn1] = p->opn2.id;
+                            newnode->oper2.type = REG;
+                            newnode->oper2.value = rn0;
+                            //printf("CMP R%d, R%d", newnode->oper1.value, newnode->oper2.value);
+
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            newnode->op = B;
+                            newnode->flag = NE;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+                            //printf("BNE %s", newnode->result.str_id);
+                        } else {
+                            // TODO 左右操作数为变量且存在溢出
+                        }
+                    }
                     break;
 
                 default:
@@ -693,4 +1464,138 @@ void armlink_insert(armcode *newnode, armcode *inode)
     inode->pre = newnode->pre;
     inode->next = newnode;
     newnode->pre = inode;
+}
+
+armcode * gvar_node_list(int func_gvar_num,char **gvartable)
+{
+    armcode * p = initnewnode();
+    armcode * m = p;
+    for(int i=0;i<func_gvar_num;i++)
+    {
+        armcode * gvarnode = gvar_node(gvartable,i,func_index);
+        m->next = gvarnode;
+        gvarnode->pre = m;
+        m=gvarnode->next;
+    }
+
+    func_index++;
+
+    return p->next;
+}
+
+armcode * gvar_node(char ** gvartable,int i,int func_index)
+{
+    char label[20]={0};
+    armcode * lblnode = initnewnode();
+    lblnode->op = ARMLABEL;
+    lblnode->result.type = STRING;
+    sprintf(label,".LCPI%d_%s",func_index,gvartable[i]);
+    strcpy(lblnode->result.str_id,label);
+
+    armcode * nnode =initnewnode();
+    nnode->op = GVAR_LABEL;
+    nnode->result.type = STRING;
+    strcpy(nnode->result.str_id,".long");
+    nnode->oper1.type = STRING;
+    char str[33]={0};
+    sprintf(str,"%s",gvartable[i]);
+    // strcpy(nnode->oper1.str_id,gvartable[i]);
+    strcpy(nnode->oper1.str_id,str);
+
+    lblnode->next = nnode;
+    nnode->pre = lblnode;
+
+    return lblnode;
+
+}
+
+armcode * create_ldrnode(int Rn,char * gvarname,int Rm,int index)
+{
+    char tmp[33]={0};
+    armcode * lnode = initnewnode();
+    lnode->op = LDR;
+    lnode->result.value = Rn;
+
+    if(gvarname == NULL)
+    {
+        lnode->oper1.type == MEM;
+        lnode->oper1.value = Rm;
+        lnode->oper1.index = index;
+    }
+    else
+    {
+        lnode->oper1.type = STRING;
+        sprintf(tmp,".LCPI%d_%s",func_index-1,gvarname);
+        strcpy(lnode->oper1.str_id,tmp);
+    }
+    
+    return lnode;
+}
+
+armcode* create_strnode(int Rn,int Rm,int index)
+{
+    armcode * strnode = initnewnode();
+    strnode->op = STR;
+    strnode->result.value = Rn;
+    strnode->oper1.type = MEM;
+    strnode->oper1.value = Rm;
+    strnode->oper1.index = index;
+
+    return strnode;
+}
+
+armcode * create_movnode(int R_res,optype type,int value)
+{
+    armcode * mnode = initnewnode();
+    mnode->op = MOV;
+    mnode->result.value = R_res;
+    
+    mnode->oper1.type = type;
+    mnode->oper1.value = value;
+
+    return mnode;
+  
+}
+
+void init_strnode(armcode * snode,int R_res,int Rm,int index)
+{
+    snode->op = STR;
+    snode->result.type = REG;
+    snode->result.value = R_res;
+    snode->oper1.type = MEM;
+    snode->oper1.value  = Rm;
+    snode->oper1.index = index;
+}
+
+void init_myreg()
+{
+    R11R12 = 3;
+}
+
+/**
+ * @brief 分配自由分配的寄存器，如果
+ * 
+ * @return int 
+ */
+int alloc_myreg()
+{
+    // if(R11R12 == 7)
+    // {
+    //     R11R12 = R11R12 >> 1;
+    //     return R10;
+    // }
+    if(R11R12 == 3)
+    {
+        R11R12 = R11R12 >> 1;
+        return R11;
+    }
+    else if(R11R12 == 1)
+    {
+        R11R12 = R11R12 >> 1;
+        return R12;
+    }
+    else
+    {
+        return -1;
+    }
 }

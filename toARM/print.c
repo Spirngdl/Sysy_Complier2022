@@ -51,7 +51,7 @@ void printarm(armcode *armnode, FILE *fp)
         switch (p->op)
         {
         case ARMLABEL:
-            fprintf(fp,"%s\n",p->result.str_id);
+            fprintf(fp,"%s:\n",p->result.str_id);
             break;
 
         case GVAR_INT:
@@ -60,6 +60,10 @@ void printarm(armcode *armnode, FILE *fp)
 
         case GVAR_FLOAT:
             fprintf(fp,"\t%s    %x\n",p->result.str_id,p->oper1.value);
+            break;
+
+        case GVAR_LABEL:
+            fprintf(fp,"\t%s    %s\n",p->result.str_id,p->oper1.str_id);
             break;
 
         case MOV:
@@ -135,6 +139,10 @@ void printarm(armcode *armnode, FILE *fp)
             {
                 fprintf(fp,"\tLDR   R%d , =%d\n",p->result.value,p->oper1.value);
             }
+            else if(p->oper1.type == STRING)
+            {
+                fprintf(fp,"\tLDR   R%d , %s\n",p->result.value,p->oper1.str_id);
+            }
             else
             {
                 printf("LDR node oper1.type error!\n");
@@ -142,7 +150,14 @@ void printarm(armcode *armnode, FILE *fp)
             break;
 
         case STR:
-            fprintf(fp,"\tSTR   R%d , [R%d,#%d]\n",p->result.value,p->oper1.value,p->oper1.index);
+            if(p->oper1.index == 0)
+            {
+                fprintf(fp,"\tSTR   R%d , [R%d]\n",p->result.value,p->oper1.value);
+            }
+            else
+            {
+                fprintf(fp,"\tSTR   R%d , [R%d,#%d]\n",p->result.value,p->oper1.value,p->oper1.index);
+            }
             break;
         
         case STMFD:
