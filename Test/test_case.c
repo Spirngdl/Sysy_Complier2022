@@ -26,15 +26,7 @@
 
 //float f[10]={10.0};
 
-int a;
-
 int main()
 {
-    int k;
-    int j=0;
-    if(j > 9)
-	{
-		return 0;
-	}
-    return k;
+    return 3;
 }

@@ -275,8 +275,8 @@ armcode *translatearm(Blocks *blocks)
                     subnode->oper1.value = R13;
                     subnode->oper2.type = IMME;
                     subnode->oper2.value = func_enter_subindex;
-                    snode->next = subnode;
-                    subnode->pre = snode;
+                    q->next = subnode;
+                    subnode->pre = q;
                     q = subnode;
 
                     vartable_update_all(vartbl,func_enter_subindex);
@@ -866,9 +866,12 @@ armcode *translatearm(Blocks *blocks)
                     armlink_insert(newnode,addnode);
                     vartable_update_all(vartbl,-func_enter_subindex);
 
-                    ldmnode = mul_reg_node(LDMFD,R13,func_enter_reg,func_enter_regnum);
-                    armlink_insert(newnode,ldmnode);
-                    vartable_update_all(vartbl,-(func_enter_regnum*4));
+                    if(func_enter_regnum != 0)
+                    {
+                        ldmnode = mul_reg_node(LDMFD,R13,func_enter_reg,func_enter_regnum);
+                        armlink_insert(newnode,ldmnode);
+                        vartable_update_all(vartbl,-(func_enter_regnum*4));
+                    }
 
                     func_gvar_num = search_func_gvar(funcname,func_gvar_ary);
                     armcode *gnode = gvar_node_list(func_gvar_num,func_gvar_ary);
