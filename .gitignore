@@ -10,3 +10,4 @@ a.asm
 list_test.c
 test_case.c
 tac.txt
+test_case.s

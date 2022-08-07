@@ -180,15 +180,15 @@ bool isLibraryfunctions(char *func_name)
  * @param j
  * @return 寄存器号
  */
-int get_other_reg(int i, int j)
-{
-    //最简单写法就遍历呗，但是这样应该会
-    static int index = 0;
-    for (index %= 10; index < 10; index = (index + 1) % 10)
-    {
-        if (index != i && index != j)
-        {
-            return index++;
-        }
-    }
-}
+// int get_other_reg(int i, int j)
+// {
+//     //最简单写法就遍历呗，但是这样应该会
+//     static int index = 0;
+//     for (index %= 10; index < 10; index = (index + 1) % 10)
+//     {
+//         if (index != i && index != j)
+//         {
+//             return index++;
+//         }
+//     }
+// }

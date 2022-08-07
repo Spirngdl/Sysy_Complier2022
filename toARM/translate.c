@@ -50,7 +50,7 @@ void translate(armcode *newnode, struct codenode *p, armop armop,armcode *q)
 
         if (p->opn1.kind == LITERAL)
         {
-            // R_op1 = alloc_myreg();
+            R_op1 = alloc_myreg();
             // movcode = initnewnode();
             // movcode->op = MOV;
             // movcode->result.value = R_op1;
@@ -157,7 +157,7 @@ void translate(armcode *newnode, struct codenode *p, armop armop,armcode *q)
                 else if (p->opn2.kind == ID)
                 {
                     rn2 = search_var(funcname, p->opn2.id);
-                    if (rn2 > 0)
+                    if (rn2 >= 0)
                     {
                         // printf("ADD R%d ,R%d ,R%d", rn0, rn1, rn2);
                         Reg[rn2] = p->opn2.id;
@@ -781,7 +781,7 @@ armcode *translatearm(Blocks *blocks)
                                     // strnode->oper1.type = MEM;
                                     // strnode->oper1.value = R13;
                                     // strnode->oper1.index = stkindex;
-                                    // armlink_insert(newnode, strnode);
+                                    armlink_insert(newnode, strnode);
                                }
                                else
                                {
@@ -1696,7 +1696,7 @@ armcode * create_ldrnode(int Rn,char * gvarname,int Rm,int index)
 
     if(gvarname == NULL)
     {
-        lnode->oper1.type == MEM;
+        lnode->oper1.type  = MEM;
         lnode->oper1.value = Rm;
         lnode->oper1.index = index;
     }

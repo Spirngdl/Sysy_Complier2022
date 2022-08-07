@@ -124,7 +124,7 @@ void print_IR(struct codenode *head)
     char opnstr1[32], opnstr2[32], resultstr[32];
     struct codenode *h = head;
     char str[128];
-    FILE *fp = fopen("./tac.txt", "w");
+    // FILE *fp = fopen("./tac.txt", "w");
     while (h != NULL)
     {
         printf("%d: ", h->UID);
