@@ -34,7 +34,7 @@ armcode *search_global_var()
                 p = vnode;
 
             }
-            else if (sym.flag == VAR) //全局变量
+            else if (sym.flag == VAR ||sym.flag == CONST_VAR) //全局变量
             {
                 // char *alias = sym.alias;//别名，三地址代码中所有变量名都是别名
                 // int type = sym.type; //可能是TOK_INT TOK_FLOAT
