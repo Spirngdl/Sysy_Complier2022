@@ -888,9 +888,8 @@ armcode *translatearm(Blocks *blocks)
                     free(vartbl);
                     break;
 
-                case GOTO:
+                 case GOTO:
                     newnode->op = B;
-                    // 需要将 result.id 转换为对应 标号
                     newnode->result.type = STRING;
                     strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
                     //printf("B %s", newnode->result.str_id);
@@ -900,6 +899,7 @@ armcode *translatearm(Blocks *blocks)
                     if ((p->opn1.kind == LITERAL) && (p->opn2.kind == LITERAL)) {
                         if (p->opn1.const_int <= p->opn2.const_int) {
                             newnode->op = B;
+                            newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
                             //printf("B %s", newnode->result.str_id);
                         } else {
@@ -925,6 +925,7 @@ armcode *translatearm(Blocks *blocks)
 
                             newnode->op = B;
                             newnode->flag = LE;
+                            newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
                             //printf("BLE %s", newnode->result.str_id);
 
@@ -951,6 +952,7 @@ armcode *translatearm(Blocks *blocks)
 
                             newnode->op = B;
                             newnode->flag = GT;
+                            newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
                             //printf("BGT %s", newnode->result.str_id);
 
@@ -977,6 +979,7 @@ armcode *translatearm(Blocks *blocks)
 
                             newnode->op = B;
                             newnode->flag = LE;
+                            newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
                             //printf("BLE %s", newnode->result.str_id);
                         } else {
@@ -989,6 +992,7 @@ armcode *translatearm(Blocks *blocks)
                     if ((p->opn1.kind == LITERAL) && (p->opn2.kind == LITERAL)) {
                         if (p->opn1.const_int < p->opn2.const_int) {
                             newnode->op = B;
+                            newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
                             //printf("B %s", newnode->result.str_id);
                         } else {
@@ -1014,6 +1018,7 @@ armcode *translatearm(Blocks *blocks)
 
                             newnode->op = B;
                             newnode->flag = LT;
+                            newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
                             //printf("BLT %s", newnode->result.str_id);
 
@@ -1040,6 +1045,7 @@ armcode *translatearm(Blocks *blocks)
 
                             newnode->op = B;
                             newnode->flag = GE;
+                            newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
                             //printf("BGE %s", newnode->result.str_id);
 
@@ -1066,6 +1072,7 @@ armcode *translatearm(Blocks *blocks)
 
                             newnode->op = B;
                             newnode->flag = LT;
+                            newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
                             //printf("BLT %s", newnode->result.str_id);
                         } else {
@@ -1078,6 +1085,7 @@ armcode *translatearm(Blocks *blocks)
                     if ((p->opn1.kind == LITERAL) && (p->opn2.kind == LITERAL)) {
                         if (p->opn1.const_int >= p->opn2.const_int) {
                             newnode->op = B;
+                            newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
                             //printf("B %s", newnode->result.str_id);
                         } else {
@@ -1103,6 +1111,7 @@ armcode *translatearm(Blocks *blocks)
 
                             newnode->op = B;
                             newnode->flag = GE;
+                            newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
                             //printf("BGE %s", newnode->result.str_id);
 
@@ -1129,6 +1138,7 @@ armcode *translatearm(Blocks *blocks)
 
                             newnode->op = B;
                             newnode->flag = LT;
+                            newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
                             //printf("BLT %s", newnode->result.str_id);
 
@@ -1155,6 +1165,7 @@ armcode *translatearm(Blocks *blocks)
 
                             newnode->op = B;
                             newnode->flag = GE;
+                            newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
                             //printf("BGE %s", newnode->result.str_id);
                         } else {
@@ -1167,6 +1178,7 @@ armcode *translatearm(Blocks *blocks)
                     if ((p->opn1.kind == LITERAL) && (p->opn2.kind == LITERAL)) {
                         if (p->opn1.const_int > p->opn2.const_int) {
                             newnode->op = B;
+                            newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
                             //printf("B %s", newnode->result.str_id);
                         } else {
@@ -1192,6 +1204,7 @@ armcode *translatearm(Blocks *blocks)
 
                             newnode->op = B;
                             newnode->flag = GT;
+                            newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
                             //printf("BGT %s", newnode->result.str_id);
 
@@ -1218,6 +1231,7 @@ armcode *translatearm(Blocks *blocks)
 
                             newnode->op = B;
                             newnode->flag = LE;
+                            newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
                             //printf("BLE %s", newnode->result.str_id);
 
@@ -1244,6 +1258,7 @@ armcode *translatearm(Blocks *blocks)
 
                             newnode->op = B;
                             newnode->flag = GT;
+                            newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
                             //printf("BGT %s", newnode->result.str_id);
                         } else {
@@ -1256,6 +1271,7 @@ armcode *translatearm(Blocks *blocks)
                     if ((p->opn1.kind == LITERAL) && (p->opn2.kind == LITERAL)) {
                         if (p->opn1.const_int == p->opn2.const_int) {
                             newnode->op = B;
+                            newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
                             //printf("B %s", newnode->result.str_id);
                         } else {
@@ -1281,6 +1297,7 @@ armcode *translatearm(Blocks *blocks)
 
                             newnode->op = B;
                             newnode->flag = EQ;
+                            newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
                             //printf("BEQ %s", newnode->result.str_id);
 
@@ -1307,6 +1324,7 @@ armcode *translatearm(Blocks *blocks)
 
                             newnode->op = B;
                             newnode->flag = EQ;
+                            newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
                             //printf("BEQ %s", newnode->result.str_id);
 
@@ -1333,6 +1351,7 @@ armcode *translatearm(Blocks *blocks)
 
                             newnode->op = B;
                             newnode->flag = EQ;
+                            newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
                             //printf("BEQ %s", newnode->result.str_id);
                         } else {
@@ -1345,6 +1364,7 @@ armcode *translatearm(Blocks *blocks)
                     if ((p->opn1.kind == LITERAL) && (p->opn2.kind == LITERAL)) {
                         if (p->opn1.const_int != p->opn2.const_int) {
                             newnode->op = B;
+                            newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
                             //printf("B %s", newnode->result.str_id);
                         } else {
@@ -1370,6 +1390,7 @@ armcode *translatearm(Blocks *blocks)
 
                             newnode->op = B;
                             newnode->flag = NE;
+                            newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
                             //printf("BNE %s", newnode->result.str_id);
 
@@ -1396,6 +1417,7 @@ armcode *translatearm(Blocks *blocks)
 
                             newnode->op = B;
                             newnode->flag = NE;
+                            newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
                             //printf("BNE %s", newnode->result.str_id);
 
@@ -1422,6 +1444,7 @@ armcode *translatearm(Blocks *blocks)
 
                             newnode->op = B;
                             newnode->flag = NE;
+                            newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
                             //printf("BNE %s", newnode->result.str_id);
                         } else {
