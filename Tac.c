@@ -47,19 +47,22 @@ struct codenode *merge(int num, ...)
 struct codenode *genLDR(int val, struct codenode *t, int flag)
 {
     struct codenode *h = (struct codenode *)malloc(sizeof(struct codenode));
+    h->next = h->prior = NULL;
+    h->in = h->out = 0;
     char *name = newTemp();
     h->op = TOK_LDR;
     h->opn1.kind = LITERAL;
     h->opn1.const_int = val;
     h->result.kind = ID;
     strcpy(h->result.id, name);
-    if (t->prior != NULL)
-    {
-        t->prior->next = h;
-    }
-    h->prior = t->prior;
-    h->next = t;
-    t->prior = h;
+    //指针的操作还是在外面做？
+    // if (t->prior != NULL)
+    // {
+    //     t->prior->next = h;
+    // }
+    // h->prior = t->prior;
+    // h->next = t;
+    // t->prior = h;
     if (flag == 1)
     {
         t->opn1.kind = ID;
@@ -447,13 +450,16 @@ void make_uid_block(Blocks *block)
             }
             else if (num_chi == 2) // 子节点块有两个，一般是遇到了IF
             {
-                while (tcode->op == GOTO) //少一点判断
+                while (tcode)
                 {
-                    int target = cur_blocks->block[i]->children[1]->tac_list->UID;
-                    tcode->result.const_int = target;
-                    tcode = tcode->prior; //回到上一句
-                    target = cur_blocks->block[i]->children[0]->tac_list->UID;
-                    tcode->result.const_int = target;
+                    if (tcode->op >= GOTO) //条件跳转或者GOTO
+                    {
+
+                        tcode->result.const_int = cur_blocks->block[i]->children[0]->tac_list->UID; //条件跳转
+                        tcode = tcode->next;
+                        tcode->result.const_int = cur_blocks->block[i]->children[1]->tac_list->UID; // GOTO
+                    }
+                    tcode = tcode->next;
                 }
             }
         }
@@ -565,11 +571,12 @@ void check_immes(Blocks *blocks)
                         val = tcode->opn1.const_int;
                         if (check_imme(val) == -1) //非法立即数
                         {
-                            genLDR(val, tcode, 1);
-                            if (tcode->UID == base_id) //该语句是当前基本块的头部
-                            {
-                                cur_blocks->block[i]->tac_list = cur_blocks->block[i]->tac_list->prior;
-                            }
+                            // genLDR(val, tcode, 1);
+                            // if (tcode->UID == base_id) //该语句是当前基本块的头部
+                            // {
+                            //     cur_blocks->block[i]->tac_list = cur_blocks->block[i]->tac_list->prior;
+                            // }
+                            tcode->op = TOK_LDR;
                         }
                     }
                     break;
@@ -591,11 +598,17 @@ void check_immes(Blocks *blocks)
                         val = tcode->opn1.const_int;
                         if (check_imme(val) == -1)
                         {
-                            genLDR(val, tcode, 1);
+                            struct codenode *e = genLDR(val, tcode, 1);
+                            e->next = tcode;
                             if (tcode->UID == base_id) //该语句是当前基本块的头部
                             {
-                                cur_blocks->block[i]->tac_list = cur_blocks->block[i]->tac_list->prior;
+                                cur_blocks->block[i]->tac_list = e;
                             }
+                            else
+                            {
+                                tcode->prior->next = e;
+                            }
+                            tcode->prior = e;
                         }
                     }
                     if (tcode->opn2.kind == LITERAL)
@@ -603,11 +616,17 @@ void check_immes(Blocks *blocks)
                         val = tcode->opn2.const_int;
                         if (check_imme(val) == -1)
                         {
-                            genLDR(val, tcode, 2);
+                            struct codenode *e = genLDR(val, tcode, 2);
+                            e->next = tcode;
                             if (tcode->UID == base_id) //该语句是当前基本块的头部
                             {
-                                cur_blocks->block[i]->tac_list = cur_blocks->block[i]->tac_list->prior;
+                                cur_blocks->block[i]->tac_list = e;
                             }
+                            else
+                            {
+                                tcode->prior->next = e;
+                            }
+                            tcode->prior = e;
                         }
                     }
                     break;

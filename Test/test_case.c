@@ -1,8 +1,7 @@
-int defn(){
-    return 4;
-}
-
-int main(){
-    int a=defn();
-    return a;
+int main()
+{
+    int i = 5;
+    int d = i*8;
+    int k = d;
+    return 0;
 }

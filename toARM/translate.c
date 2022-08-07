@@ -253,12 +253,14 @@ armcode *translatearm(Blocks *blocks)
 
                     //int reg[16] = {0};
                     func_enter_regnum = one_fun_reg(funcname,func_enter_reg);
-                    snode = mul_reg_node(STMFD,R13,func_enter_reg,func_enter_regnum);
-                    newnode->next = snode;
-                    snode->pre = newnode;
-                    q=snode;
-
-                    vartable_update_all(vartbl,func_enter_regnum*4);
+                    if(func_enter_regnum != 0)
+                    {
+                        snode = mul_reg_node(STMFD,R13,func_enter_reg,func_enter_regnum);
+                        newnode->next = snode;
+                        snode->pre = newnode;
+                        q=snode;
+                        vartable_update_all(vartbl,func_enter_regnum*4);
+                    }
 
                     spil_var_num = search_fun_spilling(funcname);
 
@@ -273,8 +275,8 @@ armcode *translatearm(Blocks *blocks)
                     subnode->oper1.value = R13;
                     subnode->oper2.type = IMME;
                     subnode->oper2.value = func_enter_subindex;
-                    snode->next = subnode;
-                    subnode->pre = snode;
+                    q->next = subnode;
+                    subnode->pre = q;
                     q = subnode;
 
                     vartable_update_all(vartbl,func_enter_subindex);
@@ -864,9 +866,12 @@ armcode *translatearm(Blocks *blocks)
                     armlink_insert(newnode,addnode);
                     vartable_update_all(vartbl,-func_enter_subindex);
 
-                    ldmnode = mul_reg_node(LDMFD,R13,func_enter_reg,func_enter_regnum);
-                    armlink_insert(newnode,ldmnode);
-                    vartable_update_all(vartbl,-(func_enter_regnum*4));
+                    if(func_enter_regnum != 0)
+                    {
+                        ldmnode = mul_reg_node(LDMFD,R13,func_enter_reg,func_enter_regnum);
+                        armlink_insert(newnode,ldmnode);
+                        vartable_update_all(vartbl,-(func_enter_regnum*4));
+                    }
 
                     func_gvar_num = search_func_gvar(funcname,func_gvar_ary);
                     armcode *gnode = gvar_node_list(func_gvar_num,func_gvar_ary);
@@ -1463,9 +1468,13 @@ armcode *translatearm(Blocks *blocks)
     }
 
     armcode * vnode = search_global_var();
-    q->next = vnode;
-    vnode->pre = q;
-    q = vnode;
+    if(vnode != NULL)
+    {
+        q->next = vnode;
+        vnode->pre = q;
+        q = vnode;
+    }
+    
 
     return first;
 }

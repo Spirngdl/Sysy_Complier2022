@@ -96,8 +96,8 @@ enum node_kind
     ARG,
     CALL,
     LABEL,
-    GOTO,
-    JLT = 3000,
+    GOTO = 3000,
+    JLT,
     JLE,
     JGT,
     JGE,
@@ -249,4 +249,5 @@ void check_immes(Blocks *blocks);
 char *Label_();
 void add_label_block(Blocks *head);
 int ToIeee754(float i);
+int get_other_reg(int i, int j);
 #endif

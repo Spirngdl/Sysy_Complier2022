@@ -172,3 +172,23 @@ bool isLibraryfunctions(char *func_name)
         return true;
     return false;
 }
+
+/**
+ * @brief 一共16个寄存器，找到当前语句没用的寄存器
+ *
+ * @param i 有没有可能是-1表示不用
+ * @param j
+ * @return 寄存器号
+ */
+int get_other_reg(int i, int j)
+{
+    //最简单写法就遍历呗，但是这样应该会
+    static int index = 0;
+    for (index %= 10; index < 10; index = (index + 1) % 10)
+    {
+        if (index != i && index != j)
+        {
+            return index++;
+        }
+    }
+}
