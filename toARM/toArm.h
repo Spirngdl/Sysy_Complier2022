@@ -39,8 +39,8 @@ typedef enum
 
 typedef enum
 {
-    // EQ,
-    NE=25,
+    EQU=25,
+    NE,
     GE,
     LT,
     GT,
@@ -110,7 +110,7 @@ typedef struct _vartable
 
 
 void arminterface();
-void translate(armcode *newnode, struct codenode *p, armop armop);
+void translate(armcode *newnode, struct codenode *p, armop armop,armcode *q);
 armcode *initnewnode();
 armcode *translatearm(Blocks *blocks);
 void printarm(armcode *armnode, FILE *fp);
@@ -139,6 +139,8 @@ armcode* create_strnode(int Rn,int Rm,int index);
 
 void init_myreg();
 int alloc_myreg();
+
+int get_other_reg(int i, int j);
 
 
 #endif

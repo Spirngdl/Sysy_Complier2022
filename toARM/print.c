@@ -42,6 +42,8 @@
 //     }
 // }
 
+char *flag[6] = {"EQ", "NE", "GE", "LT", "GT","LE"};
+
 void printarm(armcode *armnode, FILE *fp)
 {
     armcode * p = armnode->next;
@@ -179,7 +181,7 @@ void printarm(armcode *armnode, FILE *fp)
             break;
 
         case B:
-            fprintf(fp,"\tB %s\n",p->result.str_id);
+            fprintf(fp,"\tB%s %s\n",flag[p->flag-EQU],p->result.str_id);
             break;
 
         case CMP:
@@ -203,7 +205,7 @@ void printarm(armcode *armnode, FILE *fp)
 
 void arminterface(Blocks *blocks)
 {
-    FILE *fp = fopen("./a.asm", "w");
+    FILE *fp = fopen("./test_case.s", "w");
     armcode *armcode = translatearm(blocks);
     printarm(armcode, fp);
 }
