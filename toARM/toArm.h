@@ -22,6 +22,8 @@ typedef enum
     ADD,
     SUB,
     MUL,
+    CMP,
+    B,
     BL,
     BX,
     LDR,
@@ -31,6 +33,7 @@ typedef enum
     ARMLABEL,
     GVAR_INT,   //整型全局变量
     GVAR_FLOAT, //浮点型全局变量
+    GVAR_LABEL,  //全局变量地址
 
 } armop;
 
@@ -64,7 +67,7 @@ struct armcode_
     opflag flag;
     bool is_s;
     armoper result; // result
-    armoper oper1;  //···||全局变量初始值
+    armoper oper1;  //···||全局变量初始值,全局变量标号名
     armoper oper2;       
     armoper oper3; //用来移位的
     struct armcode_ *next;
@@ -99,6 +102,7 @@ typedef struct _vartable
 #define R2 2
 #define R4 4
 #define R5 5
+#define R10 10
 #define R11 11
 #define R12 12
 #define R13 13
@@ -124,6 +128,17 @@ armcode *mul_reg_node(armop opt,int stkreg, int reg[], int regnum); //生成LDMF
 
 armcode *search_global_var();
 armcode *traverse_List(List *value_list,int arysize);
+
+armcode * gvar_node_list(int func_gvar_num,char **gvartable);
+armcode * gvar_node(char ** gvartable,int i,int func_index);
+
+armcode * create_ldrnode(int Rn,char * gvarname,int Rm,int index);
+void init_strnode(armcode * snode,int R_res,int Rm,int index);
+armcode * create_movnode(int R_res,optype type,int value);
+armcode* create_strnode(int Rn,int Rm,int index);
+
+void init_myreg();
+int alloc_myreg();
 
 
 #endif
