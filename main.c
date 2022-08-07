@@ -31,9 +31,9 @@ void Driver(struct node *T)
   basic_block(T->code); //划分基本块
                         // get_count_var(head_block);
                         // invariant_Extrapolation(head_block);
-  // printf("optimize\n");
-  // dag_optimize(head_block);   // DAG优化
-  // make_uid_block(head_block); //在进入arm翻译前最后一次调整编号
+  printf("optimize\n");
+  dag_optimize(head_block);   // DAG优化
+  make_uid_block(head_block); //在进入arm翻译前最后一次调整编号
 
   check_immes(head_block);     //检验立即数合法性
   all_fun_reg(head_block);     //进行活跃变量分析
@@ -47,7 +47,7 @@ void Driver(struct node *T)
     }
     cur_blocks = cur_blocks->next;
   }
-  arminterface(head_block);
+  // arminterface(head_block);
 
   // // invariant_Extrapolation(head_block);
   // // dag_optimize(head_block);
