@@ -44,11 +44,11 @@ void Driver(struct node *T)
     }
     cur_blocks = cur_blocks->next;
   }
-  // check_immes(head_block);     //检验立即数合法性
-  // all_fun_reg(head_block);     //进行活跃变量分析
+  check_immes(head_block);     //检验立即数合法性
+  all_fun_reg(head_block);     //进行活跃变量分析
   add_label_block(head_block); //
 
-  // arminterface(head_block);
+  arminterface(head_block);
 
   // // invariant_Extrapolation(head_block);
   // // dag_optimize(head_block);

@@ -127,7 +127,7 @@ int fillArrayTable(char *name, char *alias, int level, int type);
 int fillFunctionTable(char *name, int type, int paramnum);
 int get_array_infunc(char *func_name);
 int filllabel(char *name, int uid);
-char *search_uid(int uid);
+// char *search_uid(int uid);
 
 char*uid_to_label(int uid);
 #endif
