@@ -61,7 +61,7 @@ struct ArrayValue_
         char var_name[32];
     };
 };
-
+//处理label和uid的对应关系
 struct LabelUidTable
 {
     struct LabelUid table[10000];
@@ -105,6 +105,14 @@ struct _aliastable
     struct aliassym table[MAXLENGTH];
     int index;
 } AliasTable;
+typedef struct _uidnode uidnode;
+struct _uidnode
+{
+    char Label[32];
+    int uid;
+};
+List *uidTable;
+// FUNCITON
 int searchSymbolTable(char *name);
 int searchFuncTable(char *name); //用来查找函数的 目前只在函数调用时候查找一下
 
@@ -120,4 +128,6 @@ int fillFunctionTable(char *name, int type, int paramnum);
 int get_array_infunc(char *func_name);
 int filllabel(char *name, int uid);
 char *search_uid(int uid);
+
+char*uid_to_label(int uid);
 #endif

@@ -59,6 +59,8 @@ enum node_kind
     LITERAL = 2044,
     FLOAT_LITERAL,
     ARRAY_ASSIGN,
+    ARRAY_EXP,
+    ARRAY_DEF,
     INITARRAY,
     BACK,
     VAR,
@@ -71,7 +73,6 @@ enum node_kind
     EXT_VAR_DEF,
     FUNC_DEF,
     FUNC_DEC,
-
     EXP_LIST,
     EXP_ELE,
     EXP_ARRAY,
@@ -88,7 +89,7 @@ enum node_kind
     IF_THEN,
     IF_THEN_ELSE,
     FUNC_CALL,
-    ARRAY_EXP,
+
     ARGS,
     FUNCTION,
     PARAM,

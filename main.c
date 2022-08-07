@@ -46,7 +46,7 @@ void Driver(struct node *T)
   }
   // check_immes(head_block);     //检验立即数合法性
   // all_fun_reg(head_block);     //进行活跃变量分析
-  // add_label_block(head_block); //
+  add_label_block(head_block); //
 
   // arminterface(head_block);
 

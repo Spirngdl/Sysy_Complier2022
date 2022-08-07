@@ -73,12 +73,13 @@ bool isLiteralNode(DAG *dag, char *symbol);                                    /
 int getLiteral(DAG *dag, char *symbol);                                        //取得一个字面常量结点所表示的常量值
 void removeSymbol(DAG *dag, char *symbol);                                     //删除DAG上所有等于target的附加标识符
 int findnode_depend_on(DAG *dag, DAGnode *n, int vector[]);                    //查找DAG上所有依赖于n的结点
-int readquad(DAG *dag, struct codenode *T);                                    //读取三地址代码
+int readquad(DAG *dag, struct codenode **T);                                   //读取三地址代码
 int readquad0(DAG *dag, struct codenode *T);                                   // 0型
 int readquad1(DAG *dag, struct codenode *T);                                   // 1型 暂时是return
 int readquad2(DAG *dag, struct codenode *T);                                   // 2型
+int readquad2_1(DAG *dag, struct codenode *T);                                 //
 int readquad3(DAG *dag, struct codenode *T);                                   // 3型 数组赋值
-int readquad4(DAG *dag, struct codenode *T);                                   // 4型我定义为函数调用
+int readquad4(DAG *dag, struct codenode **T);                                  // 4型我定义为函数调用
 bool isRoot(DAG *dag, DAGnode *n);                                             // 判断结点 n 是否是入度为 0 的结点
 bool isActivenNode(DAGnode *n, int out_count, char *outActive[]);              //判断结点 n 是否是有活跃变量的结点
 // TODO: 由dag变回三地址

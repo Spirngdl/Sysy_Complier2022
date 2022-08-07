@@ -57,7 +57,7 @@ int get_array_infunc(char *func_name)
  * @param uid
  * @return
  */
-char *search_uid(int uid)
+char *uid_to_label(int uid)
 {
     int i;
     for (i = LabelTable.count - 1; i >= 0; i--)

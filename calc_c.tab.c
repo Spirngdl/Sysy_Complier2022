@@ -1535,7 +1535,7 @@ yyreduce:
                                                       {(yyvsp[-1].ptr)->type =(yyvsp[-2].ptr)->kind /*($2->kind == TOK_INT ? CONST_TOK_INT:CONST_TOK_FLOAT)*/;
                                                         if((yyvsp[-1].ptr)->kind == ID)(yyvsp[-1].ptr)->kind = CONSTDECL;
                                                         if((yyvsp[0].ptr) != NULL)
-                                                                {(yyval.ptr) = mknode(CONSTDECL_LIST,(yyvsp[-1].ptr),(yyvsp[0].ptr),NULL,yylineno);}
+                                                                {(yyval.ptr) = mknode(CONSTDECL_LIST,(yyvsp[-1].ptr),(yyvsp[0].ptr),NULL,yylineno);(yyval.ptr)->type = (yyvsp[-2].ptr)->kind;}
                                                         else
                                                                 {(yyval.ptr) = (yyvsp[-1].ptr);}}
 #line 1542 "calc_c.tab.c"
@@ -1657,7 +1657,7 @@ yyreduce:
 
   case 28:
 #line 113 "calc_c.y"
-                                                                {(yyval.ptr) = mknode(INITARRAY,NULL,NULL,NULL,yylineno);}
+                                                                {struct node*temp = mknode(NONE,NULL,NULL,NULL,yylineno);(yyval.ptr) = mknode(INITARRAY,temp,NULL,NULL,yylineno);}
 #line 1662 "calc_c.tab.c"
     break;
 

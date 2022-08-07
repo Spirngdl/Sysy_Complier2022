@@ -55,7 +55,7 @@ decl: constdecl TOK_SEMICOLON                           {$$ = $1;}
 constdecl: TOK_CONST btype constdef constdecl_        {$3->type =$2->kind /*($2->kind == TOK_INT ? CONST_TOK_INT:CONST_TOK_FLOAT)*/;
                                                         if($3->kind == ID)$3->kind = CONSTDECL;
                                                         if($4 != NULL)
-                                                                {$$ = mknode(CONSTDECL_LIST,$3,$4,NULL,yylineno);}
+                                                                {$$ = mknode(CONSTDECL_LIST,$3,$4,NULL,yylineno);$$->type = $2->kind;}
                                                         else
                                                                 {$$ = $3;}}
          ;
@@ -110,7 +110,7 @@ vardef_: TOK_LSQUARE constexp TOK_RSQUARE vardef_               {struct node * t
        ;                                             
 initval: exp                                                    {$$ = $1;}
         ;
-initvalarray: TOK_LBRACKET TOK_RBRACKET                         {$$ = mknode(INITARRAY,NULL,NULL,NULL,yylineno);}
+initvalarray: TOK_LBRACKET TOK_RBRACKET                         {struct node*temp = mknode(NONE,NULL,NULL,NULL,yylineno);$$ = mknode(INITARRAY,temp,NULL,NULL,yylineno);}
             | TOK_LBRACKET initvalarraylist TOK_RBRACKET        {$$ = mknode(INITARRAY,$2,NULL,NULL,yylineno);}
             ;
 initvalarraylist: initvalarray                                  {$$ = $1;}     //多一层大括号

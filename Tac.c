@@ -120,6 +120,8 @@ void print_IR(struct codenode *head)
 {
     char opnstr1[32], opnstr2[32], resultstr[32];
     struct codenode *h = head;
+    char str[128];
+    FILE *fp = fopen("./tac.txt", "w");
     while (h != NULL)
     {
         printf("%d: ", h->UID);
@@ -161,87 +163,88 @@ void print_IR(struct codenode *head)
         switch (h->op)
         {
         case TOK_ASSIGN:
-            printf("  %s := %s\n", resultstr, opnstr1);
+            sprintf(str, "  %s := %s\n", resultstr, opnstr1);
             break;
         case TOK_LDR:
-            printf("  %s := %s\n", resultstr, opnstr1);
+            sprintf(str, "  %s := %s\n", resultstr, opnstr1);
             break;
         case ARRAY_ASSIGN:
-            printf("  %s[%s] := %s\n", resultstr, opnstr1, opnstr2);
+            sprintf(str, "  %s[%s] := %s\n", resultstr, opnstr1, opnstr2);
             break;
-        case ARRAY_DEC:
-            printf("  %s[%s] \n", resultstr, opnstr1);
+        case ARRAY_DEF:
+            sprintf(str, "  %s[%s] \n", resultstr, opnstr1);
             break;
         case TOK_ADD:
         case TOK_MUL:
         case TOK_SUB:
         case TOK_DIV:
         case TOK_MODULO:
-            printf("  %s := %s %c %s\n", resultstr, opnstr1, h->op == TOK_ADD ? '+' : h->op == TOK_SUB  ? '-'
-                                                                                  : h->op == TOK_MUL    ? '*'
-                                                                                  : h->op == TOK_MODULO ? '%'
-                                                                                  : h->op == TOK_NOT    ? '!'
-                                                                                                        : '/',
-                   opnstr2);
+            sprintf(str, "  %s := %s %c %s\n", resultstr, opnstr1, h->op == TOK_ADD ? '+' : h->op == TOK_SUB  ? '-'
+                                                                                        : h->op == TOK_MUL    ? '*'
+                                                                                        : h->op == TOK_MODULO ? '%'
+                                                                                        : h->op == TOK_NOT    ? '!'
+                                                                                                              : '/',
+                    opnstr2);
             break;
         case FUNCTION:
-            printf("FUNCTION %s :\n", h->result.id);
+            sprintf(str, "FUNCTION %s :\n", h->result.id);
             break;
         case PARAM:
-            printf("  PARAM %s\n", h->result.id);
+            sprintf(str, "  PARAM %s\n", h->result.id);
             break;
         case LABEL:
-            printf("LABEL %s :\n", h->result.id);
+            sprintf(str, "LABEL %s :\n", h->result.id);
             break;
         case GOTO:
-            printf("  GOTO %d\n", h->result.const_int);
+            sprintf(str, "  GOTO %d\n", h->result.const_int);
             break;
         case JLE:
-            printf("  IF %s <= %s GOTO %d\n", opnstr1, opnstr2, h->result.const_int);
+            sprintf(str, "  IF %s <= %s GOTO %d\n", opnstr1, opnstr2, h->result.const_int);
             break;
         case JLT:
-            printf("  IF %s < %s GOTO %d\n", opnstr1, opnstr2, h->result.const_int);
+            sprintf(str, "  IF %s < %s GOTO %d\n", opnstr1, opnstr2, h->result.const_int);
             break;
         case JGE:
-            printf("  IF %s >= %s GOTO %d\n", opnstr1, opnstr2, h->result.const_int);
+            sprintf(str, "  IF %s >= %s GOTO %d\n", opnstr1, opnstr2, h->result.const_int);
             break;
         case JGT:
-            printf("  IF %s > %s GOTO %d\n", opnstr1, opnstr2, h->result.const_int);
+            sprintf(str, "  IF %s > %s GOTO %d\n", opnstr1, opnstr2, h->result.const_int);
             break;
         case EQ:
-            printf("  IF %s == %s GOTO %d\n", opnstr1, opnstr2, h->result.const_int);
+            sprintf(str, "  IF %s == %s GOTO %d\n", opnstr1, opnstr2, h->result.const_int);
             break;
         case NEQ:
-            printf("  IF %s != %s GOTO %d\n", opnstr1, opnstr2, h->result.const_int);
+            sprintf(str, "  IF %s != %s GOTO %d\n", opnstr1, opnstr2, h->result.const_int);
             break;
         case ARRAY_EXP:
-            printf("  %s := %s[%s]\n", resultstr, opnstr1, opnstr2);
+            sprintf(str, "  %s := %s[%s]\n", resultstr, opnstr1, opnstr2);
             break;
         case ARG:
-            printf("  ARG %s\n", resultstr);
+            sprintf(str, "  ARG %s\n", resultstr);
             break;
         case CALL:
             if (h->result.kind == NONE)
             {
-                printf("  CALL %s\n", opnstr1);
+                sprintf(str, "  CALL %s\n", opnstr1);
             }
             else
-                printf("  %s := CALL %s\n", resultstr, opnstr1);
+                sprintf(str, "  %s := CALL %s\n", resultstr, opnstr1);
             break;
         case TOK_RETURN:
             if (h->result.kind)
-                printf("  RETURN %s\n", resultstr);
+                sprintf(str, "  RETURN %s\n", resultstr);
             else
-                printf("  RETURN\n");
+                sprintf(str, "  RETURN\n");
             break;
 
         case END:
-            printf("END\n");
+            sprintf(str, "END\n");
             break;
         default:
-            printf("not define\n");
+            sprintf(str, "not define\n");
             break;
         }
+        printf("%s", str);
         h = h->next;
     }
 }

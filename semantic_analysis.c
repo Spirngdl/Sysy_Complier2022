@@ -138,7 +138,7 @@ void array_decl(struct node *T)
     rtn = fillSymbolTable(T->type_id, Alias, LEV, T->type, ARRAY);                     //符号表
     arr_rtn = fillArrayTable(T->type_id, Alias, LEV, T->type);                         //往数组符号表填东西
     strcpy(arrayTalbe.symbols[arr_rtn].func_name, Func_name);                          //记录所在函数的函数名
-    //干脆整个数组声明语句
+
     if (rtn == -1)
         semantic_error(T->pos, T->type_id, "变量重复定义");
     else
@@ -149,22 +149,35 @@ void array_decl(struct node *T)
         arrayTalbe.symbols[arr_rtn].array_demension = array_dimension;                       //存放数组维度到数组符号表中
         memcpy(symbolTable.symbols[T->place].length, length, array_dimension * sizeof(int)); //数组复制
         memcpy(arrayTalbe.symbols[arr_rtn].length, length, array_dimension * sizeof(int));   //
-        if (T->ptr[0] != NULL)                                                               //数组初始化 初始值
+        int temp_width[10], width = 1;
+        int array_offset = 0;
+        int brace_num = 1; //括号层级
+        struct node *initarray = T->ptr[0];
+        for (int i = array_dimension - 1; i >= 0; i--)
         {
-            int temp_width[10], width = 1;
-            int array_offset = 0;
-            int brace_num = 1; //括号层级
-            struct node *initarray = T->ptr[0];
-            for (int i = array_dimension - 1; i >= 0; i--)
-            {
-                width *= length[i];
-                temp_width[i] = width;
-            }
+            width *= length[i];
+            temp_width[i] = width;
+        }
+        //干脆整个数组声明语句
+        if (LEV != 0)
+        {
+            struct opn result, opn1, opn2;
+            result.kind = ID;
+            strcpy(result.id, symbolTable.symbols[T->place].alias);
+            opn1.kind = LITERAL;
+            opn1.const_int = width;
+            opn2.kind = NONE;
+            T->code = merge(2, T->code, genIR(ARRAY_DEF, opn1, opn2, result));
+        }
+        if (T->ptr[0] != NULL) //数组初始化 初始值
+        {
             if (LEV == 0) //全局变量 把大括号里的值存到表中
             {
                 initarray = initarray->ptr[0];
+                if (initarray->kind == NONE) //只有一个括号，就不整了直接置为NULL
+                    return;
                 T->code = merge(2, T->code, arrayinit_bracker(value_list, initarray, brace_num, &array_offset, temp_width, array_dimension, T->type, T->type_id));
-                //为第一层大括号补0
+                //为第一层大括号补0,
                 for (int i = array_offset; i < width * length[0]; i++)
                 {
                     ArrayValue *value = (ArrayValue *)malloc(sizeof(ArrayValue));
@@ -179,13 +192,8 @@ void array_decl(struct node *T)
                  // 2022/8/3: 局部变量初始化和全局初始化的不同在于，如果没有显示初始化，对应位置全局变量是置为0而局部不设置
             {
                 initarray = initarray->ptr[0];
-                struct opn result, opn1, opn2;
-                result.kind = ID;
-                strcpy(result.id, T->type_id);
-                opn1.kind = LITERAL;
-                opn1.const_int = width;
-                opn2.kind = NONE;
-                T->code = merge(3, T->code, genIR(ARRAY_DEC, opn1, opn2, result), arrayinit_bracker_part(initarray, brace_num, &array_offset, temp_width, array_dimension, T->type, T->type_id));
+
+                T->code = merge(2, T->code, arrayinit_bracker_part(initarray, brace_num, &array_offset, temp_width, array_dimension, T->type, symbolTable.symbols[T->place].alias));
                 // symbolTable.symbols[rtn].value = value_list;
                 // arrayTalbe.symbols[arr_rtn].value = value_list;
             }
@@ -355,6 +363,7 @@ struct codenode *arrayinit_bracker(List *value_list, struct node *T, int brace_n
  */
 struct codenode *arrayinit_bracker_part(struct node *T, int brace_num, int *array_offset, int width[], int dimension, int type, char *array_name)
 {
+
     if (T == NULL)
         return NULL;
     struct codenode *tcode = NULL;
@@ -378,7 +387,8 @@ struct codenode *arrayinit_bracker_part(struct node *T, int brace_num, int *arra
         result.kind = ID;
         opn1.kind = LITERAL;
         strcpy(result.id, array_name);
-
+        if (T->kind == NONE)
+            initarray = NULL;
         if (type == TOK_INT)
         {
             while (initarray != NULL && initarray->kind != INITARRAY)
@@ -707,23 +717,32 @@ void const_decl(struct node *T)
             if (T->ptr[0]->kind == LITERAL)
             {
                 opn1.const_int = T->ptr[0]->type_int;
-                result.kind = ID;
-                strcpy(result.id, symbolTable.symbols[T->place].alias);             //赋上别名
-                T->code = merge(2, T->code, genIR(TOK_ASSIGN, opn1, opn2, result)); //合并三地址代码
+                if (LEV != 0)
+                {
+                    result.kind = ID;
+                    strcpy(result.id, symbolTable.symbols[T->place].alias);             //赋上别名
+                    T->code = merge(2, T->code, genIR(TOK_ASSIGN, opn1, opn2, result)); //合并三地址代码
+                }
             }
             else if (T->ptr[0]->kind == FLOAT_LITERAL) //给整型赋值浮点，直接转
             {
                 opn1.const_int = T->ptr[0]->type_float; //转换
-                result.kind = ID;
-                strcpy(result.id, symbolTable.symbols[T->place].alias);             //赋上别名
-                T->code = merge(2, T->code, genIR(TOK_ASSIGN, opn1, opn2, result)); //合并三地址代码
+                if (LEV != 0)
+                {
+                    result.kind = ID;
+                    strcpy(result.id, symbolTable.symbols[T->place].alias);             //赋上别名
+                    T->code = merge(2, T->code, genIR(TOK_ASSIGN, opn1, opn2, result)); //合并三地址代码
+                }
             }
             else
             {
                 opn1.const_int = const_exp(T->ptr[0]);
-                result.kind = ID;
-                strcpy(result.id, symbolTable.symbols[T->place].alias);             //赋上别名
-                T->code = merge(2, T->code, genIR(TOK_ASSIGN, opn1, opn2, result)); //合并三地址代码
+                if (LEV != 0)
+                {
+                    result.kind = ID;
+                    strcpy(result.id, symbolTable.symbols[T->place].alias);             //赋上别名
+                    T->code = merge(2, T->code, genIR(TOK_ASSIGN, opn1, opn2, result)); //合并三地址代码
+                }
             }
             symbolTable.symbols[rtn].const_value = opn1.const_int; //把值存到符号表中
         }
@@ -734,22 +753,31 @@ void const_decl(struct node *T)
             {
 
                 opn1.const_float = T->ptr[0]->type_int; //转换
-                result.kind = ID;
-                strcpy(result.id, symbolTable.symbols[T->place].alias);             //赋上别名
-                T->code = merge(2, T->code, genIR(TOK_ASSIGN, opn1, opn2, result)); //合并三地址代码
+                if (LEV != 0)
+                {
+                    result.kind = ID;
+                    strcpy(result.id, symbolTable.symbols[T->place].alias);             //赋上别名
+                    T->code = merge(2, T->code, genIR(TOK_ASSIGN, opn1, opn2, result)); //合并三地址代码
+                }
             }
             else if (T->ptr[0]->kind == FLOAT_LITERAL) //
             {
                 opn1.const_float = T->ptr[0]->type_float;
-                result.kind = ID;
-                strcpy(result.id, symbolTable.symbols[T->place].alias);             //赋上别名
-                T->code = merge(2, T->code, genIR(TOK_ASSIGN, opn1, opn2, result)); //合并三地址代码
+                if (LEV != 0)
+                {
+                    result.kind = ID;
+                    strcpy(result.id, symbolTable.symbols[T->place].alias);             //赋上别名
+                    T->code = merge(2, T->code, genIR(TOK_ASSIGN, opn1, opn2, result)); //合并三地址代码
+                }
             }
             else
             {
                 opn1.const_float = const_exp(T->ptr[0]);
-                strcpy(result.id, symbolTable.symbols[T->place].alias);             //赋上别名
-                T->code = merge(2, T->code, genIR(TOK_ASSIGN, opn1, opn2, result)); //合并三地址代码
+                if (LEV != 0)
+                {
+                    strcpy(result.id, symbolTable.symbols[T->place].alias);             //赋上别名
+                    T->code = merge(2, T->code, genIR(TOK_ASSIGN, opn1, opn2, result)); //合并三地址代码
+                }
             }
             symbolTable.symbols[rtn].const_value = opn1.const_float; //把值存到符号表中
         }
@@ -861,13 +889,6 @@ void op_exp(struct node *T)
         Exp(T->ptr[0]);
         opn1.kind = ID;
         strcpy(opn1.id, symbolTable.symbols[T->ptr[0]->place].alias);
-#ifdef DD
-        if (symbolTable.symbols[T->ptr[0]->place].flag != TEMP_VAR)
-        {
-            strcpy(opn1.id, symbolTable.symbols[T->ptr[0]->place].name);
-            strcpy(opn1.alice, symbolTable.symbols[T->ptr[0]->place].alias);
-        }
-#endif
     }
     //右子树
     if (T->ptr[1]->kind == LITERAL)
@@ -887,13 +908,6 @@ void op_exp(struct node *T)
         Exp(T->ptr[1]);
         opn2.kind = ID;
         strcpy(opn2.id, symbolTable.symbols[T->ptr[1]->place].alias);
-#ifdef DD
-        if (symbolTable.symbols[T->ptr[1]->place].flag != TEMP_VAR)
-        {
-            strcpy(opn2.id, symbolTable.symbols[T->ptr[1]->place].name);
-            strcpy(opn2.alice, symbolTable.symbols[T->ptr[1]->place].alias);
-        }
-#endif
     }
     T->code = merge(3, T->ptr[0]->code, T->ptr[1]->code, genIR(T->kind, opn1, opn2, result));
 }
@@ -913,13 +927,6 @@ void unaryexp(struct node *T)
     strcpy(opn2.id, symbolTable.symbols[T->ptr[1]->place].alias);
     T->type = TOK_INT;
     T->place = temp_add(newTemp(), LEV, T->type, TEMP_VAR);
-#ifdef DD
-    if (symbolTable.symbols[T->ptr[1]->place].flag != TEMP_VAR)
-    {
-        strcpy(opn1.id, symbolTable.symbols[T->ptr[1]->place].name);
-        strcpy(opn1.alice, symbolTable.symbols[T->ptr[1]->place].alias);
-    }
-#endif
     opn1.kind = LITERAL;
     opn1.const_int = 0;
     result.kind = ID;
@@ -988,6 +995,45 @@ void assignop_exp(struct node *T)
             T->code = merge(2, T->ptr[0]->code, T->ptr[1]->code);
         }
     }
+    else if (T->ptr[0]->kind == EXP_ARRAY) //数组作为左值 没这个东西 不敢删 先留着
+    {
+        exp_array(T->ptr[0]); //处理左值
+        T->type = T->ptr[0]->type;
+
+        //处理下标 下标只能是整型
+        if (symbolTable.symbols[T->ptr[0]->ptr[0]->place].type == LITERAL)
+        {
+            opn1.kind = LITERAL;
+            opn1.const_int = symbolTable.symbols[T->ptr[0]->ptr[0]->place].array_dimension;
+        }
+        else
+        {
+            opn1.kind = ID;
+            strcpy(opn1.id, symbolTable.symbols[T->ptr[0]->ptr[0]->place].alias); // index
+        }
+        //对右值做个简单优化
+        if (T->ptr[1]->kind == LITERAL)
+        {
+            opn2.kind = LITERAL;
+            opn2.const_int = T->ptr[1]->type_int;
+        }
+        else if (T->ptr[1]->kind == FLOAT_LITERAL)
+        {
+            opn2.kind = FLOAT_LITERAL;
+            opn2.const_float = T->ptr[1]->type_float;
+        }
+        else
+        {
+            Exp(T->ptr[1]);
+            opn2.kind = ID;
+            strcpy(opn2.id, symbolTable.symbols[T->ptr[1]->place].alias); //右值一定是个变量或临时变量
+        }
+
+        result.kind = ID;
+        strcpy(result.id, symbolTable.symbols[T->ptr[0]->place].alias);
+
+        T->code = merge(3, T->ptr[0]->code, T->ptr[1]->code, genIR(ARRAY_ASSIGN, opn1, opn2, result));
+    }
     else
     {
         semantic_error(T->pos, "", "赋值语句没有左值，语义错误");
@@ -1014,6 +1060,7 @@ void rval_array(struct node *T)
         strcpy(opn2.id, symbolTable.symbols[T->ptr[0]->place].alias); // index
     }
     T->code = merge(2, T->code, genIR(ARRAY_EXP, opn1, opn2, result));
+    T->place = place;
     // T->place = place;
 }
 /**
