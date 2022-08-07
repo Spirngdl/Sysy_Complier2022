@@ -1,3 +1,8 @@
+int defn(){
+    return 4;
+}
+
 int main(){
-    return 3;
+    int a=defn();
+    return a;
 }

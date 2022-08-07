@@ -178,7 +178,7 @@ void array_decl(struct node *T)
                     return;
                 T->code = merge(2, T->code, arrayinit_bracker(value_list, initarray, brace_num, &array_offset, temp_width, array_dimension, T->type, T->type_id));
                 //为第一层大括号补0,
-                for (int i = array_offset; i < width * length[0]; i++)
+                for (int i = array_offset; i < width; i++)
                 {
                     ArrayValue *value = (ArrayValue *)malloc(sizeof(ArrayValue));
                     value->kind = LITERAL;
@@ -235,42 +235,7 @@ struct codenode *arrayinit_bracker(List *value_list, struct node *T, int brace_n
                 ArrayValue *value = (ArrayValue *)malloc(sizeof(ArrayValue));
                 value->kind = LITERAL;
                 value->v_int = const_exp(initarray);
-                // if (initarray->kind == ID) //如果是变量，考虑查找值,如果是全局的话可以直接拿到对应的值
-                // {
-                //     // int place = searchSymbolTable(T->type_id);
-                //     // if (place != -1) //找到了全局变量 不用考虑是不是const
-                //     // {
-                //     //     //直接取值
-                //     //     value->kind = LITERAL;
-                //     //     const_value = symbolTable.symbols[place].const_value;
-                //     // }
-                //     // else //
-                //     // {
-                //     //     value->kind = ID;
-                //     //     strcpy(value->var_name, initarray->type_id);
-                //     // }
-                //     value->kind == LITERAL;
-                //     value->v_int = const_exp(initarray);
-                // }
-                // else if (initarray->kind == EXP_ARRAY) //不处理了直接返回ARRAY_ASSIGN
-                // {
-                //     // rval_array(initarray);
-                //     // struct opn opn1, opn2, result;
-                //     // result.kind = ID;
-                //     // strcpy(result.id, array_name);
-                //     // opn1.kind = LITERAL;
-                //     // opn1.const_int = *array_offset;
-                //     // opn2.kind = ID;
-                //     // strcpy(opn2.id, symbolTable.symbols[initarray->place].alias);
-                //     // tcode = merge(3, tcode, initarray->code, genIR(ARRAY_ASSIGN, opn1, opn2, result));
-                //     value->kind = LITERAL;
-                //     value->v_int = const_exp(initarray);
-                // }
-                // else
-                // {
-                //     value->kind = LITERAL;
-                //     value->v_int = const_exp(initarray);
-                // }
+                
                 ListPushBack(value_list, value);
                 // push_initvalue(const_value, value_list);
                 (*array_offset)++;
