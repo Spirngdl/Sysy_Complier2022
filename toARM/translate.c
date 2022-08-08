@@ -2119,7 +2119,7 @@ armcode *translatearm(Blocks *blocks)
                                     // TODO 变量溢出
                                     R_op2 = alloc_myreg();
 
-                                    vartable_index = vartable_select(vartbl,p->result.id);
+                                    vartable_index = vartable_select(vartbl,m->result.id);
                                     ldrnode = create_ldrnode(R_op2,NULL,R13,vartbl->table[vartable_index].index);
                                     armlink_insert(newnode,ldrnode);
                                     strnode = create_strnode(R_op2,R13,i*4);
