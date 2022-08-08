@@ -490,6 +490,8 @@ int count_mask[16] = {0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4};
  */
 int check_imme(int imme)
 {
+    if(imme < 0)
+        imme = -imme;
     int tmp;
     int count1 = 0;
     int first = 0, firstflag = 0;
