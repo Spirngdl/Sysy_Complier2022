@@ -1802,7 +1802,7 @@ armcode *translatearm(Blocks *blocks)
 
                     vartable_update_all(vartbl,func_enter_subindex);
 
-
+                    init_myreg();
                     break;
 
                 case LABEL:
