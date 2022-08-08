@@ -1802,7 +1802,7 @@ armcode *translatearm(Blocks *blocks)
 
                     vartable_update_all(vartbl,func_enter_subindex);
 
-
+                    init_myreg();
                     break;
 
                 case LABEL:
@@ -2129,7 +2129,7 @@ armcode *translatearm(Blocks *blocks)
                                 {
                                     R_op2 = alloc_myreg();
                                   
-                                    ldrnode = create_ldrnode(R_op2,p->result.id,0,0);
+                                    ldrnode = create_ldrnode(R_op2,m->result.id,0,0);
                                     armlink_insert(newnode,ldrnode);
                                     ldrnode = create_ldrnode(R_op2,NULL,R_op2,0);
                                     armlink_insert(newnode,ldrnode);
@@ -2179,6 +2179,7 @@ armcode *translatearm(Blocks *blocks)
                                 }
                             }
                             m = m->next;
+                            init_myreg();
                         }
                         m = m->prior; // m指向最后一个参数
                     }
@@ -2271,6 +2272,7 @@ armcode *translatearm(Blocks *blocks)
                             }
                         }
                         p = p->next;
+                        init_myreg();
                     }
                     p = m; //指向最后一个参数
                     q = newnode->pre;
