@@ -12,7 +12,7 @@
 #ifndef SYMTABLE_H_
 #define SYMTABLE_H_
 #include "../Common/list.h"
-#define MAXLENGTH 100000 //定义符号表的大小
+#define MAXLENGTH 20000 //定义符号表的大小
 struct symbol
 {                   //这里只列出了一个符号表项的部分属性，没考虑属性间的互斥
     char name[33];  //变量或函数名
@@ -128,6 +128,6 @@ int fillFunctionTable(char *name, int type, int paramnum);
 int get_array_infunc(char *func_name);
 int filllabel(char *name, int uid);
 // char *search_uid(int uid);
-
+bool isLibraryfunctions(char *func_name);
 char*uid_to_label(int uid);
 #endif

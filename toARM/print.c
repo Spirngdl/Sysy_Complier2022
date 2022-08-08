@@ -42,46 +42,45 @@
 //     }
 // }
 
-char *flag[6] = {"EQ", "NE", "GE", "LT", "GT","LE"};
+char *flag[6] = {"EQ", "NE", "GE", "LT", "GT", "LE"};
 
 void printarm(armcode *armnode, FILE *fp)
 {
-    armcode * p = armnode->next;
+    armcode *p = armnode->next;
     int tmp;
-    while(p != NULL)
+    while (p != NULL)
     {
         switch (p->op)
         {
         case ARMLABEL:
-            fprintf(fp,"%s:\n",p->result.str_id);
+            fprintf(fp, "%s:\n", p->result.str_id);
             break;
 
         case GVAR_INT:
-            fprintf(fp,"\t%s   %d\n",p->result.str_id,p->oper1.value);
+            fprintf(fp, "\t%s   %d\n", p->result.str_id, p->oper1.value);
             break;
 
         case GVAR_FLOAT:
-            fprintf(fp,"\t%s    %x\n",p->result.str_id,p->oper1.value);
+            fprintf(fp, "\t%s    %x\n", p->result.str_id, p->oper1.value);
             break;
 
         case GVAR_LABEL:
-            fprintf(fp,"\t%s    %s\n",p->result.str_id,p->oper1.str_id);
+            fprintf(fp, "\t%s    %s\n", p->result.str_id, p->oper1.str_id);
             break;
 
         case MOV:
-            if(p->oper1.type == REG)
+            if (p->oper1.type == REG)
             {
-                fprintf(fp,"\tMOV   R%d , R%d\n",p->result.value,p->oper1.value);
+                fprintf(fp, "\tMOV   R%d , R%d\n", p->result.value, p->oper1.value);
             }
-            else if(p->oper1.type == IMME)
+            else if (p->oper1.type == IMME)
             {
-                fprintf(fp,"\tMOV   R%d , #%d\n",p->result.value,p->oper1.value);
+                fprintf(fp, "\tMOV   R%d , #%d\n", p->result.value, p->oper1.value);
             }
             else
             {
-                if(p->oper1.type == NUL)
+                if (p->oper1.type == NUL)
                 {
-
                 }
                 else
                 {
@@ -91,13 +90,13 @@ void printarm(armcode *armnode, FILE *fp)
             break;
 
         case ADD:
-            if(p->oper2.type == REG)
+            if (p->oper2.type == REG)
             {
-                fprintf(fp,"\tADD   R%d , R%d , R%d\n",p->result.value,p->oper1.value,p->oper2.value);
+                fprintf(fp, "\tADD   R%d , R%d , R%d\n", p->result.value, p->oper1.value, p->oper2.value);
             }
-            else if(p->oper2.type == IMME)
+            else if (p->oper2.type == IMME)
             {
-                fprintf(fp,"\tADD   R%d , R%d , #%d\n",p->result.value,p->oper1.value,p->oper2.value);
+                fprintf(fp, "\tADD   R%d , R%d , #%d\n", p->result.value, p->oper1.value, p->oper2.value);
             }
             else
             {
@@ -106,13 +105,13 @@ void printarm(armcode *armnode, FILE *fp)
             break;
 
         case SUB:
-            if(p->oper2.type == REG)
+            if (p->oper2.type == REG)
             {
-                fprintf(fp,"\tSUB   R%d , R%d , R%d\n",p->result.value,p->oper1.value,p->oper2.value);
+                fprintf(fp, "\tSUB   R%d , R%d , R%d\n", p->result.value, p->oper1.value, p->oper2.value);
             }
-            else if(p->oper2.type == IMME)
+            else if (p->oper2.type == IMME)
             {
-                fprintf(fp,"\tSUB   R%d , R%d , #%d\n",p->result.value,p->oper1.value,p->oper2.value);
+                fprintf(fp, "\tSUB   R%d , R%d , #%d\n", p->result.value, p->oper1.value, p->oper2.value);
             }
             else
             {
@@ -121,29 +120,29 @@ void printarm(armcode *armnode, FILE *fp)
             break;
 
         case MUL:
-            fprintf(fp,"\tMUL   R%d , R%d , R%d\n",p->result.value,p->oper1.value,p->oper2.value);
+            fprintf(fp, "\tMUL   R%d , R%d , R%d\n", p->result.value, p->oper1.value, p->oper2.value);
             break;
 
         case BL:
-            fprintf(fp,"\tBL    %s\n",p->result.str_id);
+            fprintf(fp, "\tBL    %s\n", p->result.str_id);
             break;
 
         case BX:
-            fprintf(fp,"\tBX    R%d\n",p->result.value);
+            fprintf(fp, "\tBX    R%d\n", p->result.value);
             break;
 
         case LDR:
-            if(p->oper1.type == MEM)
+            if (p->oper1.type == MEM)
             {
-                fprintf(fp,"\tLDR   R%d , [R%d,#%d]\n",p->result.value,p->oper1.value,p->oper1.index);
+                fprintf(fp, "\tLDR   R%d , [R%d,#%d]\n", p->result.value, p->oper1.value, p->oper1.index);
             }
-            else if(p->oper1.type == ILIMME)
+            else if (p->oper1.type == ILIMME)
             {
-                fprintf(fp,"\tLDR   R%d , =%d\n",p->result.value,p->oper1.value);
+                fprintf(fp, "\tLDR   R%d , =%d\n", p->result.value, p->oper1.value);
             }
-            else if(p->oper1.type == STRING)
+            else if (p->oper1.type == STRING)
             {
-                fprintf(fp,"\tLDR   R%d , %s\n",p->result.value,p->oper1.str_id);
+                fprintf(fp, "\tLDR   R%d , %s\n", p->result.value, p->oper1.str_id);
             }
             else
             {
@@ -152,32 +151,32 @@ void printarm(armcode *armnode, FILE *fp)
             break;
 
         case STR:
-            if(p->oper1.index == 0)
+            if (p->oper1.index == 0)
             {
-                fprintf(fp,"\tSTR   R%d , [R%d]\n",p->result.value,p->oper1.value);
+                fprintf(fp, "\tSTR   R%d , [R%d]\n", p->result.value, p->oper1.value);
             }
             else
             {
-                fprintf(fp,"\tSTR   R%d , [R%d,#%d]\n",p->result.value,p->oper1.value,p->oper1.index);
+                fprintf(fp, "\tSTR   R%d , [R%d,#%d]\n", p->result.value, p->oper1.value, p->oper1.index);
             }
             break;
-        
+
         case STMFD:
-            fprintf(fp,"\tSTMFD R%d! , {R%d",p->result.value,p->oper1.reglist[0]);
-            for(tmp=1;tmp<p->regnum;tmp++)
+            fprintf(fp, "\tSTMFD R%d! , {R%d", p->result.value, p->oper1.reglist[0]);
+            for (tmp = 1; tmp < p->regnum; tmp++)
             {
-                fprintf(fp,",R%d",p->oper1.reglist[tmp]);
+                fprintf(fp, ",R%d", p->oper1.reglist[tmp]);
             }
-            fprintf(fp,"}\n");
+            fprintf(fp, "}\n");
             break;
-        
+
         case LDMFD:
-            fprintf(fp,"\tLDMFD R%d! , {R%d",p->result.value,p->oper1.reglist[0]);
-            for(tmp=1;tmp<p->regnum;tmp++)
+            fprintf(fp, "\tLDMFD R%d! , {R%d", p->result.value, p->oper1.reglist[0]);
+            for (tmp = 1; tmp < p->regnum; tmp++)
             {
-                fprintf(fp,",R%d",p->oper1.reglist[tmp]);
+                fprintf(fp, ",R%d", p->oper1.reglist[tmp]);
             }
-            fprintf(fp,"}\n");
+            fprintf(fp, "}\n");
             break;
 
         case B:
@@ -192,21 +191,21 @@ void printarm(armcode *armnode, FILE *fp)
             break;
 
         case CMP:
-            if(p->oper2.type == IMME)
+            if (p->oper2.type == IMME)
             {
-                fprintf(fp,"\tCMP   R%d , #%d\n",p->oper1.value,p->oper2.value);
+                fprintf(fp, "\tCMP   R%d , #%d\n", p->oper1.value, p->oper2.value);
             }
-            else if(p->oper2.type == REG)
+            else if (p->oper2.type == REG)
             {
-                fprintf(fp,"\tCMP   R%d , R%d\n",p->oper1.value,p->oper2.value);
+                fprintf(fp, "\tCMP   R%d , R%d\n", p->oper1.value, p->oper2.value);
             }
             break;
-        
+
         default:
             break;
         }
-        
-        p=p->next;
+
+        p = p->next;
     }
 }
 

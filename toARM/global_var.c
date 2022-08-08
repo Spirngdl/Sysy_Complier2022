@@ -28,7 +28,7 @@ armcode *search_global_var()
                     arysize *= sym.length[i];
                 }
 
-                armcode * vnode = traverse_List(sym.value,arysize);
+                armcode *vnode = traverse_List(sym.value, arysize);
                 p->next = vnode;
                 vnode->pre = p;
                 
@@ -37,9 +37,8 @@ armcode *search_global_var()
                     vnode = vnode->next;
                 }
                 p = vnode;
-
             }
-            else if (sym.flag == VAR ||sym.flag == CONST_VAR) //全局变量
+            else if (sym.flag == VAR || sym.flag == CONST_VAR) //全局变量
             {
                 // char *alias = sym.alias;//别名，三地址代码中所有变量名都是别名
                 // int type = sym.type; //可能是TOK_INT TOK_FLOAT
@@ -68,6 +67,10 @@ armcode *search_global_var()
 
                 p->next = vnode;
                 vnode->pre = p;
+                while (vnode->next)
+                {
+                    vnode = vnode->next;
+                }
                 p = vnode;
             }
         }
@@ -76,17 +79,17 @@ armcode *search_global_var()
     return q->next;
 }
 
-armcode *traverse_List(List *value_list,int arysize)
+armcode *traverse_List(List *value_list, int arysize)
 {
 
     if (value_list == NULL)
     {
-        armcode * anode = initnewnode();
+        armcode *anode = initnewnode();
         anode->op = GVAR_INT;
         anode->result.type = STRING;
-        strcpy(anode->result.str_id,".zero");
+        strcpy(anode->result.str_id, ".zero");
         anode->oper1.type = IMME;
-        anode->oper1.value = arysize*4;
+        anode->oper1.value = arysize * 4;
 
         return anode;
     }
@@ -94,14 +97,14 @@ armcode *traverse_List(List *value_list,int arysize)
     {
         void *element = NULL;
         ListFirst(value_list, false); //重置iterator
-        armcode * anode = initnewnode();
-        armcode * q = anode;
+        armcode *anode = initnewnode();
+        armcode *q = anode;
         while (ListNext(value_list, &element))
         {
             ArrayValue *value = (ArrayValue *)element;
-            armcode * m = initnewnode();
+            armcode *m = initnewnode();
             m->result.type = STRING;
-            strcpy(m->result.str_id,".long");
+            strcpy(m->result.str_id, ".long");
             m->oper1.type = IMME;
             if (value->kind == LITERAL) //整型常量
             {

@@ -136,7 +136,7 @@ void insert_param(Blocks *head)
 int search_alias(char *alias)
 {
     int i;
-    for (i = symbolTable.index - 1; i >= 0; i--)
+    for (i = symbolTable.index - 1; i >= 20; i--)
     {
         if (strcmp(symbolTable.symbols[i].alias, alias) == 0) //找到了，可能是全局变量或者形式参数
         {
@@ -158,3 +158,37 @@ int ToIeee754(float i)
 {
     return *(int *)&i;
 }
+/**
+ * @brief 判断是否是库函数
+ *
+ * @param func_name
+ * @return true
+ * @return false
+ */
+bool isLibraryfunctions(char *func_name)
+{
+    int index = searchSymbolTable(func_name);
+    if (index <= 20)
+        return true;
+    return false;
+}
+
+/**
+ * @brief 一共16个寄存器，找到当前语句没用的寄存器
+ *
+ * @param i 有没有可能是-1表示不用
+ * @param j
+ * @return 寄存器号
+ */
+// int get_other_reg(int i, int j)
+// {
+//     //最简单写法就遍历呗，但是这样应该会
+//     static int index = 0;
+//     for (index %= 10; index < 10; index = (index + 1) % 10)
+//     {
+//         if (index != i && index != j)
+//         {
+//             return index++;
+//         }
+//     }
+// }
