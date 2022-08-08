@@ -2138,7 +2138,7 @@ armcode *translatearm(Blocks *blocks)
                                 }
                                 else
                                 {
-                                    //无用赋值
+                                    printf("ERROR!\n");
                                 }
                             }
                             else if (m->result.kind == LITERAL)
@@ -2275,6 +2275,7 @@ armcode *translatearm(Blocks *blocks)
                     p = m; //指向最后一个参数
                     q = newnode->pre;
                     free(newnode);
+                    init_myreg();
                     break;
 
                 case CALL:
@@ -2369,7 +2370,7 @@ armcode *translatearm(Blocks *blocks)
                     q = ldmnode;
 
                     vartable_update_all(vartbl,-20);
-
+                    init_myreg();
                     break;
 
                 case TOK_RETURN:
@@ -2465,7 +2466,7 @@ armcode *translatearm(Blocks *blocks)
                         vartable_update_all(vartbl,-(func_enter_regnum*4));
                     }
 
-
+                    init_myreg();
                     break;
 
                 case END:
@@ -2507,6 +2508,7 @@ armcode *translatearm(Blocks *blocks)
                    
 
                     free(vartbl);
+                    init_myreg();
                     break;
 
                  case GOTO:
