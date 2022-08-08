@@ -2218,7 +2218,7 @@ armcode *translatearm(Blocks *blocks)
                                     armlink_insert(newnode, movnode);
                                 }
                             }
-                            else if (rn2 == -1)
+                            else if (rn1 == -1)
                             {
                                 // TODO 变量溢出
                                 R_op2 = alloc_myreg();
@@ -2230,7 +2230,7 @@ armcode *translatearm(Blocks *blocks)
                                 movnode = create_movnode(i,REG,R_op2);
                                 armlink_insert(newnode, movnode);
                             }
-                            else if (rn2 == -2)
+                            else if (rn1 == -2)
                             {
                                 // TODO全局变量
                                 R_op2 = alloc_myreg();

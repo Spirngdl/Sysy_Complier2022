@@ -1,4 +1,4 @@
-#include "../include/def.h"
+#include "include/def.h"
 
 // 全局变量不参与寄存器分配，每次使用时后端部分选用一个空的寄存器，使用完成后保存于内存
 // 寄存器分配以函数为单位进行，每个函数存在一个独立的分配方案，互不干扰
@@ -348,7 +348,11 @@ void reg_param (char* fun_add, char* param[], int param_num) {
     for (i = 0; i < param_num; i++) {
         strcpy(vars[var_cnt].name, param[i]);
         strcpy(vars[var_cnt].fun_name, fun_add);
-        vars[var_cnt].reg = i;
+        if (i < 4) {
+            vars[var_cnt].reg = i;
+        } else {
+            vars[var_cnt].reg = -1;
+        }
         var_cnt++;
     }
 }

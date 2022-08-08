@@ -1,5 +1,5 @@
 #define MAX_REG 11 // 最大寄存器数（R11、R12 翻译自用）
-#define MAX_VARS 1024 // 最大变量数
+#define MAX_VARS 100000 // 最大变量数
 
 struct var_of_RIG {
     char* name; // 变量名
