@@ -235,7 +235,7 @@ struct codenode *arrayinit_bracker(List *value_list, struct node *T, int brace_n
                 ArrayValue *value = (ArrayValue *)malloc(sizeof(ArrayValue));
                 value->kind = LITERAL;
                 value->v_int = const_exp(initarray);
-                
+
                 ListPushBack(value_list, value);
                 // push_initvalue(const_value, value_list);
                 (*array_offset)++;
@@ -1242,6 +1242,17 @@ void boolExp(struct node *T, char *Etrue, char *Efalse) //二代
             else
                 boolExp(T->ptr[1], Etrue, Efalse);
             T->code = T->ptr[1]->code;
+            break;
+        case FUNC_CALL:
+            Exp(T);
+            opn1.kind = ID;
+            strcpy(opn1.id, symbolTable.symbols[T->place].alias); //传递别名
+
+            opn2.kind = LITERAL;
+            opn2.const_int = 0;
+            result.kind = ID;
+            strcpy(result.id, Etrue);
+            T->code = merge(3, T->code, genIR(NEQ, opn1, opn2, result), genGoto(Efalse));
             break;
         default:
             break;

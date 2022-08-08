@@ -1,4 +1,4 @@
-#include "include/def.h"
+#include "../include/def.h"
 
 // 根据变量别名去查询符号表中的位置i（此时，符号表仅存全局变量）
 /*int search_alias(char *alias)
@@ -145,8 +145,17 @@ void one_block_use_def (char* use[], char* def[], int size, Block block, char* f
                 }
             }
         }
-        // 数组赋值语句（数组下标为 use，数组名不做处理）
-       if (p->op == ARRAY_ASSIGN) {
+        // 数组声明语句
+        if (p->op == ARRAY_DEF) {
+            if (p->result.kind == ID) {
+                if (!id_exist_strs(p->result.id, param, param, param_num) && !id_exist_strs(p->result.id, use, def, size) && search_alias(p->result.id) == -1 && _search_var(fun_name, p->result.id) == -2) {
+                    def[def_num] = p->result.id;
+                    def_num++;
+                }
+            }
+        }
+        // 数组赋值语句（数组下标为 use，数组名为 use）
+        if (p->op == ARRAY_ASSIGN) {
             if (p->opn1.kind == ID) {
                 if (!id_exist_strs(p->opn1.id, param, param, param_num) && !id_exist_strs(p->opn1.id, use, def, size) && search_alias(p->opn1.id) == -1 && _search_var(fun_name, p->opn1.id) == -2) {
                     use[use_num] = p->opn1.id;
@@ -159,21 +168,21 @@ void one_block_use_def (char* use[], char* def[], int size, Block block, char* f
                     use_num++;
                 }
             }
-            /*if (p->result.kind == ID) {
+            if (p->result.kind == ID) {
                 if (!id_exist_strs(p->result.id, param, param, param_num) && !id_exist_strs(p->result.id, use, def, size) && search_alias(p->result.id) == -1 && _search_var(fun_name, p->result.id) == -2) {
                     use[use_num] = p->result.id;
                     use_num++;
                 }
-            }*/
+            }
         }
-        // 数组引用语句（数组下标为 use，数组名不做处理）
+        // 数组引用语句（数组下标为 use，数组名为 use）
         if (p->op == ARRAY_EXP) {
-            /*if (p->opn1.kind == ID) {
+            if (p->opn1.kind == ID) {
                 if (!id_exist_strs(p->opn1.id, param, param, param_num) && !id_exist_strs(p->opn1.id, use, def, size) && search_alias(p->opn1.id) == -1 && _search_var(fun_name, p->opn1.id) == -2) {
                     use[use_num] = p->opn1.id;
                     use_num++;
                 }    
-            }*/
+            }
             if (p->opn2.kind == ID) {
                 if (!id_exist_strs(p->opn2.id, param, param, param_num) && !id_exist_strs(p->opn2.id, use, def, size) && search_alias(p->opn2.id) == -1 && _search_var(fun_name, p->opn2.id) == -2) {
                     use[use_num] = p->opn2.id;
@@ -679,8 +688,17 @@ void _one_block_use_def (char* use[], char* def[], int size, Block block) {
                 }
             }
         }
+        // 数组声明语句
+        if (p->op == ARRAY_DEF) {
+            if (p->result.kind == ID) {
+                if (!id_exist_strs(p->result.id, use, def, size)) {
+                    def[def_num] = p->result.id;
+                    def_num++;
+                }
+            }
+        }
         // 数组赋值语句（数组下标为 use，数组名不做处理）
-       if (p->op == ARRAY_ASSIGN) {
+        if (p->op == ARRAY_ASSIGN) {
             if (p->opn1.kind == ID) {
                 if (!id_exist_strs(p->opn1.id, use, def, size)) {
                     use[use_num] = p->opn1.id;
