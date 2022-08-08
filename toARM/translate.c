@@ -107,7 +107,7 @@ void translate(armcode *newnode, struct codenode *p, armop armop,armcode *q)
                 }
                 else
                 {
-                    printf("Failed to allocate register for opn2\n");
+                   printf("%d  %s REG ALLOC ERROR!\n",p->UID,p->opn2.id);
                 }
             }
             else if (p->opn2.kind == FLOAT_LITERAL)
@@ -260,7 +260,7 @@ void translate(armcode *newnode, struct codenode *p, armop armop,armcode *q)
                     }
                     else
                     {
-                        printf("TOK_:Failed to allocate register for opn2\n");
+                        printf("%d  %s REG ALLOC ERROR!\n",p->UID,p->opn2.id);
                     }
                 }
                 else if (p->opn2.kind == FLOAT_LITERAL)
@@ -1533,12 +1533,12 @@ void translate(armcode *newnode, struct codenode *p, armop armop,armcode *q)
                     }
                     else 
                     {
-                        printf("ERROR!\n");
+                        printf("%d  %s REG ALLOC ERROR!\n",p->UID,p->opn2.id);
                     }
                 }
                 else
                 {
-                    printf("Error!\n");
+                    printf("%d  %s REG ALLOC ERROR!\n",p->UID,p->opn1.id);
                 }
             }
             else if(p->opn2.kind == LITERAL)
@@ -2245,7 +2245,7 @@ armcode *translatearm(Blocks *blocks)
                             }
                             else
                             {
-                                printf("ERROR!\n");
+                                printf("%d  %s REG ALLOC ERROR!\n",p->UID,p->result.id);
                             }
                         }
                         else if (p->result.kind == LITERAL)
@@ -2513,7 +2513,18 @@ armcode *translatearm(Blocks *blocks)
                     init_myreg();
                     break;
 
-                 case GOTO:
+                case ARRAY_DEF:
+                    cur_stk_offset -=4;
+                    vartable_insert(vartbl,p->result.id,memindex,cur_stk_offset);
+                    break;
+
+                case ARRAY_ASSIGN:
+                    break;
+
+                case ARRAY_EXP:
+                    break;
+
+                case GOTO:
                     newnode->op = B;
                     newnode->result.type = STRING;
                     strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
@@ -2526,7 +2537,6 @@ armcode *translatearm(Blocks *blocks)
                             newnode->op = B;
                             newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
-                            //printf("B %s", newnode->result.str_id);
                         } else {
                             // 无效跳转
                         }
@@ -2535,13 +2545,11 @@ armcode *translatearm(Blocks *blocks)
                             
                             newnode->op = CMP;
                             
-                            Reg[rn0] = p->opn1.id;
                             newnode->oper1.type = REG;
                             newnode->oper1.value = rn0;
 
                             newnode->oper2.type = IMME;
                             newnode->oper2.value = p->opn2.const_int;
-                            //printf("CMP R%d, #%d", newnode->oper1.value, newnode->oper2.value);
 
                             newnode = initnewnode();
                             q->next = newnode;
@@ -2552,23 +2560,81 @@ armcode *translatearm(Blocks *blocks)
                             newnode->flag = LE;
                             newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
-                            //printf("BLE %s", newnode->result.str_id);
 
-                        } else {
-                            // TODO 左操作数为变量且溢出
+                        } else if ((rn0 = search_var(funcname, p->opn1.id)) == -1) {
+                            // 左操作数为变量且溢出
+
+                            // 必然可分配到 R11、R12 之一
+                            R_op1 = alloc_myreg();
+
+                            // 将栈中变量取到 R_op1 中
+                            vartable_index = vartable_select(vartbl, p->opn1.id);
+                            ldrnode = create_ldrnode(R_op1, NULL, R13, vartbl->table[vartable_index].index);
+                            armlink_insert(newnode, ldrnode);
+
+                            // CMP 指令
+                            newnode->op = CMP;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = R_op1;
+
+                            newnode->oper2.type = IMME;
+                            newnode->oper2.value = p->opn2.const_int;
+
+                            // 新建节点
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            // B 指令
+                            newnode->op = B;
+                            newnode->flag = LE;
+                            newnode->result.type = STRING;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+
+                        } else if ((rn0 = search_var(funcname, p->opn1.id)) == -2) {
+                            // 左操作数为全局变量
+
+                            // 必然可分配到 R11、R12 之一
+                            R_op1 = alloc_myreg();
+
+                            // 将全局变量值取到 R_op1 中
+                            ldrnode = create_ldrnode(R_op1, p->opn1.id, 0, 0);
+                            armlink_insert(newnode,ldrnode);
+                            ldrnode = create_ldrnode(R_op1, NULL, R_op1, 0);
+                            armlink_insert(newnode,ldrnode);
+
+                            // CMP 指令
+                            newnode->op = CMP;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = R_op1;
+
+                            newnode->oper2.type = IMME;
+                            newnode->oper2.value = p->opn2.const_int;
+
+                            // 新建节点
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            // B 指令
+                            newnode->op = B;
+                            newnode->flag = LE;
+                            newnode->result.type = STRING;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+                            
                         }
                     } else if ((p->opn1.kind == LITERAL) && (p->opn2.kind == ID)) {
                         if ((rn0 = search_var(funcname, p->opn2.id)) >= 0) {
                             
                             newnode->op = CMP;
                             
-                            Reg[rn0] = p->opn2.id;
                             newnode->oper1.type = REG;
                             newnode->oper1.value = rn0;
 
                             newnode->oper2.type = IMME;
                             newnode->oper2.value = p->opn1.const_int;
-                            //printf("CMP R%d, #%d", newnode->oper1.value, newnode->oper2.value);
 
                             newnode = initnewnode();
                             q->next = newnode;
@@ -2579,38 +2645,258 @@ armcode *translatearm(Blocks *blocks)
                             newnode->flag = GT;
                             newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
-                            //printf("BGT %s", newnode->result.str_id);
 
-                        } else {
-                            // TODO 右操作数为变量且溢出
-                        }
-                    } else if ((p->opn1.kind == ID) && (p->opn2.kind == ID)) {
-                        if ((rn0 = search_var(funcname, p->opn1.id)) >= 0 && (rn1 = search_var(funcname, p->opn2.id)) >= 0) {
+                        } else if ((rn0 = search_var(funcname, p->opn2.id)) == -1) {
+                            // 右操作数为变量且溢出
+
+                            // 必然可分配到 R11、R12 之一
+                            R_op2 = alloc_myreg();
+
+                            // 将栈中变量取到 R_op2 中
+                            vartable_index = vartable_select(vartbl, p->opn2.id);
+                            ldrnode = create_ldrnode(R_op2, NULL, R13, vartbl->table[vartable_index].index);
+                            armlink_insert(newnode, ldrnode);
+
+                            // CMP 指令
                             newnode->op = CMP;
-
-                            Reg[rn0] = p->opn1.id;
                             newnode->oper1.type = REG;
-                            newnode->oper1.value = rn0;
+                            newnode->oper1.value = R_op2;
 
-                            Reg[rn1] = p->opn2.id;
-                            newnode->oper2.type = REG;
-                            newnode->oper2.value = rn1;
-                            //printf("CMP R%d, R%d", newnode->oper1.value, newnode->oper2.value);
+                            newnode->oper2.type = IMME;
+                            newnode->oper2.value = p->opn1.const_int;
 
+                            // 新建节点
                             newnode = initnewnode();
                             q->next = newnode;
                             newnode->pre = q;
                             q = newnode;
 
+                            // B 指令
+                            newnode->op = B;
+                            newnode->flag = GT;
+                            newnode->result.type = STRING;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+
+                        } else if ((rn0 = search_var(funcname, p->opn2.id)) == -2) {
+                            // 右操作数为全局变量
+
+                            // 必然可分配到 R11、R12 之一
+                            R_op2 = alloc_myreg();
+
+                            // 将全局变量值取到 R_op2 中
+                            ldrnode = create_ldrnode(R_op2, p->opn2.id, 0, 0);
+                            armlink_insert(newnode, ldrnode);
+                            ldrnode = create_ldrnode(R_op2, NULL, R_op2, 0);
+                            armlink_insert(newnode, ldrnode);
+
+                            // CMP 指令
+                            newnode->op = CMP;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = R_op2;
+
+                            newnode->oper2.type = IMME;
+                            newnode->oper2.value = p->opn1.const_int;
+
+                            // 新建节点
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            // B 指令
+                            newnode->op = B;
+                            newnode->flag = GT;
+                            newnode->result.type = STRING;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+
+                        }
+                    } else if ((p->opn1.kind == ID) && (p->opn2.kind == ID)) {
+                        if ((rn0 = search_var(funcname, p->opn1.id)) == -1) {
+                            // 左操作数为变量且溢出
+
+                            // 必然可分配到 R11、R12 之一
+                            R_op1 = alloc_myreg();
+
+                            // 将栈中变量取到 R_op1 中
+                            vartable_index = vartable_select(vartbl, p->opn1.id);
+                            ldrnode = create_ldrnode(R_op1, NULL, R13, vartbl->table[vartable_index].index);
+                            armlink_insert(newnode, ldrnode);
+
+                            // 将右操作数取到 R_op2 中
+                            if ((rn1 = search_var(funcname, p->opn2.id)) == -1) {
+                                // 右操作数为变量且溢出
+
+                                // 必然可分配到 R11、R12 之一
+                                R_op2 = alloc_myreg();
+
+                                // 将栈中变量取到 R_op2 中
+                                vartable_index = vartable_select(vartbl, p->opn2.id);
+                                ldrnode = create_ldrnode(R_op2, NULL, R13, vartbl->table[vartable_index].index);
+                                armlink_insert(newnode, ldrnode);
+                            
+                            } else if ((rn1 = search_var(funcname, p->opn2.id)) == -2) {
+                                // 右操作数为全局变量
+
+                                // 必然可分配到 R11、R12 之一
+                                R_op2 = alloc_myreg();
+
+                                // 将全局变量值取到 R_op2 中
+                                ldrnode = create_ldrnode(R_op2, p->opn2.id, 0, 0);
+                                armlink_insert(newnode, ldrnode);
+                                ldrnode = create_ldrnode(R_op2, NULL, R_op2, 0);
+                                armlink_insert(newnode, ldrnode);
+
+                            } else if ((rn1 = search_var(funcname, p->opn2.id)) >= 0) {
+                                // 右操作数正常分配寄存器
+
+                                // 便于后续统一操作
+                                R_op2 = rn1;
+
+                            }
+
+                            // CMP 指令
+                            newnode->op = CMP;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = R_op1;
+
+                            newnode->oper2.type = REG;
+                            newnode->oper2.value = R_op2;
+
+                            // 新建节点
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            // B 指令
                             newnode->op = B;
                             newnode->flag = LE;
                             newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
-                            //printf("BLE %s", newnode->result.str_id);
-                        } else {
-                            // TODO 左右操作数为变量且存在溢出
+
+                        } else if ((rn0 = search_var(funcname, p->opn1.id)) == -2) {
+                            // 左操作数为全局变量
+
+                            // 必然可分配到 R11、R12 之一
+                            R_op1 = alloc_myreg();
+
+                            // 将全局变量值取到 R_op1 中
+                            ldrnode = create_ldrnode(R_op1, p->opn1.id, 0, 0);
+                            armlink_insert(newnode, ldrnode);
+                            ldrnode = create_ldrnode(R_op1, NULL, R_op1, 0);
+                            armlink_insert(newnode, ldrnode);
+
+                            // 将右操作数取到 R_op2 中
+                            if ((rn1 = search_var(funcname, p->opn2.id)) == -1) {
+                                // 右操作数为变量且溢出
+
+                                // 必然可分配到 R11、R12 之一
+                                R_op2 = alloc_myreg();
+
+                                // 将栈中变量取到 R_op2 中
+                                vartable_index = vartable_select(vartbl, p->opn2.id);
+                                ldrnode = create_ldrnode(R_op2, NULL, R13, vartbl->table[vartable_index].index);
+                                armlink_insert(newnode, ldrnode);
+                            
+                            } else if ((rn1 = search_var(funcname, p->opn2.id)) == -2) {
+                                // 右操作数为全局变量
+
+                                // 必然可分配到 R11、R12 之一
+                                R_op2 = alloc_myreg();
+
+                                // 将全局变量值取到 R_op2 中
+                                ldrnode = create_ldrnode(R_op2, p->opn2.id, 0, 0);
+                                armlink_insert(newnode, ldrnode);
+                                ldrnode = create_ldrnode(R_op2, NULL, R_op2, 0);
+                                armlink_insert(newnode, ldrnode);
+
+                            } else if ((rn1 = search_var(funcname, p->opn2.id)) >= 0) {
+                                // 右操作数正常分配寄存器
+
+                                // 便于后续统一操作
+                                R_op2 = rn1;
+
+                            }
+
+                            // CMP 指令
+                            newnode->op = CMP;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = R_op1;
+
+                            newnode->oper2.type = REG;
+                            newnode->oper2.value = R_op2;
+
+                            // 新建节点
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            // B 指令
+                            newnode->op = B;
+                            newnode->flag = LE;
+                            newnode->result.type = STRING;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+
+                        } else if ((rn0 = search_var(funcname, p->opn1.id)) >= 0 ) {
+                            // 左操作数正常分配寄存器
+
+                            R_op1 = rn0;
+
+                            // 将右操作数取到 R_op2 中
+                            if ((rn1 = search_var(funcname, p->opn2.id)) == -1) {
+                                // 右操作数为变量且溢出
+
+                                // 必然可分配到 R11、R12 之一
+                                R_op2 = alloc_myreg();
+
+                                // 将栈中变量取到 R_op2 中
+                                vartable_index = vartable_select(vartbl, p->opn2.id);
+                                ldrnode = create_ldrnode(R_op2, NULL, R13, vartbl->table[vartable_index].index);
+                                armlink_insert(newnode, ldrnode);
+                            
+                            } else if ((rn1 = search_var(funcname, p->opn2.id)) == -2) {
+                                // 右操作数为全局变量
+
+                                // 必然可分配到 R11、R12 之一
+                                R_op2 = alloc_myreg();
+
+                                // 将全局变量值取到 R_op2 中
+                                ldrnode = create_ldrnode(R_op2, p->opn2.id, 0, 0);
+                                armlink_insert(newnode, ldrnode);
+                                ldrnode = create_ldrnode(R_op2, NULL, R_op2, 0);
+                                armlink_insert(newnode, ldrnode);
+
+                            } else if ((rn1 = search_var(funcname, p->opn2.id)) >= 0) {
+                                // 右操作数正常分配寄存器
+
+                                // 便于后续统一操作
+                                R_op2 = rn1;
+
+                            }
+
+                            // CMP 指令
+                            newnode->op = CMP;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = R_op1;
+
+                            newnode->oper2.type = REG;
+                            newnode->oper2.value = R_op2;
+
+                            // 新建节点
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            // B 指令
+                            newnode->op = B;
+                            newnode->flag = LE;
+                            newnode->result.type = STRING;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
                         }
                     }
+                    init_myreg();
                     break;
 
                 case JLT: // <
@@ -2623,18 +2909,16 @@ armcode *translatearm(Blocks *blocks)
                         } else {
                             // 无效跳转
                         }
-                    } else if ((p->opn1.kind == ID) && (p->opn2.kind == LITERAL)) {
+                    }  else if ((p->opn1.kind == ID) && (p->opn2.kind == LITERAL)) {
                         if ((rn0 = search_var(funcname, p->opn1.id)) >= 0) {
                             
                             newnode->op = CMP;
                             
-                            Reg[rn0] = p->opn1.id;
                             newnode->oper1.type = REG;
                             newnode->oper1.value = rn0;
 
                             newnode->oper2.type = IMME;
                             newnode->oper2.value = p->opn2.const_int;
-                            //printf("CMP R%d, #%d", newnode->oper1.value, newnode->oper2.value);
 
                             newnode = initnewnode();
                             q->next = newnode;
@@ -2645,23 +2929,81 @@ armcode *translatearm(Blocks *blocks)
                             newnode->flag = LT;
                             newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
-                            //printf("BLT %s", newnode->result.str_id);
 
-                        } else {
-                            // TODO 左操作数为变量且溢出
+                        } else if ((rn0 = search_var(funcname, p->opn1.id)) == -1) {
+                            // 左操作数为变量且溢出
+
+                            // 必然可分配到 R11、R12 之一
+                            R_op1 = alloc_myreg();
+
+                            // 将栈中变量取到 R_op1 中
+                            vartable_index = vartable_select(vartbl, p->opn1.id);
+                            ldrnode = create_ldrnode(R_op1, NULL, R13, vartbl->table[vartable_index].index);
+                            armlink_insert(newnode, ldrnode);
+
+                            // CMP 指令
+                            newnode->op = CMP;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = R_op1;
+
+                            newnode->oper2.type = IMME;
+                            newnode->oper2.value = p->opn2.const_int;
+
+                            // 新建节点
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            // B 指令
+                            newnode->op = B;
+                            newnode->flag = LT;
+                            newnode->result.type = STRING;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+
+                        } else if ((rn0 = search_var(funcname, p->opn1.id)) == -2) {
+                            // 左操作数为全局变量
+
+                            // 必然可分配到 R11、R12 之一
+                            R_op1 = alloc_myreg();
+
+                            // 将全局变量值取到 R_op1 中
+                            ldrnode = create_ldrnode(R_op1, p->opn1.id, 0, 0);
+                            armlink_insert(newnode,ldrnode);
+                            ldrnode = create_ldrnode(R_op1, NULL, R_op1, 0);
+                            armlink_insert(newnode,ldrnode);
+
+                            // CMP 指令
+                            newnode->op = CMP;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = R_op1;
+
+                            newnode->oper2.type = IMME;
+                            newnode->oper2.value = p->opn2.const_int;
+
+                            // 新建节点
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            // B 指令
+                            newnode->op = B;
+                            newnode->flag = LT;
+                            newnode->result.type = STRING;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+                            
                         }
                     } else if ((p->opn1.kind == LITERAL) && (p->opn2.kind == ID)) {
                         if ((rn0 = search_var(funcname, p->opn2.id)) >= 0) {
                             
                             newnode->op = CMP;
                             
-                            Reg[rn0] = p->opn2.id;
                             newnode->oper1.type = REG;
                             newnode->oper1.value = rn0;
 
                             newnode->oper2.type = IMME;
                             newnode->oper2.value = p->opn1.const_int;
-                            //printf("CMP R%d, #%d", newnode->oper1.value, newnode->oper2.value);
 
                             newnode = initnewnode();
                             q->next = newnode;
@@ -2672,38 +3014,258 @@ armcode *translatearm(Blocks *blocks)
                             newnode->flag = GE;
                             newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
-                            //printf("BGE %s", newnode->result.str_id);
 
-                        } else {
-                            // TODO 右操作数为变量且溢出
-                        }
-                    } else if ((p->opn1.kind == ID) && (p->opn2.kind == ID)) {
-                        if ((rn0 = search_var(funcname, p->opn1.id)) >= 0 && (rn1 = search_var(funcname, p->opn2.id)) >= 0) {
+                        } else if ((rn0 = search_var(funcname, p->opn2.id)) == -1) {
+                            // 右操作数为变量且溢出
+
+                            // 必然可分配到 R11、R12 之一
+                            R_op2 = alloc_myreg();
+
+                            // 将栈中变量取到 R_op2 中
+                            vartable_index = vartable_select(vartbl, p->opn2.id);
+                            ldrnode = create_ldrnode(R_op2, NULL, R13, vartbl->table[vartable_index].index);
+                            armlink_insert(newnode, ldrnode);
+
+                            // CMP 指令
                             newnode->op = CMP;
-
-                            Reg[rn0] = p->opn1.id;
                             newnode->oper1.type = REG;
-                            newnode->oper1.value = rn0;
+                            newnode->oper1.value = R_op2;
 
-                            Reg[rn1] = p->opn2.id;
-                            newnode->oper2.type = REG;
-                            newnode->oper2.value = rn1;
-                            //printf("CMP R%d, R%d", newnode->oper1.value, newnode->oper2.value);
+                            newnode->oper2.type = IMME;
+                            newnode->oper2.value = p->opn1.const_int;
 
+                            // 新建节点
                             newnode = initnewnode();
                             q->next = newnode;
                             newnode->pre = q;
                             q = newnode;
 
+                            // B 指令
+                            newnode->op = B;
+                            newnode->flag = GE;
+                            newnode->result.type = STRING;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+
+                        } else if ((rn0 = search_var(funcname, p->opn2.id)) == -2) {
+                            // 右操作数为全局变量
+
+                            // 必然可分配到 R11、R12 之一
+                            R_op2 = alloc_myreg();
+
+                            // 将全局变量值取到 R_op2 中
+                            ldrnode = create_ldrnode(R_op2, p->opn2.id, 0, 0);
+                            armlink_insert(newnode, ldrnode);
+                            ldrnode = create_ldrnode(R_op2, NULL, R_op2, 0);
+                            armlink_insert(newnode, ldrnode);
+
+                            // CMP 指令
+                            newnode->op = CMP;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = R_op2;
+
+                            newnode->oper2.type = IMME;
+                            newnode->oper2.value = p->opn1.const_int;
+
+                            // 新建节点
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            // B 指令
+                            newnode->op = B;
+                            newnode->flag = GE;
+                            newnode->result.type = STRING;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+
+                        }
+                    } else if ((p->opn1.kind == ID) && (p->opn2.kind == ID)) {
+                        if ((rn0 = search_var(funcname, p->opn1.id)) == -1) {
+                            // 左操作数为变量且溢出
+
+                            // 必然可分配到 R11、R12 之一
+                            R_op1 = alloc_myreg();
+
+                            // 将栈中变量取到 R_op1 中
+                            vartable_index = vartable_select(vartbl, p->opn1.id);
+                            ldrnode = create_ldrnode(R_op1, NULL, R13, vartbl->table[vartable_index].index);
+                            armlink_insert(newnode, ldrnode);
+
+                            // 将右操作数取到 R_op2 中
+                            if ((rn1 = search_var(funcname, p->opn2.id)) == -1) {
+                                // 右操作数为变量且溢出
+
+                                // 必然可分配到 R11、R12 之一
+                                R_op2 = alloc_myreg();
+
+                                // 将栈中变量取到 R_op2 中
+                                vartable_index = vartable_select(vartbl, p->opn2.id);
+                                ldrnode = create_ldrnode(R_op2, NULL, R13, vartbl->table[vartable_index].index);
+                                armlink_insert(newnode, ldrnode);
+                            
+                            } else if ((rn1 = search_var(funcname, p->opn2.id)) == -2) {
+                                // 右操作数为全局变量
+
+                                // 必然可分配到 R11、R12 之一
+                                R_op2 = alloc_myreg();
+
+                                // 将全局变量值取到 R_op2 中
+                                ldrnode = create_ldrnode(R_op2, p->opn2.id, 0, 0);
+                                armlink_insert(newnode, ldrnode);
+                                ldrnode = create_ldrnode(R_op2, NULL, R_op2, 0);
+                                armlink_insert(newnode, ldrnode);
+
+                            } else if ((rn1 = search_var(funcname, p->opn2.id)) >= 0) {
+                                // 右操作数正常分配寄存器
+
+                                // 便于后续统一操作
+                                R_op2 = rn1;
+
+                            }
+
+                            // CMP 指令
+                            newnode->op = CMP;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = R_op1;
+
+                            newnode->oper2.type = REG;
+                            newnode->oper2.value = R_op2;
+
+                            // 新建节点
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            // B 指令
                             newnode->op = B;
                             newnode->flag = LT;
                             newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
-                            //printf("BLT %s", newnode->result.str_id);
-                        } else {
-                            // TODO 左右操作数为变量且存在溢出
+
+                        } else if ((rn0 = search_var(funcname, p->opn1.id)) == -2) {
+                            // 左操作数为全局变量
+
+                            // 必然可分配到 R11、R12 之一
+                            R_op1 = alloc_myreg();
+
+                            // 将全局变量值取到 R_op1 中
+                            ldrnode = create_ldrnode(R_op1, p->opn1.id, 0, 0);
+                            armlink_insert(newnode, ldrnode);
+                            ldrnode = create_ldrnode(R_op1, NULL, R_op1, 0);
+                            armlink_insert(newnode, ldrnode);
+
+                            // 将右操作数取到 R_op2 中
+                            if ((rn1 = search_var(funcname, p->opn2.id)) == -1) {
+                                // 右操作数为变量且溢出
+
+                                // 必然可分配到 R11、R12 之一
+                                R_op2 = alloc_myreg();
+
+                                // 将栈中变量取到 R_op2 中
+                                vartable_index = vartable_select(vartbl, p->opn2.id);
+                                ldrnode = create_ldrnode(R_op2, NULL, R13, vartbl->table[vartable_index].index);
+                                armlink_insert(newnode, ldrnode);
+                            
+                            } else if ((rn1 = search_var(funcname, p->opn2.id)) == -2) {
+                                // 右操作数为全局变量
+
+                                // 必然可分配到 R11、R12 之一
+                                R_op2 = alloc_myreg();
+
+                                // 将全局变量值取到 R_op2 中
+                                ldrnode = create_ldrnode(R_op2, p->opn2.id, 0, 0);
+                                armlink_insert(newnode, ldrnode);
+                                ldrnode = create_ldrnode(R_op2, NULL, R_op2, 0);
+                                armlink_insert(newnode, ldrnode);
+
+                            } else if ((rn1 = search_var(funcname, p->opn2.id)) >= 0) {
+                                // 右操作数正常分配寄存器
+
+                                // 便于后续统一操作
+                                R_op2 = rn1;
+
+                            }
+
+                            // CMP 指令
+                            newnode->op = CMP;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = R_op1;
+
+                            newnode->oper2.type = REG;
+                            newnode->oper2.value = R_op2;
+
+                            // 新建节点
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            // B 指令
+                            newnode->op = B;
+                            newnode->flag = LT;
+                            newnode->result.type = STRING;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+
+                        } else if ((rn0 = search_var(funcname, p->opn1.id)) >= 0 ) {
+                            // 左操作数正常分配寄存器
+
+                            R_op1 = rn0;
+
+                            // 将右操作数取到 R_op2 中
+                            if ((rn1 = search_var(funcname, p->opn2.id)) == -1) {
+                                // 右操作数为变量且溢出
+
+                                // 必然可分配到 R11、R12 之一
+                                R_op2 = alloc_myreg();
+
+                                // 将栈中变量取到 R_op2 中
+                                vartable_index = vartable_select(vartbl, p->opn2.id);
+                                ldrnode = create_ldrnode(R_op2, NULL, R13, vartbl->table[vartable_index].index);
+                                armlink_insert(newnode, ldrnode);
+                            
+                            } else if ((rn1 = search_var(funcname, p->opn2.id)) == -2) {
+                                // 右操作数为全局变量
+
+                                // 必然可分配到 R11、R12 之一
+                                R_op2 = alloc_myreg();
+
+                                // 将全局变量值取到 R_op2 中
+                                ldrnode = create_ldrnode(R_op2, p->opn2.id, 0, 0);
+                                armlink_insert(newnode, ldrnode);
+                                ldrnode = create_ldrnode(R_op2, NULL, R_op2, 0);
+                                armlink_insert(newnode, ldrnode);
+
+                            } else if ((rn1 = search_var(funcname, p->opn2.id)) >= 0) {
+                                // 右操作数正常分配寄存器
+
+                                // 便于后续统一操作
+                                R_op2 = rn1;
+
+                            }
+
+                            // CMP 指令
+                            newnode->op = CMP;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = R_op1;
+
+                            newnode->oper2.type = REG;
+                            newnode->oper2.value = R_op2;
+
+                            // 新建节点
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            // B 指令
+                            newnode->op = B;
+                            newnode->flag = LT;
+                            newnode->result.type = STRING;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
                         }
                     }
+                    init_myreg();
                     break;
 
                 case JGE: // >=
@@ -2716,18 +3278,16 @@ armcode *translatearm(Blocks *blocks)
                         } else {
                             // 无效跳转
                         }
-                    } else if ((p->opn1.kind == ID) && (p->opn2.kind == LITERAL)) {
+                    }  else if ((p->opn1.kind == ID) && (p->opn2.kind == LITERAL)) {
                         if ((rn0 = search_var(funcname, p->opn1.id)) >= 0) {
                             
                             newnode->op = CMP;
                             
-                            Reg[rn0] = p->opn1.id;
                             newnode->oper1.type = REG;
                             newnode->oper1.value = rn0;
 
                             newnode->oper2.type = IMME;
                             newnode->oper2.value = p->opn2.const_int;
-                            //printf("CMP R%d, #%d", newnode->oper1.value, newnode->oper2.value);
 
                             newnode = initnewnode();
                             q->next = newnode;
@@ -2738,23 +3298,81 @@ armcode *translatearm(Blocks *blocks)
                             newnode->flag = GE;
                             newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
-                            //printf("BGE %s", newnode->result.str_id);
 
-                        } else {
-                            // TODO 左操作数为变量且溢出
+                        } else if ((rn0 = search_var(funcname, p->opn1.id)) == -1) {
+                            // 左操作数为变量且溢出
+
+                            // 必然可分配到 R11、R12 之一
+                            R_op1 = alloc_myreg();
+
+                            // 将栈中变量取到 R_op1 中
+                            vartable_index = vartable_select(vartbl, p->opn1.id);
+                            ldrnode = create_ldrnode(R_op1, NULL, R13, vartbl->table[vartable_index].index);
+                            armlink_insert(newnode, ldrnode);
+
+                            // CMP 指令
+                            newnode->op = CMP;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = R_op1;
+
+                            newnode->oper2.type = IMME;
+                            newnode->oper2.value = p->opn2.const_int;
+
+                            // 新建节点
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            // B 指令
+                            newnode->op = B;
+                            newnode->flag = GE;
+                            newnode->result.type = STRING;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+
+                        } else if ((rn0 = search_var(funcname, p->opn1.id)) == -2) {
+                            // 左操作数为全局变量
+
+                            // 必然可分配到 R11、R12 之一
+                            R_op1 = alloc_myreg();
+
+                            // 将全局变量值取到 R_op1 中
+                            ldrnode = create_ldrnode(R_op1, p->opn1.id, 0, 0);
+                            armlink_insert(newnode,ldrnode);
+                            ldrnode = create_ldrnode(R_op1, NULL, R_op1, 0);
+                            armlink_insert(newnode,ldrnode);
+
+                            // CMP 指令
+                            newnode->op = CMP;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = R_op1;
+
+                            newnode->oper2.type = IMME;
+                            newnode->oper2.value = p->opn2.const_int;
+
+                            // 新建节点
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            // B 指令
+                            newnode->op = B;
+                            newnode->flag = GE;
+                            newnode->result.type = STRING;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+                            
                         }
                     } else if ((p->opn1.kind == LITERAL) && (p->opn2.kind == ID)) {
                         if ((rn0 = search_var(funcname, p->opn2.id)) >= 0) {
                             
                             newnode->op = CMP;
                             
-                            Reg[rn0] = p->opn2.id;
                             newnode->oper1.type = REG;
                             newnode->oper1.value = rn0;
 
                             newnode->oper2.type = IMME;
                             newnode->oper2.value = p->opn1.const_int;
-                            //printf("CMP R%d, #%d", newnode->oper1.value, newnode->oper2.value);
 
                             newnode = initnewnode();
                             q->next = newnode;
@@ -2765,131 +3383,258 @@ armcode *translatearm(Blocks *blocks)
                             newnode->flag = LT;
                             newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
-                            //printf("BLT %s", newnode->result.str_id);
 
-                        } else {
-                            // TODO 右操作数为变量且溢出
-                        }
-                    } else if ((p->opn1.kind == ID) && (p->opn2.kind == ID)) {
-                        if ((rn0 = search_var(funcname, p->opn1.id)) >= 0 && (rn1 = search_var(funcname, p->opn2.id)) >= 0) {
+                        } else if ((rn0 = search_var(funcname, p->opn2.id)) == -1) {
+                            // 右操作数为变量且溢出
+
+                            // 必然可分配到 R11、R12 之一
+                            R_op2 = alloc_myreg();
+
+                            // 将栈中变量取到 R_op2 中
+                            vartable_index = vartable_select(vartbl, p->opn2.id);
+                            ldrnode = create_ldrnode(R_op2, NULL, R13, vartbl->table[vartable_index].index);
+                            armlink_insert(newnode, ldrnode);
+
+                            // CMP 指令
                             newnode->op = CMP;
-
-                            Reg[rn0] = p->opn1.id;
                             newnode->oper1.type = REG;
-                            newnode->oper1.value = rn0;
+                            newnode->oper1.value = R_op2;
 
-                            Reg[rn1] = p->opn2.id;
-                            newnode->oper2.type = REG;
-                            newnode->oper2.value = rn0;
-                            //printf("CMP R%d, R%d", newnode->oper1.value, newnode->oper2.value);
+                            newnode->oper2.type = IMME;
+                            newnode->oper2.value = p->opn1.const_int;
 
+                            // 新建节点
                             newnode = initnewnode();
                             q->next = newnode;
                             newnode->pre = q;
                             q = newnode;
 
+                            // B 指令
+                            newnode->op = B;
+                            newnode->flag = LT;
+                            newnode->result.type = STRING;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+
+                        } else if ((rn0 = search_var(funcname, p->opn2.id)) == -2) {
+                            // 右操作数为全局变量
+
+                            // 必然可分配到 R11、R12 之一
+                            R_op2 = alloc_myreg();
+
+                            // 将全局变量值取到 R_op2 中
+                            ldrnode = create_ldrnode(R_op2, p->opn2.id, 0, 0);
+                            armlink_insert(newnode, ldrnode);
+                            ldrnode = create_ldrnode(R_op2, NULL, R_op2, 0);
+                            armlink_insert(newnode, ldrnode);
+
+                            // CMP 指令
+                            newnode->op = CMP;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = R_op2;
+
+                            newnode->oper2.type = IMME;
+                            newnode->oper2.value = p->opn1.const_int;
+
+                            // 新建节点
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            // B 指令
+                            newnode->op = B;
+                            newnode->flag = LT;
+                            newnode->result.type = STRING;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+
+                        }
+                    } else if ((p->opn1.kind == ID) && (p->opn2.kind == ID)) {
+                        if ((rn0 = search_var(funcname, p->opn1.id)) == -1) {
+                            // 左操作数为变量且溢出
+
+                            // 必然可分配到 R11、R12 之一
+                            R_op1 = alloc_myreg();
+
+                            // 将栈中变量取到 R_op1 中
+                            vartable_index = vartable_select(vartbl, p->opn1.id);
+                            ldrnode = create_ldrnode(R_op1, NULL, R13, vartbl->table[vartable_index].index);
+                            armlink_insert(newnode, ldrnode);
+
+                            // 将右操作数取到 R_op2 中
+                            if ((rn1 = search_var(funcname, p->opn2.id)) == -1) {
+                                // 右操作数为变量且溢出
+
+                                // 必然可分配到 R11、R12 之一
+                                R_op2 = alloc_myreg();
+
+                                // 将栈中变量取到 R_op2 中
+                                vartable_index = vartable_select(vartbl, p->opn2.id);
+                                ldrnode = create_ldrnode(R_op2, NULL, R13, vartbl->table[vartable_index].index);
+                                armlink_insert(newnode, ldrnode);
+                            
+                            } else if ((rn1 = search_var(funcname, p->opn2.id)) == -2) {
+                                // 右操作数为全局变量
+
+                                // 必然可分配到 R11、R12 之一
+                                R_op2 = alloc_myreg();
+
+                                // 将全局变量值取到 R_op2 中
+                                ldrnode = create_ldrnode(R_op2, p->opn2.id, 0, 0);
+                                armlink_insert(newnode, ldrnode);
+                                ldrnode = create_ldrnode(R_op2, NULL, R_op2, 0);
+                                armlink_insert(newnode, ldrnode);
+
+                            } else if ((rn1 = search_var(funcname, p->opn2.id)) >= 0) {
+                                // 右操作数正常分配寄存器
+
+                                // 便于后续统一操作
+                                R_op2 = rn1;
+
+                            }
+
+                            // CMP 指令
+                            newnode->op = CMP;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = R_op1;
+
+                            newnode->oper2.type = REG;
+                            newnode->oper2.value = R_op2;
+
+                            // 新建节点
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            // B 指令
                             newnode->op = B;
                             newnode->flag = GE;
                             newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
-                            //printf("BGE %s", newnode->result.str_id);
-                        } else {
-                            // TODO 左右操作数为变量且存在溢出
-                        }
-                    }
-                    break;
 
-                case JGT: // >
-                    if ((p->opn1.kind == LITERAL) && (p->opn2.kind == LITERAL)) {
-                        if (p->opn1.const_int > p->opn2.const_int) {
-                            newnode->op = B;
-                            newnode->result.type = STRING;
-                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
-                            //printf("B %s", newnode->result.str_id);
-                        } else {
-                            // 无效跳转
-                        }
-                    } else if ((p->opn1.kind == ID) && (p->opn2.kind == LITERAL)) {
-                        if ((rn0 = search_var(funcname, p->opn1.id)) >= 0) {
+                        } else if ((rn0 = search_var(funcname, p->opn1.id)) == -2) {
+                            // 左操作数为全局变量
+
+                            // 必然可分配到 R11、R12 之一
+                            R_op1 = alloc_myreg();
+
+                            // 将全局变量值取到 R_op1 中
+                            ldrnode = create_ldrnode(R_op1, p->opn1.id, 0, 0);
+                            armlink_insert(newnode, ldrnode);
+                            ldrnode = create_ldrnode(R_op1, NULL, R_op1, 0);
+                            armlink_insert(newnode, ldrnode);
+
+                            // 将右操作数取到 R_op2 中
+                            if ((rn1 = search_var(funcname, p->opn2.id)) == -1) {
+                                // 右操作数为变量且溢出
+
+                                // 必然可分配到 R11、R12 之一
+                                R_op2 = alloc_myreg();
+
+                                // 将栈中变量取到 R_op2 中
+                                vartable_index = vartable_select(vartbl, p->opn2.id);
+                                ldrnode = create_ldrnode(R_op2, NULL, R13, vartbl->table[vartable_index].index);
+                                armlink_insert(newnode, ldrnode);
                             
+                            } else if ((rn1 = search_var(funcname, p->opn2.id)) == -2) {
+                                // 右操作数为全局变量
+
+                                // 必然可分配到 R11、R12 之一
+                                R_op2 = alloc_myreg();
+
+                                // 将全局变量值取到 R_op2 中
+                                ldrnode = create_ldrnode(R_op2, p->opn2.id, 0, 0);
+                                armlink_insert(newnode, ldrnode);
+                                ldrnode = create_ldrnode(R_op2, NULL, R_op2, 0);
+                                armlink_insert(newnode, ldrnode);
+
+                            } else if ((rn1 = search_var(funcname, p->opn2.id)) >= 0) {
+                                // 右操作数正常分配寄存器
+
+                                // 便于后续统一操作
+                                R_op2 = rn1;
+
+                            }
+
+                            // CMP 指令
                             newnode->op = CMP;
-                            
-                            Reg[rn0] = p->opn1.id;
                             newnode->oper1.type = REG;
-                            newnode->oper1.value = rn0;
+                            newnode->oper1.value = R_op1;
 
-                            newnode->oper2.type = IMME;
-                            newnode->oper2.value = p->opn2.const_int;
-                            //printf("CMP R%d, #%d", newnode->oper1.value, newnode->oper2.value);
-
-                            newnode = initnewnode();
-                            q->next = newnode;
-                            newnode->pre = q;
-                            q = newnode;
-
-                            newnode->op = B;
-                            newnode->flag = GT;
-                            newnode->result.type = STRING;
-                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
-                            //printf("BGT %s", newnode->result.str_id);
-
-                        } else {
-                            // TODO 左操作数为变量且溢出
-                        }
-                    } else if ((p->opn1.kind == LITERAL) && (p->opn2.kind == ID)) {
-                        if ((rn0 = search_var(funcname, p->opn2.id)) >= 0) {
-                            
-                            newnode->op = CMP;
-                            
-                            Reg[rn0] = p->opn2.id;
-                            newnode->oper1.type = REG;
-                            newnode->oper1.value = rn0;
-
-                            newnode->oper2.type = IMME;
-                            newnode->oper2.value = p->opn1.const_int;
-                            //printf("CMP R%d, #%d", newnode->oper1.value, newnode->oper2.value);
-
-                            newnode = initnewnode();
-                            q->next = newnode;
-                            newnode->pre = q;
-                            q = newnode;
-
-                            newnode->op = B;
-                            newnode->flag = LE;
-                            newnode->result.type = STRING;
-                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
-                            //printf("BLE %s", newnode->result.str_id);
-
-                        } else {
-                            // TODO 右操作数为变量且溢出
-                        }
-                    } else if ((p->opn1.kind == ID) && (p->opn2.kind == ID)) {
-                        if ((rn0 = search_var(funcname, p->opn1.id)) >= 0 && (rn1 = search_var(funcname, p->opn2.id)) >= 0) {
-                            newnode->op = CMP;
-
-                            Reg[rn0] = p->opn1.id;
-                            newnode->oper1.type = REG;
-                            newnode->oper1.value = rn0;
-
-                            Reg[rn1] = p->opn2.id;
                             newnode->oper2.type = REG;
-                            newnode->oper2.value = rn0;
-                            //printf("CMP R%d, R%d", newnode->oper1.value, newnode->oper2.value);
+                            newnode->oper2.value = R_op2;
 
+                            // 新建节点
                             newnode = initnewnode();
                             q->next = newnode;
                             newnode->pre = q;
                             q = newnode;
 
+                            // B 指令
                             newnode->op = B;
-                            newnode->flag = GT;
+                            newnode->flag = GE;
                             newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
-                            //printf("BGT %s", newnode->result.str_id);
-                        } else {
-                            // TODO 左右操作数为变量且存在溢出
+
+                        } else if ((rn0 = search_var(funcname, p->opn1.id)) >= 0 ) {
+                            // 左操作数正常分配寄存器
+
+                            R_op1 = rn0;
+
+                            // 将右操作数取到 R_op2 中
+                            if ((rn1 = search_var(funcname, p->opn2.id)) == -1) {
+                                // 右操作数为变量且溢出
+
+                                // 必然可分配到 R11、R12 之一
+                                R_op2 = alloc_myreg();
+
+                                // 将栈中变量取到 R_op2 中
+                                vartable_index = vartable_select(vartbl, p->opn2.id);
+                                ldrnode = create_ldrnode(R_op2, NULL, R13, vartbl->table[vartable_index].index);
+                                armlink_insert(newnode, ldrnode);
+                            
+                            } else if ((rn1 = search_var(funcname, p->opn2.id)) == -2) {
+                                // 右操作数为全局变量
+
+                                // 必然可分配到 R11、R12 之一
+                                R_op2 = alloc_myreg();
+
+                                // 将全局变量值取到 R_op2 中
+                                ldrnode = create_ldrnode(R_op2, p->opn2.id, 0, 0);
+                                armlink_insert(newnode, ldrnode);
+                                ldrnode = create_ldrnode(R_op2, NULL, R_op2, 0);
+                                armlink_insert(newnode, ldrnode);
+
+                            } else if ((rn1 = search_var(funcname, p->opn2.id)) >= 0) {
+                                // 右操作数正常分配寄存器
+
+                                // 便于后续统一操作
+                                R_op2 = rn1;
+
+                            }
+
+                            // CMP 指令
+                            newnode->op = CMP;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = R_op1;
+
+                            newnode->oper2.type = REG;
+                            newnode->oper2.value = R_op2;
+
+                            // 新建节点
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            // B 指令
+                            newnode->op = B;
+                            newnode->flag = GE;
+                            newnode->result.type = STRING;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
                         }
                     }
+                    init_myreg();
                     break;
 
                 case EQ:  // ==
@@ -2902,18 +3647,16 @@ armcode *translatearm(Blocks *blocks)
                         } else {
                             // 无效跳转
                         }
-                    } else if ((p->opn1.kind == ID) && (p->opn2.kind == LITERAL)) {
+                    }  else if ((p->opn1.kind == ID) && (p->opn2.kind == LITERAL)) {
                         if ((rn0 = search_var(funcname, p->opn1.id)) >= 0) {
                             
                             newnode->op = CMP;
                             
-                            Reg[rn0] = p->opn1.id;
                             newnode->oper1.type = REG;
                             newnode->oper1.value = rn0;
 
                             newnode->oper2.type = IMME;
                             newnode->oper2.value = p->opn2.const_int;
-                            //printf("CMP R%d, #%d", newnode->oper1.value, newnode->oper2.value);
 
                             newnode = initnewnode();
                             q->next = newnode;
@@ -2924,23 +3667,81 @@ armcode *translatearm(Blocks *blocks)
                             newnode->flag = EQU;
                             newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
-                            //printf("BEQ %s", newnode->result.str_id);
 
-                        } else {
-                            // TODO 左操作数为变量且溢出
+                        } else if ((rn0 = search_var(funcname, p->opn1.id)) == -1) {
+                            // 左操作数为变量且溢出
+
+                            // 必然可分配到 R11、R12 之一
+                            R_op1 = alloc_myreg();
+
+                            // 将栈中变量取到 R_op1 中
+                            vartable_index = vartable_select(vartbl, p->opn1.id);
+                            ldrnode = create_ldrnode(R_op1, NULL, R13, vartbl->table[vartable_index].index);
+                            armlink_insert(newnode, ldrnode);
+
+                            // CMP 指令
+                            newnode->op = CMP;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = R_op1;
+
+                            newnode->oper2.type = IMME;
+                            newnode->oper2.value = p->opn2.const_int;
+
+                            // 新建节点
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            // B 指令
+                            newnode->op = B;
+                            newnode->flag = EQU;
+                            newnode->result.type = STRING;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+
+                        } else if ((rn0 = search_var(funcname, p->opn1.id)) == -2) {
+                            // 左操作数为全局变量
+
+                            // 必然可分配到 R11、R12 之一
+                            R_op1 = alloc_myreg();
+
+                            // 将全局变量值取到 R_op1 中
+                            ldrnode = create_ldrnode(R_op1, p->opn1.id, 0, 0);
+                            armlink_insert(newnode,ldrnode);
+                            ldrnode = create_ldrnode(R_op1, NULL, R_op1, 0);
+                            armlink_insert(newnode,ldrnode);
+
+                            // CMP 指令
+                            newnode->op = CMP;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = R_op1;
+
+                            newnode->oper2.type = IMME;
+                            newnode->oper2.value = p->opn2.const_int;
+
+                            // 新建节点
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            // B 指令
+                            newnode->op = B;
+                            newnode->flag = EQU;
+                            newnode->result.type = STRING;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+                            
                         }
                     } else if ((p->opn1.kind == LITERAL) && (p->opn2.kind == ID)) {
                         if ((rn0 = search_var(funcname, p->opn2.id)) >= 0) {
                             
                             newnode->op = CMP;
                             
-                            Reg[rn0] = p->opn2.id;
                             newnode->oper1.type = REG;
                             newnode->oper1.value = rn0;
 
                             newnode->oper2.type = IMME;
                             newnode->oper2.value = p->opn1.const_int;
-                            //printf("CMP R%d, #%d", newnode->oper1.value, newnode->oper2.value);
 
                             newnode = initnewnode();
                             q->next = newnode;
@@ -2951,38 +3752,258 @@ armcode *translatearm(Blocks *blocks)
                             newnode->flag = EQU;
                             newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
-                            //printf("BEQ %s", newnode->result.str_id);
 
-                        } else {
-                            // TODO 右操作数为变量且溢出
+                        } else if ((rn0 = search_var(funcname, p->opn2.id)) == -1) {
+                            // 右操作数为变量且溢出
+
+                            // 必然可分配到 R11、R12 之一
+                            R_op2 = alloc_myreg();
+
+                            // 将栈中变量取到 R_op2 中
+                            vartable_index = vartable_select(vartbl, p->opn2.id);
+                            ldrnode = create_ldrnode(R_op2, NULL, R13, vartbl->table[vartable_index].index);
+                            armlink_insert(newnode, ldrnode);
+
+                            // CMP 指令
+                            newnode->op = CMP;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = R_op2;
+
+                            newnode->oper2.type = IMME;
+                            newnode->oper2.value = p->opn1.const_int;
+
+                            // 新建节点
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            // B 指令
+                            newnode->op = B;
+                            newnode->flag = EQU;
+                            newnode->result.type = STRING;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+
+                        } else if ((rn0 = search_var(funcname, p->opn2.id)) == -2) {
+                            // 右操作数为全局变量
+
+                            // 必然可分配到 R11、R12 之一
+                            R_op2 = alloc_myreg();
+
+                            // 将全局变量值取到 R_op2 中
+                            ldrnode = create_ldrnode(R_op2, p->opn2.id, 0, 0);
+                            armlink_insert(newnode, ldrnode);
+                            ldrnode = create_ldrnode(R_op2, NULL, R_op2, 0);
+                            armlink_insert(newnode, ldrnode);
+
+                            // CMP 指令
+                            newnode->op = CMP;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = R_op2;
+
+                            newnode->oper2.type = IMME;
+                            newnode->oper2.value = p->opn1.const_int;
+
+                            // 新建节点
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            // B 指令
+                            newnode->op = B;
+                            newnode->flag = EQU;
+                            newnode->result.type = STRING;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+
                         }
                     } else if ((p->opn1.kind == ID) && (p->opn2.kind == ID)) {
-                        if ((rn0 = search_var(funcname, p->opn1.id)) >= 0 && (rn1 = search_var(funcname, p->opn2.id)) >= 0) {
+                        if ((rn0 = search_var(funcname, p->opn1.id)) == -1) {
+                            // 左操作数为变量且溢出
+
+                            // 必然可分配到 R11、R12 之一
+                            R_op1 = alloc_myreg();
+
+                            // 将栈中变量取到 R_op1 中
+                            vartable_index = vartable_select(vartbl, p->opn1.id);
+                            ldrnode = create_ldrnode(R_op1, NULL, R13, vartbl->table[vartable_index].index);
+                            armlink_insert(newnode, ldrnode);
+
+                            // 将右操作数取到 R_op2 中
+                            if ((rn1 = search_var(funcname, p->opn2.id)) == -1) {
+                                // 右操作数为变量且溢出
+
+                                // 必然可分配到 R11、R12 之一
+                                R_op2 = alloc_myreg();
+
+                                // 将栈中变量取到 R_op2 中
+                                vartable_index = vartable_select(vartbl, p->opn2.id);
+                                ldrnode = create_ldrnode(R_op2, NULL, R13, vartbl->table[vartable_index].index);
+                                armlink_insert(newnode, ldrnode);
+                            
+                            } else if ((rn1 = search_var(funcname, p->opn2.id)) == -2) {
+                                // 右操作数为全局变量
+
+                                // 必然可分配到 R11、R12 之一
+                                R_op2 = alloc_myreg();
+
+                                // 将全局变量值取到 R_op2 中
+                                ldrnode = create_ldrnode(R_op2, p->opn2.id, 0, 0);
+                                armlink_insert(newnode, ldrnode);
+                                ldrnode = create_ldrnode(R_op2, NULL, R_op2, 0);
+                                armlink_insert(newnode, ldrnode);
+
+                            } else if ((rn1 = search_var(funcname, p->opn2.id)) >= 0) {
+                                // 右操作数正常分配寄存器
+
+                                // 便于后续统一操作
+                                R_op2 = rn1;
+
+                            }
+
+                            // CMP 指令
                             newnode->op = CMP;
-
-                            Reg[rn0] = p->opn1.id;
                             newnode->oper1.type = REG;
-                            newnode->oper1.value = rn0;
+                            newnode->oper1.value = R_op1;
 
-                            Reg[rn1] = p->opn2.id;
                             newnode->oper2.type = REG;
-                            newnode->oper2.value = rn0;
-                            //printf("CMP R%d, R%d", newnode->oper1.value, newnode->oper2.value);
+                            newnode->oper2.value = R_op2;
 
+                            // 新建节点
                             newnode = initnewnode();
                             q->next = newnode;
                             newnode->pre = q;
                             q = newnode;
 
+                            // B 指令
                             newnode->op = B;
                             newnode->flag = EQU;
                             newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
-                            //printf("BEQ %s", newnode->result.str_id);
-                        } else {
-                            // TODO 左右操作数为变量且存在溢出
+
+                        } else if ((rn0 = search_var(funcname, p->opn1.id)) == -2) {
+                            // 左操作数为全局变量
+
+                            // 必然可分配到 R11、R12 之一
+                            R_op1 = alloc_myreg();
+
+                            // 将全局变量值取到 R_op1 中
+                            ldrnode = create_ldrnode(R_op1, p->opn1.id, 0, 0);
+                            armlink_insert(newnode, ldrnode);
+                            ldrnode = create_ldrnode(R_op1, NULL, R_op1, 0);
+                            armlink_insert(newnode, ldrnode);
+
+                            // 将右操作数取到 R_op2 中
+                            if ((rn1 = search_var(funcname, p->opn2.id)) == -1) {
+                                // 右操作数为变量且溢出
+
+                                // 必然可分配到 R11、R12 之一
+                                R_op2 = alloc_myreg();
+
+                                // 将栈中变量取到 R_op2 中
+                                vartable_index = vartable_select(vartbl, p->opn2.id);
+                                ldrnode = create_ldrnode(R_op2, NULL, R13, vartbl->table[vartable_index].index);
+                                armlink_insert(newnode, ldrnode);
+                            
+                            } else if ((rn1 = search_var(funcname, p->opn2.id)) == -2) {
+                                // 右操作数为全局变量
+
+                                // 必然可分配到 R11、R12 之一
+                                R_op2 = alloc_myreg();
+
+                                // 将全局变量值取到 R_op2 中
+                                ldrnode = create_ldrnode(R_op2, p->opn2.id, 0, 0);
+                                armlink_insert(newnode, ldrnode);
+                                ldrnode = create_ldrnode(R_op2, NULL, R_op2, 0);
+                                armlink_insert(newnode, ldrnode);
+
+                            } else if ((rn1 = search_var(funcname, p->opn2.id)) >= 0) {
+                                // 右操作数正常分配寄存器
+
+                                // 便于后续统一操作
+                                R_op2 = rn1;
+
+                            }
+
+                            // CMP 指令
+                            newnode->op = CMP;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = R_op1;
+
+                            newnode->oper2.type = REG;
+                            newnode->oper2.value = R_op2;
+
+                            // 新建节点
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            // B 指令
+                            newnode->op = B;
+                            newnode->flag = EQU;
+                            newnode->result.type = STRING;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+
+                        } else if ((rn0 = search_var(funcname, p->opn1.id)) >= 0 ) {
+                            // 左操作数正常分配寄存器
+
+                            R_op1 = rn0;
+
+                            // 将右操作数取到 R_op2 中
+                            if ((rn1 = search_var(funcname, p->opn2.id)) == -1) {
+                                // 右操作数为变量且溢出
+
+                                // 必然可分配到 R11、R12 之一
+                                R_op2 = alloc_myreg();
+
+                                // 将栈中变量取到 R_op2 中
+                                vartable_index = vartable_select(vartbl, p->opn2.id);
+                                ldrnode = create_ldrnode(R_op2, NULL, R13, vartbl->table[vartable_index].index);
+                                armlink_insert(newnode, ldrnode);
+                            
+                            } else if ((rn1 = search_var(funcname, p->opn2.id)) == -2) {
+                                // 右操作数为全局变量
+
+                                // 必然可分配到 R11、R12 之一
+                                R_op2 = alloc_myreg();
+
+                                // 将全局变量值取到 R_op2 中
+                                ldrnode = create_ldrnode(R_op2, p->opn2.id, 0, 0);
+                                armlink_insert(newnode, ldrnode);
+                                ldrnode = create_ldrnode(R_op2, NULL, R_op2, 0);
+                                armlink_insert(newnode, ldrnode);
+
+                            } else if ((rn1 = search_var(funcname, p->opn2.id)) >= 0) {
+                                // 右操作数正常分配寄存器
+
+                                // 便于后续统一操作
+                                R_op2 = rn1;
+
+                            }
+
+                            // CMP 指令
+                            newnode->op = CMP;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = R_op1;
+
+                            newnode->oper2.type = REG;
+                            newnode->oper2.value = R_op2;
+
+                            // 新建节点
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            // B 指令
+                            newnode->op = B;
+                            newnode->flag = EQU;
+                            newnode->result.type = STRING;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
                         }
                     }
+                    init_myreg();
                     break;
 
                 case NEQ: // !=
@@ -2995,18 +4016,16 @@ armcode *translatearm(Blocks *blocks)
                         } else {
                             // 无效跳转
                         }
-                    } else if ((p->opn1.kind == ID) && (p->opn2.kind == LITERAL)) {
+                    }  else if ((p->opn1.kind == ID) && (p->opn2.kind == LITERAL)) {
                         if ((rn0 = search_var(funcname, p->opn1.id)) >= 0) {
                             
                             newnode->op = CMP;
                             
-                            Reg[rn0] = p->opn1.id;
                             newnode->oper1.type = REG;
                             newnode->oper1.value = rn0;
 
                             newnode->oper2.type = IMME;
                             newnode->oper2.value = p->opn2.const_int;
-                            //printf("CMP R%d, #%d", newnode->oper1.value, newnode->oper2.value);
 
                             newnode = initnewnode();
                             q->next = newnode;
@@ -3017,23 +4036,81 @@ armcode *translatearm(Blocks *blocks)
                             newnode->flag = NE;
                             newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
-                            //printf("BNE %s", newnode->result.str_id);
 
-                        } else {
-                            // TODO 左操作数为变量且溢出
+                        } else if ((rn0 = search_var(funcname, p->opn1.id)) == -1) {
+                            // 左操作数为变量且溢出
+
+                            // 必然可分配到 R11、R12 之一
+                            R_op1 = alloc_myreg();
+
+                            // 将栈中变量取到 R_op1 中
+                            vartable_index = vartable_select(vartbl, p->opn1.id);
+                            ldrnode = create_ldrnode(R_op1, NULL, R13, vartbl->table[vartable_index].index);
+                            armlink_insert(newnode, ldrnode);
+
+                            // CMP 指令
+                            newnode->op = CMP;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = R_op1;
+
+                            newnode->oper2.type = IMME;
+                            newnode->oper2.value = p->opn2.const_int;
+
+                            // 新建节点
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            // B 指令
+                            newnode->op = B;
+                            newnode->flag = NE;
+                            newnode->result.type = STRING;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+
+                        } else if ((rn0 = search_var(funcname, p->opn1.id)) == -2) {
+                            // 左操作数为全局变量
+
+                            // 必然可分配到 R11、R12 之一
+                            R_op1 = alloc_myreg();
+
+                            // 将全局变量值取到 R_op1 中
+                            ldrnode = create_ldrnode(R_op1, p->opn1.id, 0, 0);
+                            armlink_insert(newnode,ldrnode);
+                            ldrnode = create_ldrnode(R_op1, NULL, R_op1, 0);
+                            armlink_insert(newnode,ldrnode);
+
+                            // CMP 指令
+                            newnode->op = CMP;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = R_op1;
+
+                            newnode->oper2.type = IMME;
+                            newnode->oper2.value = p->opn2.const_int;
+
+                            // 新建节点
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            // B 指令
+                            newnode->op = B;
+                            newnode->flag = NE;
+                            newnode->result.type = STRING;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+                            
                         }
                     } else if ((p->opn1.kind == LITERAL) && (p->opn2.kind == ID)) {
                         if ((rn0 = search_var(funcname, p->opn2.id)) >= 0) {
                             
                             newnode->op = CMP;
                             
-                            Reg[rn0] = p->opn2.id;
                             newnode->oper1.type = REG;
                             newnode->oper1.value = rn0;
 
                             newnode->oper2.type = IMME;
                             newnode->oper2.value = p->opn1.const_int;
-                            //printf("CMP R%d, #%d", newnode->oper1.value, newnode->oper2.value);
 
                             newnode = initnewnode();
                             q->next = newnode;
@@ -3044,38 +4121,258 @@ armcode *translatearm(Blocks *blocks)
                             newnode->flag = NE;
                             newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
-                            //printf("BNE %s", newnode->result.str_id);
 
-                        } else {
-                            // TODO 右操作数为变量且溢出
+                        } else if ((rn0 = search_var(funcname, p->opn2.id)) == -1) {
+                            // 右操作数为变量且溢出
+
+                            // 必然可分配到 R11、R12 之一
+                            R_op2 = alloc_myreg();
+
+                            // 将栈中变量取到 R_op2 中
+                            vartable_index = vartable_select(vartbl, p->opn2.id);
+                            ldrnode = create_ldrnode(R_op2, NULL, R13, vartbl->table[vartable_index].index);
+                            armlink_insert(newnode, ldrnode);
+
+                            // CMP 指令
+                            newnode->op = CMP;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = R_op2;
+
+                            newnode->oper2.type = IMME;
+                            newnode->oper2.value = p->opn1.const_int;
+
+                            // 新建节点
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            // B 指令
+                            newnode->op = B;
+                            newnode->flag = NE;
+                            newnode->result.type = STRING;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+
+                        } else if ((rn0 = search_var(funcname, p->opn2.id)) == -2) {
+                            // 右操作数为全局变量
+
+                            // 必然可分配到 R11、R12 之一
+                            R_op2 = alloc_myreg();
+
+                            // 将全局变量值取到 R_op2 中
+                            ldrnode = create_ldrnode(R_op2, p->opn2.id, 0, 0);
+                            armlink_insert(newnode, ldrnode);
+                            ldrnode = create_ldrnode(R_op2, NULL, R_op2, 0);
+                            armlink_insert(newnode, ldrnode);
+
+                            // CMP 指令
+                            newnode->op = CMP;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = R_op2;
+
+                            newnode->oper2.type = IMME;
+                            newnode->oper2.value = p->opn1.const_int;
+
+                            // 新建节点
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            // B 指令
+                            newnode->op = B;
+                            newnode->flag = NE;
+                            newnode->result.type = STRING;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+
                         }
                     } else if ((p->opn1.kind == ID) && (p->opn2.kind == ID)) {
-                        if ((rn0 = search_var(funcname, p->opn1.id)) >= 0 && (rn1 = search_var(funcname, p->opn2.id)) >= 0) {
+                        if ((rn0 = search_var(funcname, p->opn1.id)) == -1) {
+                            // 左操作数为变量且溢出
+
+                            // 必然可分配到 R11、R12 之一
+                            R_op1 = alloc_myreg();
+
+                            // 将栈中变量取到 R_op1 中
+                            vartable_index = vartable_select(vartbl, p->opn1.id);
+                            ldrnode = create_ldrnode(R_op1, NULL, R13, vartbl->table[vartable_index].index);
+                            armlink_insert(newnode, ldrnode);
+
+                            // 将右操作数取到 R_op2 中
+                            if ((rn1 = search_var(funcname, p->opn2.id)) == -1) {
+                                // 右操作数为变量且溢出
+
+                                // 必然可分配到 R11、R12 之一
+                                R_op2 = alloc_myreg();
+
+                                // 将栈中变量取到 R_op2 中
+                                vartable_index = vartable_select(vartbl, p->opn2.id);
+                                ldrnode = create_ldrnode(R_op2, NULL, R13, vartbl->table[vartable_index].index);
+                                armlink_insert(newnode, ldrnode);
+                            
+                            } else if ((rn1 = search_var(funcname, p->opn2.id)) == -2) {
+                                // 右操作数为全局变量
+
+                                // 必然可分配到 R11、R12 之一
+                                R_op2 = alloc_myreg();
+
+                                // 将全局变量值取到 R_op2 中
+                                ldrnode = create_ldrnode(R_op2, p->opn2.id, 0, 0);
+                                armlink_insert(newnode, ldrnode);
+                                ldrnode = create_ldrnode(R_op2, NULL, R_op2, 0);
+                                armlink_insert(newnode, ldrnode);
+
+                            } else if ((rn1 = search_var(funcname, p->opn2.id)) >= 0) {
+                                // 右操作数正常分配寄存器
+
+                                // 便于后续统一操作
+                                R_op2 = rn1;
+
+                            }
+
+                            // CMP 指令
                             newnode->op = CMP;
-
-                            Reg[rn0] = p->opn1.id;
                             newnode->oper1.type = REG;
-                            newnode->oper1.value = rn0;
+                            newnode->oper1.value = R_op1;
 
-                            Reg[rn1] = p->opn2.id;
                             newnode->oper2.type = REG;
-                            newnode->oper2.value = rn0;
-                            //printf("CMP R%d, R%d", newnode->oper1.value, newnode->oper2.value);
+                            newnode->oper2.value = R_op2;
 
+                            // 新建节点
                             newnode = initnewnode();
                             q->next = newnode;
                             newnode->pre = q;
                             q = newnode;
 
+                            // B 指令
                             newnode->op = B;
                             newnode->flag = NE;
                             newnode->result.type = STRING;
                             strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
-                            //printf("BNE %s", newnode->result.str_id);
-                        } else {
-                            // TODO 左右操作数为变量且存在溢出
+
+                        } else if ((rn0 = search_var(funcname, p->opn1.id)) == -2) {
+                            // 左操作数为全局变量
+
+                            // 必然可分配到 R11、R12 之一
+                            R_op1 = alloc_myreg();
+
+                            // 将全局变量值取到 R_op1 中
+                            ldrnode = create_ldrnode(R_op1, p->opn1.id, 0, 0);
+                            armlink_insert(newnode, ldrnode);
+                            ldrnode = create_ldrnode(R_op1, NULL, R_op1, 0);
+                            armlink_insert(newnode, ldrnode);
+
+                            // 将右操作数取到 R_op2 中
+                            if ((rn1 = search_var(funcname, p->opn2.id)) == -1) {
+                                // 右操作数为变量且溢出
+
+                                // 必然可分配到 R11、R12 之一
+                                R_op2 = alloc_myreg();
+
+                                // 将栈中变量取到 R_op2 中
+                                vartable_index = vartable_select(vartbl, p->opn2.id);
+                                ldrnode = create_ldrnode(R_op2, NULL, R13, vartbl->table[vartable_index].index);
+                                armlink_insert(newnode, ldrnode);
+                            
+                            } else if ((rn1 = search_var(funcname, p->opn2.id)) == -2) {
+                                // 右操作数为全局变量
+
+                                // 必然可分配到 R11、R12 之一
+                                R_op2 = alloc_myreg();
+
+                                // 将全局变量值取到 R_op2 中
+                                ldrnode = create_ldrnode(R_op2, p->opn2.id, 0, 0);
+                                armlink_insert(newnode, ldrnode);
+                                ldrnode = create_ldrnode(R_op2, NULL, R_op2, 0);
+                                armlink_insert(newnode, ldrnode);
+
+                            } else if ((rn1 = search_var(funcname, p->opn2.id)) >= 0) {
+                                // 右操作数正常分配寄存器
+
+                                // 便于后续统一操作
+                                R_op2 = rn1;
+
+                            }
+
+                            // CMP 指令
+                            newnode->op = CMP;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = R_op1;
+
+                            newnode->oper2.type = REG;
+                            newnode->oper2.value = R_op2;
+
+                            // 新建节点
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            // B 指令
+                            newnode->op = B;
+                            newnode->flag = NE;
+                            newnode->result.type = STRING;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
+
+                        } else if ((rn0 = search_var(funcname, p->opn1.id)) >= 0 ) {
+                            // 左操作数正常分配寄存器
+
+                            R_op1 = rn0;
+
+                            // 将右操作数取到 R_op2 中
+                            if ((rn1 = search_var(funcname, p->opn2.id)) == -1) {
+                                // 右操作数为变量且溢出
+
+                                // 必然可分配到 R11、R12 之一
+                                R_op2 = alloc_myreg();
+
+                                // 将栈中变量取到 R_op2 中
+                                vartable_index = vartable_select(vartbl, p->opn2.id);
+                                ldrnode = create_ldrnode(R_op2, NULL, R13, vartbl->table[vartable_index].index);
+                                armlink_insert(newnode, ldrnode);
+                            
+                            } else if ((rn1 = search_var(funcname, p->opn2.id)) == -2) {
+                                // 右操作数为全局变量
+
+                                // 必然可分配到 R11、R12 之一
+                                R_op2 = alloc_myreg();
+
+                                // 将全局变量值取到 R_op2 中
+                                ldrnode = create_ldrnode(R_op2, p->opn2.id, 0, 0);
+                                armlink_insert(newnode, ldrnode);
+                                ldrnode = create_ldrnode(R_op2, NULL, R_op2, 0);
+                                armlink_insert(newnode, ldrnode);
+
+                            } else if ((rn1 = search_var(funcname, p->opn2.id)) >= 0) {
+                                // 右操作数正常分配寄存器
+
+                                // 便于后续统一操作
+                                R_op2 = rn1;
+
+                            }
+
+                            // CMP 指令
+                            newnode->op = CMP;
+                            newnode->oper1.type = REG;
+                            newnode->oper1.value = R_op1;
+
+                            newnode->oper2.type = REG;
+                            newnode->oper2.value = R_op2;
+
+                            // 新建节点
+                            newnode = initnewnode();
+                            q->next = newnode;
+                            newnode->pre = q;
+                            q = newnode;
+
+                            // B 指令
+                            newnode->op = B;
+                            newnode->flag = NE;
+                            newnode->result.type = STRING;
+                            strcpy(newnode->result.str_id, uid_to_label(p->result.const_int));
                         }
                     }
+                    init_myreg();
                     break;
 
                 default:
