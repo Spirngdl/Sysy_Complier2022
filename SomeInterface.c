@@ -136,7 +136,7 @@ void insert_param(Blocks *head)
 int search_alias(char *alias)
 {
     int i;
-    for (i = symbolTable.index - 1; i >= 0; i--)
+    for (i = symbolTable.index - 1; i >= 20; i--)
     {
         if (strcmp(symbolTable.symbols[i].alias, alias) == 0) //找到了，可能是全局变量或者形式参数
         {

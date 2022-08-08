@@ -262,7 +262,7 @@ char *str_catch(char *s1, char *s2)
 
 char *newAlias() //
 {
-    static int no = 1;
+    static int no = 0;
     char s[10];
     snprintf(s, 10, "%d", no++);
     // itoa(no++, s, 10);

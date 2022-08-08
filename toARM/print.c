@@ -180,14 +180,13 @@ void printarm(armcode *armnode, FILE *fp)
             break;
 
         case B:
-            // fprintf(fp,"\tB%s %s\n",flag[p->flag-EQU],p->result.str_id);
-            if (p->flag == 0)
+            if(p->flag == 0)
             {
-                fprintf(fp, "\tB %s\n", p->result.str_id);
+                fprintf(fp,"\tB %s\n",p->result.str_id);
             }
             else
             {
-                fprintf(fp, "\tB%s %s\n", flag[p->flag - EQU], p->result.str_id);
+                fprintf(fp,"\tB%s %s\n",flag[p->flag-EQU],p->result.str_id);
             }
             break;
 
