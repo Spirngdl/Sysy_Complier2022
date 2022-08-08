@@ -31,7 +31,8 @@ armcode *search_global_var()
                 armcode *vnode = traverse_List(sym.value, arysize);
                 p->next = vnode;
                 vnode->pre = p;
-                while (vnode->next)
+                
+                while(vnode->next != NULL)
                 {
                     vnode = vnode->next;
                 }
