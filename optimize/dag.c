@@ -16,6 +16,7 @@ DAGnode *create_dagnode()
     newnode->isKilled = false;
     newnode->kind = -1;
     newnode->ID = DAG_ID++;
+    newnode->arrOptSerial = newnode->callOptSerial = 100;
     return newnode;
 }
 DAG *creat_dag()
@@ -249,9 +250,9 @@ bool isLiteralNode(DAG *dag, char *symbol)
     return false;
 }
 //取得一个字面常量结点所表示的常量值
-int getLiteral(DAG *dag, char *symbol)
-{
-}
+// int getLiteral(DAG *dag, char *symbol)
+// {
+// }
 /**
  * @brief 判断节点n是否有活跃变量节点
  *
@@ -387,50 +388,7 @@ int readquad(DAG *dag, struct codenode **T)
     default:
         break;
     }
-
-    // if (T->op == GOTO || T->op == TOK_RETURN)
-    // {
-    //     if (dag->jumperRec == NULL)
-    //     {
-    //         T->prior = T;
-    //         dag->jumperRec = T;
-    //     }
-    //     else
-    //     {
-    //         dag->jumperRec->next = T;
-    //         dag->jumperRec->prior = T;
-    //         T->prior = dag->jumperRec;
-    //     }
-    //     return 0;
-    // }
-    // if (T->op == FUNCTION)
-    // {
-    //     dag->functionrec = T;
-    //     // T->next = NULL;
-    //     return 0;
-    // }
-    // if (T->op == END)
-    // {
-    //     dag->endfunction = T;
-    //     // T->prior = NULL;
-    //     return 0;
-    // }
-    // if (T->op == TOK_ASSIGN)
-    // {
-    //     return readquad0(dag, T);
-    // }
-    // else if (T->op == TOK_ADD || T->op == TOK_SUB || T->op == TOK_DIV || T->op == TOK_MUL || T->op == TOK_MODULO || T->op == EXP_ARRAY || T->op == JLE || T->op == JLT || T->op == JGE || T->op == JGT || T->op == EQ || T->op == NEQ)
-    // {
-    //     return readquad2(dag, T);
-    // }
-    // else if (T->op == ARRAY_ASSIGN) // 数组赋值
-    // {
-    //     return readquad3(dag, T);
-    // }
-    // else if (T->op == ARG || T->op == CALL) //函数调用
-    // {
-    //     return readquad4(dag, T);
-    // }
+    return 0;
 }
 //赋值
 int readquad0(DAG *dag, struct codenode *T) // 0型暂时不考虑数组
@@ -643,7 +601,7 @@ int readquad2(DAG *dag, struct codenode *T)
             }
             else if (type == TOK_FLOAT)
             {
-                n->kind == FLOAT_LITERAL;
+                n->kind = FLOAT_LITERAL;
                 n->v_float = val;
             }
             dag->nodes->push_back(dag->nodes, n);
@@ -882,6 +840,7 @@ int readquad3(DAG *dag, struct codenode *T)
         if (node->left != NULL && node->left->ID == index)
             node->isKilled = true;
     }
+    return 0;
 }
 /**
  * @brief 处理函数调用，计划是一个CALL节点，symlist为左值，right为函数名，left为ARG列表

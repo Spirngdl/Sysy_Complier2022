@@ -1692,8 +1692,8 @@ armcode *translatearm(Blocks *blocks)
     char regname[10]={0};
     int reg[1];
     // char labelname[33];
-    int paranum, spil_var_num;
-    armcode *snode, *subnode, *addnode, *strnode, *ldrnode, *movnode, *ldmnode, *bnode;
+    int paranum,spil_var_num;
+    armcode *snode,*subnode,*addnode,*strnode,*ldrnode,*movnode,*ldmnode,*bnode,*enode;
     Blocks *cur_blocks = blocks;
     struct codenode *result = NULL;
     while (cur_blocks != NULL) //遍历所有基本块
@@ -2473,12 +2473,14 @@ armcode *translatearm(Blocks *blocks)
                         q = gnode;
                     }
 
-                    newnode->op = ENDLABEL;
-                    newnode->result.type = STRING;
-                    strcpy(newnode->result.str_id,funcname);
-                    newnode->pre = q;
-                    q->next = newnode;
-                    q = newnode;
+                    enode = initnewnode();
+
+                    enode->op = ENDLABEL;
+                    enode->result.type = STRING;
+                    strcpy(enode->result.str_id,funcname);
+                    enode->pre = q;
+                    q->next = enode;
+                    q = enode;
                    
 
                     free(vartbl);

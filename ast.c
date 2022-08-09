@@ -161,9 +161,10 @@ struct node *mkconstnode(int kind, struct node *first, int pos, char *name)
 struct node *mkunarynode(int kind, struct node *first, struct node *second, int pos)
 {
     struct node *T = mknode(kind, NULL, NULL, NULL, pos);
+
     if (second->kind == LITERAL)
     {
-        T->kind = LITERAL;
+        T->kind = second->kind;
         if (first->kind == TOK_ADD)
         {
             T->type_int = second->type_int;
@@ -180,7 +181,7 @@ struct node *mkunarynode(int kind, struct node *first, struct node *second, int 
     }
     else if (second->kind == FLOAT_LITERAL)
     {
-        T->kind == FLOAT_LITERAL;
+        T->kind = second->kind;
         if (first->kind == TOK_ADD)
         {
             T->type_float = second->type_float;

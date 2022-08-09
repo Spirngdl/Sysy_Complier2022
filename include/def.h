@@ -137,7 +137,7 @@ struct codenode
 
 struct node
 {
-    enum node_kind kind; //结点类型
+    int kind; //结点类型
     int type;
     union
     {

@@ -931,7 +931,7 @@ void assignop_exp(struct node *T)
                 opn1.kind = FLOAT_LITERAL;
                 opn1.const_int = T->ptr[1]->type_float;
             }
-            else if (T->ptr[0]->type = TOK_FLOAT)
+            else if (T->ptr[0]->type == TOK_FLOAT)
             {
                 opn1.kind = FLOAT_LITERAL;
                 opn1.const_float = T->ptr[1]->type_float;
@@ -1073,7 +1073,7 @@ int exp_index(struct node *T, int index, int width[]) //处理数组引用的下
         if (T->ptr[1] != NULL) // 有下一维.
         {
             int temp_place = exp_index(T->ptr[1], index + 1, width);
-            if (symbolTable.symbols[temp_place].type = LITERAL)
+            if (symbolTable.symbols[temp_place].type == LITERAL)
             {
                 result.const_int = offset * T->ptr[0]->type_int + symbolTable.symbols[temp_place].array_dimension;
                 symbolTable.symbols[place].array_dimension = result.const_int;

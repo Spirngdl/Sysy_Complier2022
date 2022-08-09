@@ -1,5 +1,3 @@
-#include "../include/def.h"
-
 // 根据变量别名去查询符号表中的位置i（此时，符号表仅存全局变量）
 /*int search_alias(char *alias)
 {
@@ -73,16 +71,23 @@ void one_block_use_def (char* use[], char* def[], int size, Block block, char* f
                 gobal_cnt++;
             }
         }
+        if (p->op == CALL) {
+            if (p->result.kind == ID && search_alias(p->result.id) != -1 && exist_gobal(p->result.id, fun_name, gobal_cnt) == 0) {
+                strcpy(gobals[gobal_cnt].name, p->result.id);
+                strcpy(gobals[gobal_cnt].fun_name, fun_name);
+                gobal_cnt++;
+            }
+        }
             
         // LDR语句
-        /*if (p->op == TOK_LDR) {
+        if (p->op == TOK_LDR) {
             if (p->result.kind == ID) {
                 if (!id_exist_strs(p->result.id, param, param, param_num) && !id_exist_strs(p->result.id, use, def, size) && search_alias(p->result.id) == -1 && _search_var(fun_name, p->result.id) == -2) {
                     def[def_num] = p->result.id;
                     def_num++;
                 }
             }
-        }*/
+        }
         // return返回语句
         if (p->op == TOK_RETURN) {
             if (p->result.kind == ID) {
@@ -426,7 +431,7 @@ void one_block_tac_liveness (Block* cntr, char* block_in[], char* block_out[], c
     // 此时分配寄存器已考虑块间变量占用的问题
     graph_coloring(in, out, num_tac, reg_cnt, fun_add, reg);
     
-    /*for (i = 0; i < num_tac; i++) {
+    for (i = 0; i < num_tac; i++) {
         free(use[i]);
         free(def[i]);
         free(in[i]);
@@ -435,7 +440,7 @@ void one_block_tac_liveness (Block* cntr, char* block_in[], char* block_out[], c
     free(def);
     free(use);
     free(in);
-    free(out);*/
+    free(out);
 }
 
 void get_param (char* param[], int* param_num, Block block) {
@@ -578,7 +583,7 @@ void all_block_liveness (Block* cntr[], int num_block, char* fun_add) {
         one_block_tac_liveness(cntr[i], in[i], out[i], fun_add, param, param_num);
     }
     
-    /*for (i = 0; i < num_block; i++) {
+    for (i = 0; i < num_block; i++) {
         free(use[i]);
         free(def[i]);
         free(in[i]);
@@ -587,7 +592,7 @@ void all_block_liveness (Block* cntr[], int num_block, char* fun_add) {
     free(def);
     free(use);
     free(in);
-    free(out);*/
+    free(out);
 }
 
 // 遍历所有的函数，对每一个函数进行liveness分析与寄存器分配
@@ -618,14 +623,14 @@ void _one_block_use_def (char* use[], char* def[], int size, Block block) {
     while (p != NULL) {
 
         // LDR语句
-        /*if (p->op == TOK_LDR) {
+        if (p->op == TOK_LDR) {
             if (p->result.kind == ID) {
                 if (!id_exist_strs(p->result.id, use, def, size)) {
                     def[def_num] = p->result.id;
                     def_num++;
                 }
             }
-        }*/
+        }
         // return返回语句
         if (p->op == TOK_RETURN) {
             if (p->result.kind == ID) {
@@ -899,6 +904,17 @@ int search_out (char* fun_name, int block_index, char* _out[]) {
             _cnt++;
         }
     }
+
+    for (i = 0; i < num_block; i++) {
+        free(use[i]);
+        free(def[i]);
+        free(in[i]);
+        free(out[i]);
+    }
+    free(def);
+    free(use);
+    free(in);
+    free(out);
 
     return _cnt;
 }

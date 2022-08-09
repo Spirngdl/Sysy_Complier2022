@@ -23,12 +23,12 @@ void one_const_var (struct codenode* const_var) {
             break;
         }
         if (p->opn1.id == const_var->result.id) {
-            p->opn1.kind == LITERAL;
-            p->opn1.const_int == const_var->opn1.const_int;
+            p->opn1.kind = LITERAL;
+            p->opn1.const_int = const_var->opn1.const_int;
         }
         if (p->opn2.id == const_var->result.id) {
-            p->opn2.kind == LITERAL;
-            p->opn2.const_int == const_var->opn1.const_int;
+            p->opn2.kind = LITERAL;
+            p->opn2.const_int = const_var->opn1.const_int;
         }
         // 若出现 B = 13 + 14，则进行计算
         if (p->opn1.kind == LITERAL && p->opn2.kind == LITERAL) {
@@ -68,9 +68,9 @@ void one_const_array (struct codenode* const_array) {
         }
         // 数组引用有且仅有ARRAY_EXP指令
         if (p->op == ARRAY_EXP && p->opn1.id == const_array->result.id && p->opn2.const_int == const_array->opn1.const_int) {
-            p->op == TOK_ASSIGN;
-            p->opn1.kind == LITERAL;
-            p->opn1.const_int == const_array->opn2.const_int;
+            p->op = TOK_ASSIGN;
+            p->opn1.kind = LITERAL;
+            p->opn1.const_int = const_array->opn2.const_int;
         }
         p = p->next;
     }
