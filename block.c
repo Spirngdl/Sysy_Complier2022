@@ -218,7 +218,8 @@ void add_label_block(Blocks *head)
         int count = cur->count;
         if (count > 1) //如果只有一块，那没有跳转，不需要
         {
-            for (int i = 0; i < count; i++)
+            //0一般是FUNCTION
+            for (int i = 1; i < count; i++)
             {
                 int uid = cur->block[i]->tac_list->UID;
                 char *label = Label_();

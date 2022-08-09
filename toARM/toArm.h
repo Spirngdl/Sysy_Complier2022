@@ -131,11 +131,11 @@ armcode *traverse_List(List *value_list, int arysize);
 armcode *gvar_node_list(int func_gvar_num, char **gvartable);
 armcode *gvar_node(char **gvartable, int i, int func_index);
 
-armcode *create_ldrnode(int Rn, char *gvarname, int Rm, int index);
-void init_strnode(armcode *snode, int R_res, int Rm, int index, int indexkind);
-armcode *create_movnode(int R_res, optype type, int value);
-armcode *create_strnode(int Rn, int Rm, int index);
-armcode *create_addnode(int R_res, optype type_op1, int op1, int type_op2, int op2);
+armcode * create_ldrnode(int Rn,char * gvarname,int Rm,int index);
+void init_strnode(armcode * snode,int R_res,int Rm,int index,int indexkind);
+armcode * create_movnode(int R_res,optype type,int value);
+armcode* create_strnode(int Rn,int Rm,int index);
+armcode * create_addnode(int R_res,optype type_op1,int op1,int type_op2,int op2);
 
 void init_myreg();
 int alloc_myreg();
