@@ -3,7 +3,7 @@
 #include "../include/def.h"
 typedef struct armcode_ armcode;
 
-typedef enum
+typedef enum _optype
 {
     NUL, //空值
     IMME,
@@ -16,7 +16,7 @@ typedef enum
    
 } optype;
 
-typedef enum
+typedef enum _armop
 {
     MOV,
     ADD,
@@ -31,13 +31,15 @@ typedef enum
     STMFD,
     LDMFD,
     ARMLABEL,
+    FUNCLABEL,
+    ENDLABEL,
     GVAR_INT,   //整型全局变量
     GVAR_FLOAT, //浮点型全局变量
     GVAR_LABEL,  //全局变量地址
 
 } armop;
 
-typedef enum
+typedef enum _opflag
 {
     EQU=25,
     NE,
@@ -47,6 +49,13 @@ typedef enum
     LE,
 
 } opflag;
+
+typedef enum _indexkind
+{   
+    immeindex,
+    regindex,
+    memindex,
+}indexkind;
 
 typedef struct armoper_
 {
@@ -58,6 +67,7 @@ typedef struct armoper_
         short reglist[14];//stmfd,ldrfd寄存器列表
     };
     int index;      //相对寻址，指针偏移
+    indexkind kind;
 
 } armoper;
 
@@ -76,11 +86,7 @@ struct armcode_
     int regnum;//寄存器列表寄存器个数
 };
 
-typedef enum
-{
-    regindex,
-    memindex,
-}indexkind;
+
 
 typedef struct _varnode
 {
@@ -136,6 +142,7 @@ armcode * create_ldrnode(int Rn,char * gvarname,int Rm,int index);
 void init_strnode(armcode * snode,int R_res,int Rm,int index);
 armcode * create_movnode(int R_res,optype type,int value);
 armcode* create_strnode(int Rn,int Rm,int index);
+armcode * create_addnode(int R_res,optype type_op1,int op1,int type_op2,int op2);
 
 void init_myreg();
 int alloc_myreg();
