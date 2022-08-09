@@ -1594,6 +1594,7 @@ struct codenode *genOptimizedCode(DAG *dag, int out_count, char *outActive[])
             if (flag)
                 continue;
             // TODO: 处理数组的，之后再写
+            //根据还原顺序做
             if (cur->kind == ARRAY_ASSIGN || cur->kind == ARRAY_EXP)
             {
                 List *prefArrOpt = ListInit();
@@ -1616,7 +1617,29 @@ struct codenode *genOptimizedCode(DAG *dag, int out_count, char *outActive[])
                     continue;
                 }
             }
-
+            //函数调用的还原顺序
+            if (cur->kind == CALL)
+            {
+                List *prefCallOpt = ListInit();
+                cur_dagnode = head_dagnode;
+                while (cur_dagnode)
+                {
+                    if (cur_dagnode->kind == CALL && cur_dagnode->isvisited == 0 && cur_dagnode->callOptSerial < cur->callOptSerial)
+                        ListPushBack(prefCallOpt, cur_dagnode);
+                    cur_dagnode = cur_dagnode->next;
+                }
+                if (ListSize(prefCallOpt) != 0)
+                {
+                    ListPushBack(stk, cur);
+                    void *temp = NULL;
+                    ListFirst(prefCallOpt, false);
+                    while (ListNext(prefCallOpt, &temp))
+                    {
+                        ListPushBack(stk, (DAGnode *)temp);
+                    }
+                    continue;
+                }
+            }
             if (cur->left != NULL)
             {
                 if (cur->left->isvisited == 0)

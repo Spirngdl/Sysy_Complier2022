@@ -32,7 +32,7 @@ void Driver(struct node *T)
   basic_block(T->code); //划分基本块
                         // get_count_var(head_block);
                         // invariant_Extrapolation(head_block);
-  // printf("optimize\n");
+  printf("optimize\n");
   // dag_optimize(head_block);   // DAG优化
   check_immes(head_block); //检验立即数合法性
   all_fun_reg(head_block); //进行活跃变量分析

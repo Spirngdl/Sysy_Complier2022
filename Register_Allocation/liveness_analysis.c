@@ -1,3 +1,4 @@
+#include "../include/def.h"
 // 根据变量别名去查询符号表中的位置i（此时，符号表仅存全局变量）
 /*int search_alias(char *alias)
 {

@@ -12,7 +12,9 @@ typedef enum _optype
     REGLIST,
     STRING, //字符串类型
     MEM,
+    LSL,
 
+   
 } optype;
 
 typedef enum _armop
@@ -135,7 +137,8 @@ armcode * create_ldrnode(int Rn,char * gvarname,int Rm,int index);
 void init_strnode(armcode * snode,int R_res,int Rm,int index,int indexkind);
 armcode * create_movnode(int R_res,optype type,int value);
 armcode* create_strnode(int Rn,int Rm,int index);
-armcode * create_addnode(int R_res,optype type_op1,int op1,int type_op2,int op2);
+armcode * create_addnode(int R_res,optype type_op1,int op1,int type_op2,int op2,optype type_op3,int op3);
+void init_ldrnode(armcode * lnode,int Rn,char * gvarname,int Rm,int index,int indexkind);
 
 void init_myreg();
 int alloc_myreg();
