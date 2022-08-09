@@ -910,6 +910,8 @@ int readquad4(DAG *dag, struct codenode **T)
     n = create_dagnode();
     n->kind = CALL;
     n->left = cur;
+    //还原顺序
+    n->callOptSerial = (dag->callOptSerial)++;
     //先处理左值
     if (tcode->result.kind == ID) //如果有
     {
