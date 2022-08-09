@@ -7352,6 +7352,8 @@ armcode * div_mod_exp(armcode * newnode,struct codenode * p,armcode *q,char * op
     }
     else if(p->opn1.kind == ID && p->opn2.kind == ID)
     {
+        snode = mul_reg_node(STMFD,R13,call_reg_list,5);
+        armlink_insert(newnode,snode);
         rn1 = search_var(funcname,p->opn1.id);
         if(rn1 >= 0)
         {
