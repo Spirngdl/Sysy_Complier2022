@@ -211,7 +211,7 @@ void printarm(armcode *armnode, FILE *fp)
 
 void arminterface(Blocks *blocks)
 {
-    FILE *fp = fopen("./test_case.s", "w");
+    FILE *fp = fopen(dst_path, "w");
     armcode *armcode = translatearm(blocks);
     printarm(armcode, fp);
 }

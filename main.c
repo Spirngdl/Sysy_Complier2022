@@ -4,7 +4,8 @@ extern FILE *yyin;
 extern int yylineno;
 int main(int argc, char *argv[])
 {
-  yyin = fopen(argv[1], "r");
+  yyin = fopen(argv[4], "r");
+  dst_path = argv[3];
   //  YY_BUFFER_STATE bp = yy_scan_string(argv[1]);
   // yy_scan_string(argv[1]);
   yylineno = 1;
@@ -33,11 +34,11 @@ void Driver(struct node *T)
                         // invariant_Extrapolation(head_block);
   // printf("optimize\n");
   // dag_optimize(head_block);   // DAG优化
+  check_immes(head_block); //检验立即数合法性
+  all_fun_reg(head_block); //进行活跃变量分析
 
-  check_immes(head_block);     //检验立即数合法性
-  all_fun_reg(head_block);     //进行活跃变量分析
   make_uid_block(head_block);  //在进入arm翻译前最后一次调整编号
-  add_label_block(head_block); //
+  add_label_block(head_block); //添加label节点
   Blocks *cur_blocks = head_block;
   while (cur_blocks)
   {
@@ -47,6 +48,7 @@ void Driver(struct node *T)
     }
     cur_blocks = cur_blocks->next;
   }
+
   arminterface(head_block);
 
   // // invariant_Extrapolation(head_block);

@@ -851,6 +851,7 @@ void op_exp(struct node *T)
     }
     else
     {
+        T->ptr[0]->type = T->type;
         Exp(T->ptr[0]);
         opn1.kind = ID;
         strcpy(opn1.id, symbolTable.symbols[T->ptr[0]->place].alias);
@@ -870,6 +871,7 @@ void op_exp(struct node *T)
     }
     else
     {
+        T->ptr[1]->type = T->type;
         Exp(T->ptr[1]);
         opn2.kind = ID;
         strcpy(opn2.id, symbolTable.symbols[T->ptr[1]->place].alias);

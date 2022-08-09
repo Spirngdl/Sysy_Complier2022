@@ -30,6 +30,7 @@
 #define _HASH_SET_H_
 #include <stdbool.h>
 #include <stdlib.h>
+#include <stdint.h>
 // #include "../util.h"
 
 #ifdef __cplusplus

@@ -16,6 +16,7 @@
 #include "stdlib.h"
 #include "string.h"
 #include "stdarg.h"
+#include <stdint.h>
 #include "calc_c.tab.h"
 #include "block.h"
 #include "liveness.h"
@@ -109,6 +110,7 @@ enum node_kind
 
 #define DX 3 * sizeof(int) //活动记录控制信息需要的单元数
 
+char *dst_path;
 char *Func_name;
 struct opn
 {

@@ -52,6 +52,8 @@ typedef struct DAG_
     struct codenode *endfunction;
     //数组还原顺序
     size_t arrOptSerial;
+    //函数调用顺序
+    size_t callOptSerial;
 } DAG;
 
 // DAGNODE

@@ -22,6 +22,7 @@ DAG *creat_dag()
 {
     DAG *newnode = (DAG *)malloc(sizeof(DAG));
     newnode->arrOptSerial = 0;
+    newnode->callOptSerial = 0;
     newnode->haltRec = newnode->jumperRec = NULL;
     newnode->functionrec = newnode->endfunction = NULL;
     newnode->nodes = ListInit();
@@ -1715,7 +1716,7 @@ void dag_optimize(Blocks *blocks)
     {
         for (int i = 0; i < cur_blocks->count; i++)
         {
-            char *outActive[100];
+            char *outActive[1000];
             int out_count = search_out(cur_blocks->name, cur_blocks->block[i]->id, outActive);
             //  out_count = ii(outlive);//获取活跃变量
             struct codenode *tcode = cur_blocks->block[i]->tac_list;
