@@ -155,7 +155,7 @@ void printarm(armcode *armnode, FILE *fp)
         case LDR:
             if (p->oper1.type == MEM)
             {
-                if(p->oper1.kind = immeindex)
+                if(p->oper1.kind == immeindex)
                 {
                     fprintf(fp, "\tLDR   R%d , [R%d,#%d]\n", p->result.value, p->oper1.value, p->oper1.index);
                 }
