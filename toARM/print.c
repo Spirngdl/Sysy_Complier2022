@@ -66,7 +66,7 @@ void printarm(armcode *armnode, FILE *fp)
             break;
 
         case ENDLABEL:
-            fprintf(fp,"\t.size %s , .-%s",p->result.str_id,p->result.str_id);
+            fprintf(fp,"\t.size %s , .-%s\n",p->result.str_id,p->result.str_id);
             break;
 
         case GVAR_INT:
