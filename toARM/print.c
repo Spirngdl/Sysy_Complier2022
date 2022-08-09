@@ -157,7 +157,14 @@ void printarm(armcode *armnode, FILE *fp)
             {
                 if(p->oper1.kind == immeindex)
                 {
-                    fprintf(fp, "\tLDR   R%d , [R%d,#%d]\n", p->result.value, p->oper1.value, p->oper1.index);
+                    if(p->oper1.index != 0)
+                    {
+                        fprintf(fp, "\tLDR   R%d , [R%d,#%d]\n", p->result.value, p->oper1.value, p->oper1.index);
+                    }
+                    else
+                    {
+                        fprintf(fp, "\tLDR   R%d , [R%d]\n", p->result.value, p->oper1.value);
+                    }
                 }
                 else 
                 {
