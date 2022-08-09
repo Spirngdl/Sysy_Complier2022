@@ -1698,7 +1698,7 @@ void translate(armcode *newnode, struct codenode *p, armop armop,armcode *q)
 
         strnode = create_strnode(R_res,R11,0);
         q->next = strnode;
-        ldrnode->pre = q;
+        strnode->pre = q;
         q = strnode;
     }
     else
@@ -6011,7 +6011,7 @@ armcode * create_ldrnode(int Rn,char * gvarname,int Rm,int index)
     else
     {
         lnode->oper1.type = STRING;
-        sprintf(tmp,".LCPI%d_%s",func_index-1,gvarname);
+        sprintf(tmp,".LCPI%d_%s",func_index,gvarname);
         strcpy(lnode->oper1.str_id,tmp);
     }
     
