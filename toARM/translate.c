@@ -3772,7 +3772,7 @@ armcode *translatearm(Blocks *blocks)
                             }
                             else
                             {
-                                printf("%d  p->opn2.kind error!\n");
+                                printf("%d  p->opn2.kind error!\n",p->UID);
                             }
                         }
                         else if(rn1 == -2)          //全局数组
@@ -3834,12 +3834,12 @@ armcode *translatearm(Blocks *blocks)
                                 }
                                 else 
                                 {
-                                    printf("%d ALLOC REG for p->opn2 error\n");
+                                    printf("%d ALLOC REG for p->opn2 error\n",p->UID);
                                 }
                             }
                             else
                             {
-                                printf("%d  p->opn2.kind error!\n");
+                                printf("%d  p->opn2.kind error!\n",p->UID);
                             }
                         }
                         else
@@ -3907,12 +3907,12 @@ armcode *translatearm(Blocks *blocks)
                                 }
                                 else 
                                 {
-                                    printf("%d ALLOC REG for p->opn2 error\n");
+                                    printf("%d ALLOC REG for p->opn2 error\n",p->UID);
                                 }
                             }
                             else
                             {
-                                printf("%d  p->opn2.kind error!\n");
+                                printf("%d  p->opn2.kind error!\n",p->UID);
                             }
                         }
                         else if(rn1 == -1)          //局部数组，首址在内存中
@@ -4029,12 +4029,12 @@ armcode *translatearm(Blocks *blocks)
                                 }
                                 else 
                                 {
-                                    printf("%d ALLOC REG for p->opn2 error\n");
+                                    printf("%d ALLOC REG for p->opn2 error\n",p->UID);
                                 }
                             }
                             else
                             {
-                                printf("%d  p->opn2.kind error!\n");
+                                printf("%d  p->opn2.kind error!\n",p->UID);
                             }
                         }
                         else if(rn1 == -2)          //全局数组
@@ -4154,12 +4154,12 @@ armcode *translatearm(Blocks *blocks)
                                 }
                                 else 
                                 {
-                                    printf("%d ALLOC REG for p->opn2 error\n");
+                                    printf("%d ALLOC REG for p->opn2 error\n",p->UID);
                                 }
                             }
                             else
                             {
-                                printf("%d  p->opn2.kind error!\n");
+                                printf("%d  p->opn2.kind error!\n",p->UID);
                             }
                         }
                         else
@@ -4232,12 +4232,12 @@ armcode *translatearm(Blocks *blocks)
                                 }
                                 else 
                                 {
-                                    printf("%d ALLOC REG for p->opn2 error\n");
+                                    printf("%d ALLOC REG for p->opn2 error\n",p->UID);
                                 }
                             }
                             else
                             {
-                                printf("%d  p->opn2.kind error!\n");
+                                printf("%d  p->opn2.kind error!\n",p->UID);
                             }
                         }
                         else if(rn1 == -1)          //局部数组，首址在内存中
@@ -4354,12 +4354,12 @@ armcode *translatearm(Blocks *blocks)
                                 }
                                 else 
                                 {
-                                    printf("%d ALLOC REG for p->opn2 error\n");
+                                    printf("%d ALLOC REG for p->opn2 error\n",p->UID);
                                 }
                             }
                             else
                             {
-                                printf("%d  p->opn2.kind error!\n");
+                                printf("%d  p->opn2.kind error!\n",p->UID);
                             }
                         }
                         else if(rn1 == -2)          //全局数组
@@ -4479,12 +4479,12 @@ armcode *translatearm(Blocks *blocks)
                                 }
                                 else 
                                 {
-                                    printf("%d ALLOC REG for p->opn2 error\n");
+                                    printf("%d ALLOC REG for p->opn2 error\n",p->UID);
                                 }
                             }
                             else
                             {
-                                printf("%d  p->opn2.kind error!\n");
+                                printf("%d  p->opn2.kind error!\n",p->UID);
                             }
                         }
                         else
