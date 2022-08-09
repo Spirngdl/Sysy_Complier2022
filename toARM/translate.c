@@ -1727,6 +1727,7 @@ armcode *translatearm(Blocks *blocks)
     int vartable_index;
     char regname[10]={0};
     int reg[1];
+    bool return_reg = false;        //当返回变量在R0-R3时，恢复现场会被覆盖，这时先将返回值存到R11或R12，恢复现场后在赋值
     // char labelname[33];
     int paranum,spil_var_num;
     armcode *snode,*subnode,*addnode,*strnode,*ldrnode,*movnode,*ldmnode,*bnode,*enode;
@@ -2325,12 +2326,26 @@ armcode *translatearm(Blocks *blocks)
                             // movnode->result.value = rn0;
                             // movnode->oper1.type = REG;
                             // movnode->oper1.value = R0;
+                            if(rn0 != 0 && rn0 != 1 && rn0 != 2 && rn0 != 3)
+                            {
+                                movnode = create_movnode(rn0,REG,R0);
 
-                            movnode = create_movnode(rn0,REG,R0);
+                                newnode->next = movnode;
+                                movnode->pre = newnode;
+                                q = movnode;
+                            }
+                            else
+                            {
+                                R_res = alloc_myreg();
+                                movnode = create_movnode(R_res,REG,R0);
 
-                            newnode->next = movnode;
-                            movnode->pre = newnode;
-                            q = movnode;
+                                newnode->next = movnode;
+                                movnode->pre = newnode;
+                                q = movnode;
+                                
+                                return_reg = true;
+                            }
+                            
                         }
                         else if(rn0 == -1)
                         {
@@ -2380,6 +2395,16 @@ armcode *translatearm(Blocks *blocks)
                     q->next = ldmnode;
                     ldmnode->pre = q;
                     q = ldmnode;
+
+                    if(return_reg)
+                    {
+                        return_reg = false;
+
+                        movnode = create_movnode(rn0,REG,R_res);
+                        q->next = movnode;
+                        movnode->pre = q;
+                        q = movnode;
+                    }
 
                     vartable_update_all(vartbl,-20);
                     init_myreg();
@@ -3674,27 +3699,49 @@ armcode *translatearm(Blocks *blocks)
                                 addnode = create_addnode(rn1,REG,rn1,IMME,p->opn2.const_int*4,NUL,0);
                                 armlink_insert(newnode,addnode);
 
-                                newnode->op = LDR;
-                                newnode->result.value = rn0;
-                                newnode->oper1.type = MEM;
-                                newnode->oper1.value = R13;
-                                newnode->oper1.kind = regindex;
-                                newnode->oper1.index = rn1;
+                                init_ldrnode(newnode,rn0,NULL,R13,rn1,regindex);
+
+                                // newnode->op = LDR;
+                                // newnode->result.value = rn0;
+                                // newnode->oper1.type = MEM;
+                                // newnode->oper1.value = R13;
+                                // newnode->oper1.kind = regindex;
+                                // newnode->oper1.index = rn1;
                             }
                             else if(p->opn2.kind == ID)
                             {
                                 rn2 = search_var(funcname,p->opn2.id);
                                 if(rn2 >= 0)
                                 {
+                                    addnode = create_addnode(rn1,REG,rn1,REG,rn2,LSL,2);
+                                    armlink_insert(newnode,addnode);
 
+                                    init_ldrnode(newnode,rn0,NULL,R13,rn1,regindex);
                                 }
                                 else if(rn2 == -1)
                                 {
+                                    R_op2 = alloc_myreg();
+                                    vartable_index = vartable_select(vartbl,p->opn2.id);
+                                    ldrnode = create_ldrnode(R_op2,NULL,R13,vartbl->table[vartable_index].index);
+                                    armlink_insert(newnode,ldrnode);
 
+                                    addnode = create_addnode(rn1,REG,rn1,REG,R_op2,LSL,2);
+                                    armlink_insert(newnode,addnode);
+
+                                    init_ldrnode(newnode,rn0,NULL,R13,rn1,regindex);
                                 }
                                 else if(rn2 == -2)
                                 {
+                                    R_op2 = alloc_myreg();
+                                    ldrnode = create_ldrnode(R_op2,p->opn2.id,0,0);
+                                    armlink_insert(newnode,ldrnode);
+                                    ldrnode = create_ldrnode(R_op2,NULL,R_op2,0);
+                                    armlink_insert(newnode,ldrnode);
 
+                                    addnode = create_addnode(rn1,REG,rn1,REG,R_op2,LSL,2);
+                                    armlink_insert(newnode,addnode);
+
+                                    init_ldrnode(newnode,rn0,NULL,R13,rn1,regindex);
                                 }
                                 else 
                                 {
@@ -6116,6 +6163,28 @@ void init_strnode(armcode * snode,int R_res,int Rm,int index,int indexkind)
     snode->oper1.kind = indexkind;
 }
 
+void init_ldrnode(armcode * lnode,int Rn,char * gvarname,int Rm,int index,int indexkind)
+{
+    char tmp[33]={0};
+    // armcode * lnode = initnewnode();
+    lnode->op = LDR;
+    lnode->result.value = Rn;
+
+    if(gvarname == NULL)
+    {
+        lnode->oper1.type = MEM;
+        lnode->oper1.value = Rm;
+        lnode->oper1.index = index;
+        lnode->oper1.kind = indexkind;
+    }
+    else
+    {
+        lnode->oper1.type = STRING;
+        sprintf(tmp,".LCPI%d_%s",func_index,gvarname);
+        strcpy(lnode->oper1.str_id,tmp);
+    }
+    
+}
 void init_myreg()
 {
     R11R12 = 3;
