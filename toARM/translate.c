@@ -4557,7 +4557,7 @@ armcode *create_ldrnode(int Rn, char *gvarname, int Rm, int index)
     else
     {
         lnode->oper1.type = STRING;
-        sprintf(tmp, ".LCPI%d_%s", func_index - 1, gvarname);
+        sprintf(tmp, ".LCPI%d_%s", func_index, gvarname); //过去这边有个func_index -1
         strcpy(lnode->oper1.str_id, tmp);
     }
 
