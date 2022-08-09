@@ -517,6 +517,7 @@ void var_decl(struct node *T) //变量声明 -- kind -- NAME --TYPE
         T->place = rtn;    //用place记录在符号表中的位置
     if (T->ptr[0] != NULL) //赋值
     {
+        T->ptr[0]->type = T->type;
         if (T->type == TOK_INT)
         {
             if (T->ptr[0]->kind == LITERAL)
@@ -577,6 +578,7 @@ void var_decl(struct node *T) //变量声明 -- kind -- NAME --TYPE
                 }
                 else
                 {
+
                     Exp(T->ptr[0]);
                     struct codenode *lassign = T->ptr[0]->code->prior; //右值语句的最后一句
                     strcpy(lassign->result.id, symbolTable.symbols[T->place].alias);

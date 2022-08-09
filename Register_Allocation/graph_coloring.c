@@ -341,6 +341,14 @@ void graph_coloring (char*** in, char*** out, int num_block, int num_reg, char* 
         }
     }*/
     //printf("\n");
+    for (i = 0; i < num_var; i++) {
+        free(RIG[i]);
+    }
+    free(RIG);
+    for (i = 0; i < num_var; i++) {
+        free(var_list[i]);
+    }
+    // free(var_list[i]);
 }
 
 void reg_param (char* fun_add, char* param[], int param_num) {

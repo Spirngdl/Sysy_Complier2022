@@ -135,6 +135,25 @@ DAGnode *findNode_value(DAG *dag, char *value, int l, int r, int t)
     }
     return NULL;
 }
+//查找是否有相同的数组赋值，数组名，数组下标
+DAGnode *findNode_ArrayAssign(DAG *dag, int kind, int l, int r)
+{
+    List *nodelist = dag->nodes;
+    ListFirst(nodelist, false);
+    void *node;
+    while (nodelist->next(nodelist, &node))
+    {
+        DAGnode *dagnode = (DAGnode *)node;
+        if (dagnode->kind == kind)
+        {
+            int left = dagnode->left == NULL ? -1 : dagnode->left->ID;
+            int right = dagnode->right == NULL ? -1 : dagnode->right->ID;
+            if (left == l && right == r)
+                return dagnode;
+        }
+    }
+    return NULL;
+}
 //通过语句类型和子节点
 DAGnode *findNode_OP_value(DAG *dag, int op, int l, int r, int t)
 {
@@ -217,16 +236,16 @@ bool isLiteralNode(DAG *dag, char *symbol)
     {
         if (n->left->kind == LITERAL)
         {
-            n->kind = LITERAL;
-            n->v_num = n->left->v_num;
-            n->left = NULL;
+            // n->kind = LITERAL;
+            // n->v_num = n->left->v_num;
+            // n->left = NULL;
             return true;
         }
         else if (n->left->kind == FLOAT_LITERAL)
         {
-            n->kind = FLOAT_LITERAL;
-            n->v_float = n->left->v_float;
-            n->left = NULL;
+            // n->kind = FLOAT_LITERAL;
+            // n->v_float = n->left->v_float;
+            // n->left = NULL;
             return true;
         }
         // void *node;
@@ -250,9 +269,24 @@ bool isLiteralNode(DAG *dag, char *symbol)
     return false;
 }
 //取得一个字面常量结点所表示的常量值
-// int getLiteral(DAG *dag, char *symbol)
-// {
-// }
+float getLiteral(DAG *dag, DAGnode *n)
+{
+    switch (n->kind)
+    {
+    case LITERAL:
+        return n->v_num;
+        break;
+    case FLOAT_LITERAL:
+        return n->v_float;
+        break;
+    default:
+        break;
+    }
+    if (n->left)
+        return getLiteral(dag, n->left);
+    else
+        return getLiteral(dag, n->right);
+}
 /**
  * @brief 判断节点n是否有活跃变量节点
  *
@@ -367,7 +401,6 @@ int readquad(DAG *dag, struct codenode **T)
     case TOK_MODULO:
     case EXP_ARRAY:
 
-    case ARRAY_EXP:
         return readquad2(dag, *T);
         break;
     case JLE:
@@ -377,6 +410,9 @@ int readquad(DAG *dag, struct codenode **T)
     case EQ:
     case NEQ:
         return readquad2_1(dag, *T);
+        break;
+    case ARRAY_EXP:
+        return readquad2_2(dag, *T);
         break;
     case ARRAY_ASSIGN: //数组赋值
         return readquad3(dag, *T);
@@ -548,10 +584,11 @@ int readquad2(DAG *dag, struct codenode *T)
         {
             n2Literal = true;
             n2 = findnode_symbol(dag, T->opn1.id);
-            if (n2->kind == LITERAL)
-                val1 = n2->v_num;
-            else if (n2->kind == FLOAT_LITERAL)
-                val1 = n2->v_float;
+            // if (n2->kind == LITERAL)
+            //     val1 = n2->v_num;
+            // else if (n2->kind == FLOAT_LITERAL)
+            //     val1 = n2->v_float;
+            val1 = getLiteral(dag, n2);
         }
 
     if (T->opn2.kind == LITERAL)
@@ -569,10 +606,11 @@ int readquad2(DAG *dag, struct codenode *T)
         {
             n3Literal = true;
             n3 = findnode_symbol(dag, T->opn2.id);
-            if (n3->kind == LITERAL)
-                val2 = n3->v_num;
-            else if (n3->kind == FLOAT_LITERAL)
-                val2 = n3->v_float;
+            // if (n3->kind == LITERAL)
+            //     val2 = n3->v_num;
+            // else if (n3->kind == FLOAT_LITERAL)
+            //     val2 = n3->v_float;
+            val2 = getLiteral(dag, n3);
         }
 
     if (n2Literal && n3Literal) //可以常量传播
@@ -617,7 +655,7 @@ int readquad2(DAG *dag, struct codenode *T)
         {
             n1 = create_dagnode();
             n1->left = n;
-            n1->kind = n1->v_num = TOK_ASSIGN;
+            n1->kind = TOK_ASSIGN;
             removeSymbol(dag, T->result.id);
             addSymbol(n1, T->result.id);
             dag->nodes->push_back(dag->nodes, n1);
@@ -737,6 +775,78 @@ int readquad2(DAG *dag, struct codenode *T)
     return 0;
 }
 
+//数组引用
+int readquad2_2(DAG *dag, struct codenode *T)
+{
+    DAGnode *n1 = NULL, *n2 = NULL, *n3 = NULL;
+    // T.opn1 数组名，只能是ID
+    n1 = findNode_value(dag, T->opn1.id, -1, -1, -1);
+    if (n1 == NULL)
+    {
+        n1 = create_dagnode();
+        n1->kind = ID;
+        strcpy(n1->v_id, T->result.id);
+        ListPushBack(dag->nodes, n1);
+    }
+    //再处理下标
+    if (T->opn2.kind == LITERAL)
+    {
+        n2 = find_value_num(dag, T->opn2.const_int, -1, -1, -1, LITERAL);
+        if (n2 == NULL)
+        {
+            n2 = create_dagnode();
+            n2->kind = LITERAL;
+            n2->v_num = T->opn2.const_int;
+            ListPushBack(dag->nodes, n2);
+        }
+    }
+    else if (T->opn2.kind == ID)
+    {
+        n2 = findnode_symbol(dag, T->opn2.id);
+        if (n2 == NULL)
+        {
+            n2 = findNode_value(dag, T->opn2.id, -1, -1, -1);
+            if (n2 == NULL)
+            {
+                n2 = create_dagnode();
+                n2->kind = ID;
+                strcpy(n2->v_id, T->opn2.id);
+                ListPushBack(dag->nodes, n2);
+            }
+        }
+    }
+    //判断当前基本块内是否有该数组的赋值
+    n3 = findNode_ArrayAssign(dag, ARRAY_ASSIGN, n1->ID, n2->ID);
+    if (n3 != NULL) //如果找到了
+    {
+
+        DAGnode *n;
+        //查看是否有result = opn1这样的赋值，如果有则直接附上a1
+        n = findNode_OP_value(dag, TOK_ASSIGN, n3->tri->ID, -1, -1);
+        if (n != NULL && !n->isKilled)
+        {
+            addSymbol(n, T->result.id);
+        }
+        else
+        {
+            n = create_dagnode();
+            n->kind = TOK_ASSIGN;
+            n->left = n3->tri;
+            addSymbol(n, T->result.id);
+            ListPushBack(dag->nodes, n);
+        }
+    }
+    else
+    {
+        n3 = create_dagnode();
+        n3->kind = T->op;
+        n3->left = n1;
+        n3->right = n2;
+        addSymbol(n3, T->result.id);
+        ListPushBack(dag->nodes, n3);
+    }
+    return 0;
+}
 // (TAR, a1, a2, a3)  a1[a2] = a3 先放着
 // TODO:
 /**
@@ -825,9 +935,14 @@ int readquad3(DAG *dag, struct codenode *T)
     }
 
     //最后是result
-    n = create_dagnode();
-    n->left = n1, n->right = n2, n->tri = n3;
-    n->kind = T->op;
+    n = findNode_ArrayAssign(dag, ARRAY_ASSIGN, n1->ID, n2->ID);
+    if (n == NULL)
+    {
+        n = create_dagnode();
+        n->left = n1, n->right = n2;
+        n->kind = T->op;
+    }
+    n->tri = n3; //赋上新值
     n->arrOptSerial = (dag->arrOptSerial++);
 
     ListPushBack(dag->nodes, n);

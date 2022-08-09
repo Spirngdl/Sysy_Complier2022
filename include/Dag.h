@@ -74,13 +74,15 @@ DAGnode *findNode_value(DAG *dag, char *value, int l, int r, int t);           /
 DAGnode *findNode_OP_value(DAG *dag, int op, int l, int r, int t);             //通过语句类型和子节点
 DAGnode *find_value_num(DAG *dga, float value, int l, int r, int t, int kind); //通过Literal查找或 FLOAT_LITERAL
 bool isLiteralNode(DAG *dag, char *symbol);                                    //判断带有附加标识符symbol的结点是否表示一个字面常量
-// int getLiteral(DAG *dag, char *symbol);                                        //取得一个字面常量结点所表示的常量值
+DAGnode *findNode_ArrayAssign(DAG *dag, int kind, int l, int r);               //
+float getLiteral(DAG *dag, DAGnode *n);                                          //取得一个字面常量结点所表示的常量值
 void removeSymbol(DAG *dag, char *symbol);                                     //删除DAG上所有等于target的附加标识符
 int findnode_depend_on(DAG *dag, DAGnode *n, int vector[]);                    //查找DAG上所有依赖于n的结点
 int readquad(DAG *dag, struct codenode **T);                                   //读取三地址代码
 int readquad0(DAG *dag, struct codenode *T);                                   // 0型
 int readquad1(DAG *dag, struct codenode *T);                                   // 1型 暂时是return
 int readquad2(DAG *dag, struct codenode *T);                                   // 2型
+int readquad2_2(DAG *dag, struct codenode *T);                                 //主要处理数组引用
 int readquad2_1(DAG *dag, struct codenode *T);                                 //
 int readquad3(DAG *dag, struct codenode *T);                                   // 3型 数组赋值
 int readquad4(DAG *dag, struct codenode **T);                                  // 4型我定义为函数调用

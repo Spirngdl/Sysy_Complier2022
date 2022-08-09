@@ -1,8 +1,8 @@
 #define MAX_VAR 20000 // 假设一个基本块中的变量最多有 20000 个
-#define _MAX_VARS 100000 // 最大变量数
+#define _MAX_VARS 20000 // 最大变量数
 
 struct gobal {
-    char name[32]; // 变量名
+    char name[8]; // 变量名
     char fun_name[32]; // 函数名
 };
 
