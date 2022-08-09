@@ -2549,37 +2549,14 @@ armcode *translatearm(Blocks *blocks)
                                 movnode = create_movnode(R_op2,IMME,p->opn2.const_int);
                                 armlink_insert(newnode,movnode);
 
-                                addnode = create_addnode(rn0,REG,rn0,IMME,p->opn1.const_int*4);     //计算出相当于SP的偏移
+                                addnode = create_addnode(rn0,REG,rn0,IMME,p->opn1.const_int*4,NUL,0);     //计算出相当于SP的偏移
                                 armlink_insert(newnode,addnode);
 
                                 init_strnode(newnode,R_op2,R13,rn0,regindex);
-                                // vartable_index = vartable_select(vartbl,p->result.id);
-                                // if(check_imme(vartable_index) == 0)
-                                // {
-                                //     addnode = initnewnode();
-                                //     addnode->op = ADD;
-                                //     addnode->result.type = REG;
-                                //     addnode->result.value = R_op2;
-                                //     addnode->oper1.type = REG;
-                                //     addnode->oper1.value = R_op2;
-                                //     addnode->oper2.type = IMME;
-                                //     addnode->oper2.value = vartable_index;
-
-                                //     armlink_insert(newnode,addnode)
-                                // }
-                                // else
-                                // {
-
-                                // }
-                               
-                               
-                                
-                                
-
                             }
                             else if(p->opn2.kind == ID)
                             {
-                                addnode = create_addnode(rn0,REG,rn0,IMME,p->opn1.const_int*4);     //计算出相当于SP的偏移
+                                addnode = create_addnode(rn0,REG,rn0,IMME,p->opn1.const_int*4,NUL,0);     //计算出相当于SP的偏移
                                 armlink_insert(newnode,addnode);
 
                                 rn2 = search_var(funcname,p->opn2.id);
@@ -2634,7 +2611,7 @@ armcode *translatearm(Blocks *blocks)
                                 rn1 = search_var(funcname,p->opn1.id);
                                 if(rn1 >= 0)
                                 {
-                                    addnode = create_addnode(rn0,REG,rn0,REG,rn1);     //计算出相当于SP的偏移
+                                    addnode = create_addnode(rn0,REG,rn0,REG,rn1,LSL,2);     //计算出相当于SP的偏移
                                     armlink_insert(newnode,addnode);
 
                                     init_strnode(newnode,R_op2,R13,rn0,regindex);
@@ -2646,7 +2623,7 @@ armcode *translatearm(Blocks *blocks)
                                     ldrnode = create_ldrnode(R_op1,NULL,R13,vartbl->table[vartable_index].index);
                                     armlink_insert(newnode,ldrnode);
 
-                                    addnode = create_addnode(rn0,REG,rn0,REG,R_op1);     //计算出相当于SP的偏移
+                                    addnode = create_addnode(rn0,REG,rn0,REG,R_op1,LSL,2);     //计算出相当于SP的偏移
                                     armlink_insert(newnode,addnode);
 
                                     init_strnode(newnode,R_op2,R13,rn0,regindex);
@@ -2659,7 +2636,7 @@ armcode *translatearm(Blocks *blocks)
                                     ldrnode = create_ldrnode(R_op1,NULL,R_op1,0);
                                     armlink_insert(newnode,ldrnode);
 
-                                    addnode = create_addnode(rn0,REG,rn0,REG,R_op1);     //计算出相当于SP的偏移
+                                    addnode = create_addnode(rn0,REG,rn0,REG,R_op1,LSL,2);     //计算出相当于SP的偏移
                                     armlink_insert(newnode,addnode);
 
                                     init_strnode(newnode,R_op2,R13,rn0,regindex);
@@ -2677,7 +2654,7 @@ armcode *translatearm(Blocks *blocks)
                                     rn1 = search_var(funcname,p->opn1.id);
                                     if(rn1 >= 0)
                                     {
-                                        addnode = create_addnode(rn0,REG,rn0,REG,rn1);     //计算出相当于SP的偏移
+                                        addnode = create_addnode(rn0,REG,rn0,REG,rn1,LSL,2);     //计算出相当于SP的偏移
                                         armlink_insert(newnode,addnode);
 
                                         init_strnode(newnode,rn2,R13,rn0,regindex);
@@ -2689,7 +2666,7 @@ armcode *translatearm(Blocks *blocks)
                                         ldrnode = create_ldrnode(R_op1,NULL,R13,vartbl->table[vartable_index].index);
                                         armlink_insert(newnode,ldrnode);
 
-                                        addnode = create_addnode(rn0,REG,rn0,REG,R_op1);     //计算出相当于SP的偏移
+                                        addnode = create_addnode(rn0,REG,rn0,REG,R_op1,LSL,2);     //计算出相当于SP的偏移
                                         armlink_insert(newnode,addnode);
 
                                         init_strnode(newnode,rn2,R13,rn0,regindex);
@@ -2702,7 +2679,7 @@ armcode *translatearm(Blocks *blocks)
                                         ldrnode = create_ldrnode(R_op1,NULL,R_op1,0);
                                         armlink_insert(newnode,ldrnode);
 
-                                        addnode = create_addnode(rn0,REG,rn0,REG,R_op1);     //计算出相当于SP的偏移
+                                        addnode = create_addnode(rn0,REG,rn0,REG,R_op1,LSL,2);     //计算出相当于SP的偏移
                                         armlink_insert(newnode,addnode);
 
                                         init_strnode(newnode,rn2,R13,rn0,regindex);
@@ -2722,7 +2699,7 @@ armcode *translatearm(Blocks *blocks)
                                     rn1 = search_var(funcname,p->opn1.id);
                                     if(rn1 >= 0)
                                     {
-                                        addnode = create_addnode(rn0,REG,rn0,REG,rn1);     //计算出相当于SP的偏移
+                                        addnode = create_addnode(rn0,REG,rn0,REG,rn1,LSL,2);     //计算出相当于SP的偏移
                                         armlink_insert(newnode,addnode);
 
                                         init_strnode(newnode,R_op2,R13,rn0,regindex);
@@ -2734,7 +2711,7 @@ armcode *translatearm(Blocks *blocks)
                                         ldrnode = create_ldrnode(R_op1,NULL,R13,vartbl->table[vartable_index].index);
                                         armlink_insert(newnode,ldrnode);
 
-                                        addnode = create_addnode(rn0,REG,rn0,REG,R_op1);     //计算出相当于SP的偏移
+                                        addnode = create_addnode(rn0,REG,rn0,REG,R_op1,LSL,2);     //计算出相当于SP的偏移
                                         armlink_insert(newnode,addnode);
 
                                         init_strnode(newnode,R_op2,R13,rn0,regindex);
@@ -2747,7 +2724,7 @@ armcode *translatearm(Blocks *blocks)
                                         ldrnode = create_ldrnode(R_op1,NULL,R_op1,0);
                                         armlink_insert(newnode,ldrnode);
 
-                                        addnode = create_addnode(rn0,REG,rn0,REG,R_op1);     //计算出相当于SP的偏移
+                                        addnode = create_addnode(rn0,REG,rn0,REG,R_op1,LSL,2);     //计算出相当于SP的偏移
                                         armlink_insert(newnode,addnode);
 
                                         init_strnode(newnode,R_op2,R13,rn0,regindex);
@@ -2768,7 +2745,7 @@ armcode *translatearm(Blocks *blocks)
                                     rn1 = search_var(funcname,p->opn1.id);
                                     if(rn1 >= 0)
                                     {
-                                        addnode = create_addnode(rn0,REG,rn0,REG,rn1);     //计算出相当于SP的偏移
+                                        addnode = create_addnode(rn0,REG,rn0,REG,rn1,LSL,2);     //计算出相当于SP的偏移
                                         armlink_insert(newnode,addnode);
 
                                         init_strnode(newnode,R_op2,R13,rn0,regindex);
@@ -2780,7 +2757,7 @@ armcode *translatearm(Blocks *blocks)
                                         ldrnode = create_ldrnode(R_op1,NULL,R13,vartbl->table[vartable_index].index);
                                         armlink_insert(newnode,ldrnode);
 
-                                        addnode = create_addnode(rn0,REG,rn0,REG,R_op1);     //计算出相当于SP的偏移
+                                        addnode = create_addnode(rn0,REG,rn0,REG,R_op1,LSL,2);     //计算出相当于SP的偏移
                                         armlink_insert(newnode,addnode);
 
                                         init_strnode(newnode,R_op2,R13,rn0,regindex);
@@ -2793,7 +2770,7 @@ armcode *translatearm(Blocks *blocks)
                                         ldrnode = create_ldrnode(R_op1,NULL,R_op1,0);
                                         armlink_insert(newnode,ldrnode);
 
-                                        addnode = create_addnode(rn0,REG,rn0,REG,R_op1);     //计算出相当于SP的偏移
+                                        addnode = create_addnode(rn0,REG,rn0,REG,R_op1,LSL,2);     //计算出相当于SP的偏移
                                         armlink_insert(newnode,addnode);
 
                                         init_strnode(newnode,R_op2,R13,rn0,regindex);
@@ -2838,7 +2815,7 @@ armcode *translatearm(Blocks *blocks)
                                 movnode = create_movnode(R_op2,IMME,p->opn2.const_int);
                                 armlink_insert(newnode,movnode);
 
-                                addnode = create_addnode(R_res,REG,R_res,IMME,p->opn1.const_int*4);     //计算出相当于SP的偏移
+                                addnode = create_addnode(R_res,REG,R_res,IMME,p->opn1.const_int*4,NUL,0);     //计算出相当于SP的偏移
                                 armlink_insert(newnode,addnode);
 
                                 init_strnode(newnode,R_op2,R13,R_res,regindex);
@@ -2846,7 +2823,7 @@ armcode *translatearm(Blocks *blocks)
                             }
                             else if(p->opn2.kind == ID)
                             {
-                                addnode = create_addnode(R_res,REG,R_res,IMME,p->opn1.const_int*4);     //计算出相当于SP的偏移
+                                addnode = create_addnode(R_res,REG,R_res,IMME,p->opn1.const_int*4,NUL,0);     //计算出相当于SP的偏移
                                 armlink_insert(newnode,addnode);
 
                                 rn2 = search_var(funcname,p->opn2.id);
@@ -2901,7 +2878,7 @@ armcode *translatearm(Blocks *blocks)
                                 rn1 = search_var(funcname,p->opn1.id);
                                 if(rn1 >= 0)
                                 {
-                                    addnode = create_addnode(R_res,REG,R_res,REG,rn1);     //计算出相当于SP的偏移
+                                    addnode = create_addnode(R_res,REG,R_res,REG,rn1,LSL,2);     //计算出相当于SP的偏移
                                     armlink_insert(newnode,addnode);
 
                                     init_strnode(newnode,R_op2,R13,R_res,regindex);
@@ -2916,7 +2893,7 @@ armcode *translatearm(Blocks *blocks)
                                         ldrnode = create_ldrnode(R_op1,NULL,R13,vartbl->table[vartable_index].index);
                                         armlink_insert(newnode,ldrnode);
 
-                                        addnode = create_addnode(R_res,REG,R_res,REG,R_op1);     //计算出相当于SP的偏移
+                                        addnode = create_addnode(R_res,REG,R_res,REG,R_op1,LSL,2);     //计算出相当于SP的偏移
                                         armlink_insert(newnode,addnode);
 
                                         init_strnode(newnode,R_op2,R13,R_res,regindex);
@@ -2932,7 +2909,7 @@ armcode *translatearm(Blocks *blocks)
                                         ldrnode = create_ldrnode(reg[0],NULL,R13,vartbl->table[vartable_index].index);
                                         armlink_insert(newnode,ldrnode);
 
-                                        addnode = create_addnode(R_res,REG,R_res,REG,reg[0]);     //计算出相当于SP的偏移
+                                        addnode = create_addnode(R_res,REG,R_res,REG,reg[0],LSL,2);     //计算出相当于SP的偏移
                                         armlink_insert(newnode,addnode);
 
                                         init_strnode(newnode,R_op2,R13,R_res,regindex);
@@ -2955,7 +2932,7 @@ armcode *translatearm(Blocks *blocks)
                                         ldrnode = create_ldrnode(R_op1,NULL,R_op1,0);
                                         armlink_insert(newnode,ldrnode);
 
-                                        addnode = create_addnode(R_res,REG,R_res,REG,R_op1);     //计算出相当于SP的偏移
+                                        addnode = create_addnode(R_res,REG,R_res,REG,R_op1,LSL,2);     //计算出相当于SP的偏移
                                         armlink_insert(newnode,addnode);
 
                                         init_strnode(newnode,R_op2,R13,R_res,regindex);
@@ -2972,7 +2949,7 @@ armcode *translatearm(Blocks *blocks)
                                         ldrnode = create_ldrnode(reg[0],NULL,reg[0],0);
                                         armlink_insert(newnode,ldrnode);
 
-                                        addnode = create_addnode(R_res,REG,R_res,REG,reg[0]);     //计算出相当于SP的偏移
+                                        addnode = create_addnode(R_res,REG,R_res,REG,reg[0],LSL,2);     //计算出相当于SP的偏移
                                         armlink_insert(newnode,addnode);
 
                                         init_strnode(newnode,R_op2,R13,R_res,regindex);
@@ -2997,7 +2974,7 @@ armcode *translatearm(Blocks *blocks)
                                     rn1 = search_var(funcname,p->opn1.id);
                                     if(rn1 >= 0)
                                     {
-                                        addnode = create_addnode(R_res,REG,R_res,REG,rn1);     //计算出相当于SP的偏移
+                                        addnode = create_addnode(R_res,REG,R_res,REG,rn1,LSL,2);     //计算出相当于SP的偏移
                                         armlink_insert(newnode,addnode);
 
                                         init_strnode(newnode,rn2,R13,R_res,regindex);
@@ -3009,7 +2986,7 @@ armcode *translatearm(Blocks *blocks)
                                         ldrnode = create_ldrnode(R_op1,NULL,R13,vartbl->table[vartable_index].index);
                                         armlink_insert(newnode,ldrnode);
 
-                                        addnode = create_addnode(R_res,REG,R_res,REG,R_op1);     //计算出相当于SP的偏移
+                                        addnode = create_addnode(R_res,REG,R_res,REG,R_op1,LSL,2);     //计算出相当于SP的偏移
                                         armlink_insert(newnode,addnode);
 
                                         init_strnode(newnode,rn2,R13,R_res,regindex);
@@ -3022,7 +2999,7 @@ armcode *translatearm(Blocks *blocks)
                                         ldrnode = create_ldrnode(R_op1,NULL,R_op1,0);
                                         armlink_insert(newnode,ldrnode);
 
-                                        addnode = create_addnode(R_res,REG,R_res,REG,R_op1);     //计算出相当于SP的偏移
+                                        addnode = create_addnode(R_res,REG,R_res,REG,R_op1,LSL,2);     //计算出相当于SP的偏移
                                         armlink_insert(newnode,addnode);
 
                                         init_strnode(newnode,rn2,R13,R_res,regindex);
@@ -3042,7 +3019,7 @@ armcode *translatearm(Blocks *blocks)
                                     rn1 = search_var(funcname,p->opn1.id);
                                     if(rn1 >= 0)
                                     {
-                                        addnode = create_addnode(R_res,REG,R_res,REG,rn1);     //计算出相当于SP的偏移
+                                        addnode = create_addnode(R_res,REG,R_res,REG,rn1,LSL,2);     //计算出相当于SP的偏移
                                         armlink_insert(newnode,addnode);
 
                                         init_strnode(newnode,R_op2,R13,R_res,regindex);
@@ -3057,7 +3034,7 @@ armcode *translatearm(Blocks *blocks)
                                             ldrnode = create_ldrnode(R_op1,NULL,R13,vartbl->table[vartable_index].index);
                                             armlink_insert(newnode,ldrnode);
 
-                                            addnode = create_addnode(R_res,REG,R_res,REG,R_op1);     //计算出相当于SP的偏移
+                                            addnode = create_addnode(R_res,REG,R_res,REG,R_op1,LSL,2);     //计算出相当于SP的偏移
                                             armlink_insert(newnode,addnode);
 
                                             init_strnode(newnode,R_op2,R13,R_res,regindex);
@@ -3073,7 +3050,7 @@ armcode *translatearm(Blocks *blocks)
                                             ldrnode = create_ldrnode(reg[0],NULL,R13,vartbl->table[vartable_index].index);
                                             armlink_insert(newnode,ldrnode);
 
-                                            addnode = create_addnode(R_res,REG,R_res,REG,reg[0]);     //计算出相当于SP的偏移
+                                            addnode = create_addnode(R_res,REG,R_res,REG,reg[0],LSL,2);     //计算出相当于SP的偏移
                                             armlink_insert(newnode,addnode);
 
                                             init_strnode(newnode,R_op2,R13,R_res,regindex);
@@ -3096,7 +3073,7 @@ armcode *translatearm(Blocks *blocks)
                                             ldrnode = create_ldrnode(R_op1,NULL,R_op1,0);
                                             armlink_insert(newnode,ldrnode);
 
-                                            addnode = create_addnode(R_res,REG,R_res,REG,R_op1);     //计算出相当于SP的偏移
+                                            addnode = create_addnode(R_res,REG,R_res,REG,R_op1,LSL,2);     //计算出相当于SP的偏移
                                             armlink_insert(newnode,addnode);
 
                                             init_strnode(newnode,R_op2,R13,R_res,regindex);
@@ -3113,7 +3090,7 @@ armcode *translatearm(Blocks *blocks)
                                             ldrnode = create_ldrnode(reg[0],NULL,reg[0],0);
                                             armlink_insert(newnode,ldrnode);
 
-                                            addnode = create_addnode(R_res,REG,R_res,REG,reg[0]);     //计算出相当于SP的偏移
+                                            addnode = create_addnode(R_res,REG,R_res,REG,reg[0],LSL,2);     //计算出相当于SP的偏移
                                             armlink_insert(newnode,addnode);
 
                                             init_strnode(newnode,R_op2,R13,R_res,regindex);
@@ -3141,7 +3118,7 @@ armcode *translatearm(Blocks *blocks)
                                     rn1 = search_var(funcname,p->opn1.id);
                                     if(rn1 >= 0)
                                     {
-                                        addnode = create_addnode(R_res,REG,R_res,REG,rn1);     //计算出相当于SP的偏移
+                                        addnode = create_addnode(R_res,REG,R_res,REG,rn1,LSL,2);     //计算出相当于SP的偏移
                                         armlink_insert(newnode,addnode);
 
                                         init_strnode(newnode,R_op2,R13,R_res,regindex);
@@ -3157,7 +3134,7 @@ armcode *translatearm(Blocks *blocks)
                                             ldrnode = create_ldrnode(R_op1,NULL,R13,vartbl->table[vartable_index].index);
                                             armlink_insert(newnode,ldrnode);
 
-                                            addnode = create_addnode(R_res,REG,R_res,REG,R_op1);     //计算出相当于SP的偏移
+                                            addnode = create_addnode(R_res,REG,R_res,REG,R_op1,LSL,2);     //计算出相当于SP的偏移
                                             armlink_insert(newnode,addnode);
 
                                             init_strnode(newnode,R_op2,R13,R_res,regindex);
@@ -3173,7 +3150,7 @@ armcode *translatearm(Blocks *blocks)
                                             ldrnode = create_ldrnode(reg[0],NULL,R13,vartbl->table[vartable_index].index);
                                             armlink_insert(newnode,ldrnode);
 
-                                            addnode = create_addnode(R_res,REG,R_res,REG,reg[0]);     //计算出相当于SP的偏移
+                                            addnode = create_addnode(R_res,REG,R_res,REG,reg[0],LSL,2);     //计算出相当于SP的偏移
                                             armlink_insert(newnode,addnode);
 
                                             init_strnode(newnode,R_op2,R13,R_res,regindex);
@@ -3196,7 +3173,7 @@ armcode *translatearm(Blocks *blocks)
                                             ldrnode = create_ldrnode(R_op1,NULL,R_op1,0);
                                             armlink_insert(newnode,ldrnode);
 
-                                            addnode = create_addnode(R_res,REG,R_res,REG,R_op1);     //计算出相当于SP的偏移
+                                            addnode = create_addnode(R_res,REG,R_res,REG,R_op1,LSL,2);     //计算出相当于SP的偏移
                                             armlink_insert(newnode,addnode);
 
                                             init_strnode(newnode,R_op2,R13,R_res,regindex);
@@ -3213,7 +3190,7 @@ armcode *translatearm(Blocks *blocks)
                                             ldrnode = create_ldrnode(reg[0],NULL,reg[0],0);
                                             armlink_insert(newnode,ldrnode);
 
-                                            addnode = create_addnode(R_res,REG,R_res,REG,reg[0]);     //计算出相当于SP的偏移
+                                            addnode = create_addnode(R_res,REG,R_res,REG,reg[0],LSL,2);     //计算出相当于SP的偏移
                                             armlink_insert(newnode,addnode);
 
                                             init_strnode(newnode,R_op2,R13,R_res,regindex);
@@ -3267,7 +3244,7 @@ armcode *translatearm(Blocks *blocks)
                                 movnode = create_movnode(R_op2,IMME,p->opn2.const_int);
                                 armlink_insert(newnode,movnode);
 
-                                addnode = create_addnode(R_res,REG,R_res,IMME,p->opn1.const_int*4);     //计算出相当于SP的偏移
+                                addnode = create_addnode(R_res,REG,R_res,IMME,p->opn1.const_int*4,NUL,0);     //计算出相当于SP的偏移
                                 armlink_insert(newnode,addnode);
 
                                 init_strnode(newnode,R_op2,R13,R_res,regindex);
@@ -3275,7 +3252,7 @@ armcode *translatearm(Blocks *blocks)
                             }
                             else if(p->opn2.kind == ID)
                             {
-                                addnode = create_addnode(R_res,REG,R_res,IMME,p->opn1.const_int*4);     //计算出相当于SP的偏移
+                                addnode = create_addnode(R_res,REG,R_res,IMME,p->opn1.const_int*4,NUL,0);     //计算出相当于SP的偏移
                                 armlink_insert(newnode,addnode);
 
                                 rn2 = search_var(funcname,p->opn2.id);
@@ -3330,7 +3307,7 @@ armcode *translatearm(Blocks *blocks)
                                 rn1 = search_var(funcname,p->opn1.id);
                                 if(rn1 >= 0)
                                 {
-                                    addnode = create_addnode(R_res,REG,R_res,REG,rn1);     //计算出相当于SP的偏移
+                                    addnode = create_addnode(R_res,REG,R_res,REG,rn1,LSL,2);     //计算出相当于SP的偏移
                                     armlink_insert(newnode,addnode);
 
                                     init_strnode(newnode,R_op2,R13,R_res,regindex);
@@ -3345,7 +3322,7 @@ armcode *translatearm(Blocks *blocks)
                                         ldrnode = create_ldrnode(R_op1,NULL,R13,vartbl->table[vartable_index].index);
                                         armlink_insert(newnode,ldrnode);
 
-                                        addnode = create_addnode(R_res,REG,R_res,REG,R_op1);     //计算出相当于SP的偏移
+                                        addnode = create_addnode(R_res,REG,R_res,REG,R_op1,LSL,2);     //计算出相当于SP的偏移
                                         armlink_insert(newnode,addnode);
 
                                         init_strnode(newnode,R_op2,R13,R_res,regindex);
@@ -3361,7 +3338,7 @@ armcode *translatearm(Blocks *blocks)
                                         ldrnode = create_ldrnode(reg[0],NULL,R13,vartbl->table[vartable_index].index);
                                         armlink_insert(newnode,ldrnode);
 
-                                        addnode = create_addnode(R_res,REG,R_res,REG,reg[0]);     //计算出相当于SP的偏移
+                                        addnode = create_addnode(R_res,REG,R_res,REG,reg[0],LSL,2);     //计算出相当于SP的偏移
                                         armlink_insert(newnode,addnode);
 
                                         init_strnode(newnode,R_op2,R13,R_res,regindex);
@@ -3384,7 +3361,7 @@ armcode *translatearm(Blocks *blocks)
                                         ldrnode = create_ldrnode(R_op1,NULL,R_op1,0);
                                         armlink_insert(newnode,ldrnode);
 
-                                        addnode = create_addnode(R_res,REG,R_res,REG,R_op1);     //计算出相当于SP的偏移
+                                        addnode = create_addnode(R_res,REG,R_res,REG,R_op1,LSL,2);     //计算出相当于SP的偏移
                                         armlink_insert(newnode,addnode);
 
                                         init_strnode(newnode,R_op2,R13,R_res,regindex);
@@ -3401,7 +3378,7 @@ armcode *translatearm(Blocks *blocks)
                                         ldrnode = create_ldrnode(reg[0],NULL,reg[0],0);
                                         armlink_insert(newnode,ldrnode);
 
-                                        addnode = create_addnode(R_res,REG,R_res,REG,reg[0]);     //计算出相当于SP的偏移
+                                        addnode = create_addnode(R_res,REG,R_res,REG,reg[0],LSL,2);     //计算出相当于SP的偏移
                                         armlink_insert(newnode,addnode);
 
                                         init_strnode(newnode,R_op2,R13,R_res,regindex);
@@ -3426,7 +3403,7 @@ armcode *translatearm(Blocks *blocks)
                                     rn1 = search_var(funcname,p->opn1.id);
                                     if(rn1 >= 0)
                                     {
-                                        addnode = create_addnode(R_res,REG,R_res,REG,rn1);     //计算出相当于SP的偏移
+                                        addnode = create_addnode(R_res,REG,R_res,REG,rn1,LSL,2);     //计算出相当于SP的偏移
                                         armlink_insert(newnode,addnode);
 
                                         init_strnode(newnode,rn2,R13,R_res,regindex);
@@ -3438,7 +3415,7 @@ armcode *translatearm(Blocks *blocks)
                                         ldrnode = create_ldrnode(R_op1,NULL,R13,vartbl->table[vartable_index].index);
                                         armlink_insert(newnode,ldrnode);
 
-                                        addnode = create_addnode(R_res,REG,R_res,REG,R_op1);     //计算出相当于SP的偏移
+                                        addnode = create_addnode(R_res,REG,R_res,REG,R_op1,LSL,2);     //计算出相当于SP的偏移
                                         armlink_insert(newnode,addnode);
 
                                         init_strnode(newnode,rn2,R13,R_res,regindex);
@@ -3451,7 +3428,7 @@ armcode *translatearm(Blocks *blocks)
                                         ldrnode = create_ldrnode(R_op1,NULL,R_op1,0);
                                         armlink_insert(newnode,ldrnode);
 
-                                        addnode = create_addnode(R_res,REG,R_res,REG,R_op1);     //计算出相当于SP的偏移
+                                        addnode = create_addnode(R_res,REG,R_res,REG,R_op1,LSL,2);     //计算出相当于SP的偏移
                                         armlink_insert(newnode,addnode);
 
                                         init_strnode(newnode,rn2,R13,R_res,regindex);
@@ -3471,7 +3448,7 @@ armcode *translatearm(Blocks *blocks)
                                     rn1 = search_var(funcname,p->opn1.id);
                                     if(rn1 >= 0)
                                     {
-                                        addnode = create_addnode(R_res,REG,R_res,REG,rn1);     //计算出相当于SP的偏移
+                                        addnode = create_addnode(R_res,REG,R_res,REG,rn1,LSL,2);     //计算出相当于SP的偏移
                                         armlink_insert(newnode,addnode);
 
                                         init_strnode(newnode,R_op2,R13,R_res,regindex);
@@ -3486,7 +3463,7 @@ armcode *translatearm(Blocks *blocks)
                                             ldrnode = create_ldrnode(R_op1,NULL,R13,vartbl->table[vartable_index].index);
                                             armlink_insert(newnode,ldrnode);
 
-                                            addnode = create_addnode(R_res,REG,R_res,REG,R_op1);     //计算出相当于SP的偏移
+                                            addnode = create_addnode(R_res,REG,R_res,REG,R_op1,LSL,2);     //计算出相当于SP的偏移
                                             armlink_insert(newnode,addnode);
 
                                             init_strnode(newnode,R_op2,R13,R_res,regindex);
@@ -3502,7 +3479,7 @@ armcode *translatearm(Blocks *blocks)
                                             ldrnode = create_ldrnode(reg[0],NULL,R13,vartbl->table[vartable_index].index);
                                             armlink_insert(newnode,ldrnode);
 
-                                            addnode = create_addnode(R_res,REG,R_res,REG,reg[0]);     //计算出相当于SP的偏移
+                                            addnode = create_addnode(R_res,REG,R_res,REG,reg[0],LSL,2);     //计算出相当于SP的偏移
                                             armlink_insert(newnode,addnode);
 
                                             init_strnode(newnode,R_op2,R13,R_res,regindex);
@@ -3525,7 +3502,7 @@ armcode *translatearm(Blocks *blocks)
                                             ldrnode = create_ldrnode(R_op1,NULL,R_op1,0);
                                             armlink_insert(newnode,ldrnode);
 
-                                            addnode = create_addnode(R_res,REG,R_res,REG,R_op1);     //计算出相当于SP的偏移
+                                            addnode = create_addnode(R_res,REG,R_res,REG,R_op1,LSL,2);     //计算出相当于SP的偏移
                                             armlink_insert(newnode,addnode);
 
                                             init_strnode(newnode,R_op2,R13,R_res,regindex);
@@ -3542,7 +3519,7 @@ armcode *translatearm(Blocks *blocks)
                                             ldrnode = create_ldrnode(reg[0],NULL,reg[0],0);
                                             armlink_insert(newnode,ldrnode);
 
-                                            addnode = create_addnode(R_res,REG,R_res,REG,reg[0]);     //计算出相当于SP的偏移
+                                            addnode = create_addnode(R_res,REG,R_res,REG,reg[0],LSL,2);     //计算出相当于SP的偏移
                                             armlink_insert(newnode,addnode);
 
                                             init_strnode(newnode,R_op2,R13,R_res,regindex);
@@ -3570,7 +3547,7 @@ armcode *translatearm(Blocks *blocks)
                                     rn1 = search_var(funcname,p->opn1.id);
                                     if(rn1 >= 0)
                                     {
-                                        addnode = create_addnode(R_res,REG,R_res,REG,rn1);     //计算出相当于SP的偏移
+                                        addnode = create_addnode(R_res,REG,R_res,REG,rn1,LSL,2);     //计算出相当于SP的偏移
                                         armlink_insert(newnode,addnode);
 
                                         init_strnode(newnode,R_op2,R13,R_res,regindex);
@@ -3586,7 +3563,7 @@ armcode *translatearm(Blocks *blocks)
                                             ldrnode = create_ldrnode(R_op1,NULL,R13,vartbl->table[vartable_index].index);
                                             armlink_insert(newnode,ldrnode);
 
-                                            addnode = create_addnode(R_res,REG,R_res,REG,R_op1);     //计算出相当于SP的偏移
+                                            addnode = create_addnode(R_res,REG,R_res,REG,R_op1,LSL,2);     //计算出相当于SP的偏移
                                             armlink_insert(newnode,addnode);
 
                                             init_strnode(newnode,R_op2,R13,R_res,regindex);
@@ -3602,7 +3579,7 @@ armcode *translatearm(Blocks *blocks)
                                             ldrnode = create_ldrnode(reg[0],NULL,R13,vartbl->table[vartable_index].index);
                                             armlink_insert(newnode,ldrnode);
 
-                                            addnode = create_addnode(R_res,REG,R_res,REG,reg[0]);     //计算出相当于SP的偏移
+                                            addnode = create_addnode(R_res,REG,R_res,REG,reg[0],LSL,2);     //计算出相当于SP的偏移
                                             armlink_insert(newnode,addnode);
 
                                             init_strnode(newnode,R_op2,R13,R_res,regindex);
@@ -3625,7 +3602,7 @@ armcode *translatearm(Blocks *blocks)
                                             ldrnode = create_ldrnode(R_op1,NULL,R_op1,0);
                                             armlink_insert(newnode,ldrnode);
 
-                                            addnode = create_addnode(R_res,REG,R_res,REG,R_op1);     //计算出相当于SP的偏移
+                                            addnode = create_addnode(R_res,REG,R_res,REG,R_op1,LSL,2);    //计算出相当于SP的偏移
                                             armlink_insert(newnode,addnode);
 
                                             init_strnode(newnode,R_op2,R13,R_res,regindex);
@@ -3642,7 +3619,7 @@ armcode *translatearm(Blocks *blocks)
                                             ldrnode = create_ldrnode(reg[0],NULL,reg[0],0);
                                             armlink_insert(newnode,ldrnode);
 
-                                            addnode = create_addnode(R_res,REG,R_res,REG,reg[0]);     //计算出相当于SP的偏移
+                                            addnode = create_addnode(R_res,REG,R_res,REG,reg[0],LSL,2);     //计算出相当于SP的偏移
                                             armlink_insert(newnode,addnode);
 
                                             init_strnode(newnode,R_op2,R13,R_res,regindex);
@@ -3686,6 +3663,74 @@ armcode *translatearm(Blocks *blocks)
                     break;
 
                 case ARRAY_EXP:
+                    rn0 = search_var(funcname,p->result.id);
+                    if(rn0 >= 0)
+                    {
+                        rn1 = search_var(funcname,p->opn1.id);
+                        if(rn1 >= 0)                //局部数组，首址在寄存器中
+                        {
+                            if(p->opn2.kind == LITERAL)
+                            {
+                                addnode = create_addnode(rn1,REG,rn1,IMME,p->opn2.const_int*4,NUL,0);
+                                armlink_insert(newnode,addnode);
+
+                                newnode->op = LDR;
+                                newnode->result.value = rn0;
+                                newnode->oper1.type = MEM;
+                                newnode->oper1.value = R13;
+                                newnode->oper1.kind = regindex;
+                                newnode->oper1.index = rn1;
+                            }
+                            else if(p->opn2.kind == ID)
+                            {
+                                rn2 = search_var(funcname,p->opn2.id);
+                                if(rn2 >= 0)
+                                {
+
+                                }
+                                else if(rn2 == -1)
+                                {
+
+                                }
+                                else if(rn2 == -2)
+                                {
+
+                                }
+                                else 
+                                {
+                                    printf("%d ALLOC REG for p->opn2 error\n");
+                                }
+                            }
+                            else
+                            {
+                                printf("%d  p->opn2.kind error!\n");
+                            }
+                        }
+                        else if(rn1 == -1)          //局部数组，首址在内存中
+                        {
+
+                        }
+                        else if(rn1 == -2)          //全局数组
+                        {
+
+                        }
+                        else
+                        {
+                            printf("%d p->opn1.kind error!\n",p->UID);
+                        }
+                    }
+                    else if(rn0 == -1)
+                    {
+
+                    }
+                    else if(rn0 == -2)
+                    {
+
+                    }
+                    else
+                    {
+                        printf("无用赋值\n");
+                    }
                     init_myreg();
                     break;
 
@@ -6045,7 +6090,7 @@ armcode * create_movnode(int R_res,optype type,int value)
   
 }
 
-armcode * create_addnode(int R_res,optype type_op1,int op1,int type_op2,int op2)
+armcode * create_addnode(int R_res,optype type_op1,int op1,int type_op2,int op2,optype type_op3,int op3)
 {
     armcode * anode = initnewnode();
     anode->op = ADD;
@@ -6054,6 +6099,8 @@ armcode * create_addnode(int R_res,optype type_op1,int op1,int type_op2,int op2)
     anode->oper1.value = op1;
     anode->oper2.type = type_op2;
     anode->oper2.value = op2;
+    anode->oper3.type = type_op3;
+    anode->oper3.value = op3;
 
     return anode;
 }

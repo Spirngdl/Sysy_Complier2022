@@ -105,7 +105,15 @@ void printarm(armcode *armnode, FILE *fp)
         case ADD:
             if (p->oper2.type == REG)
             {
-                fprintf(fp, "\tADD   R%d , R%d , R%d\n", p->result.value, p->oper1.value, p->oper2.value);
+                if(p->oper3.type == LSL)
+                {
+                   fprintf(fp, "\tADD   R%d , R%d , R%d,LSL #%d\n", p->result.value, p->oper1.value, p->oper2.value,p->oper3.value); 
+                }
+                else
+                {
+                    fprintf(fp, "\tADD   R%d , R%d , R%d\n", p->result.value, p->oper1.value, p->oper2.value);
+                }
+                
             }
             else if (p->oper2.type == IMME)
             {
