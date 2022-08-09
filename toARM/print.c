@@ -61,7 +61,8 @@ void printarm(armcode *armnode, FILE *fp)
         case FUNCLABEL:
             fprintf(fp,"\t.align    2\n");
             fprintf(fp,"\t.global   %s\n",p->result.str_id);
-            fprintf(fp,"\t.type %s  ,%%function");
+            fprintf(fp,"\t.type %s  ,%%function\n",p->result.str_id);
+            fprintf(fp,"%s:\n",p->result.str_id);
             break;
 
         case ENDLABEL:
