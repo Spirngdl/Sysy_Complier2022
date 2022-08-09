@@ -151,7 +151,7 @@ int alloc_myreg();
 
 int get_other_reg(int i, int j);
 
-armcode * div_mod_exp(armcode * newnode,struct codenode * p,armcode *q);
+armcode * div_mod_exp(armcode * newnode,struct codenode * p,armcode *q,char * op);
 
 
 #endif
