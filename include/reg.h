@@ -9,7 +9,7 @@ struct var_of_RIG {
 };
 
 struct var {
-    char name[8]; // 变量名
+    char name[10]; // 变量名
     char fun_name[32]; // 函数名
     int reg; // 寄存器号，溢出为-1
 };
