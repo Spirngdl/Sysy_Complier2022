@@ -2,8 +2,8 @@
 
 char *Reg[16];
 char funcname[33];
-const int reg[5] = {0, 1, 2, 3, 14};
-// int regcountmask[16] = {0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4};
+const int call_reg_list[5] = {0, 1, 2, 3, 14};
+//int regcountmask[16] = {0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4};
 
 int R11R12 = 3;
 
@@ -2031,8 +2031,8 @@ armcode *translatearm(Blocks *blocks)
 
                     m = m->prior; //指向最后一个参数
 
-                    // int reg[5] = {0, 1, 2, 3, 14};
-                    snode = mul_reg_node(STMFD, R13, reg, 5);
+                    //int reg[5] = {0, 1, 2, 3, 14};
+                    snode = mul_reg_node(STMFD,R13, call_reg_list, 5);
                     newnode->pre->next = snode;
                     snode->pre = newnode->pre;
                     snode->next = newnode;
@@ -2255,8 +2255,8 @@ armcode *translatearm(Blocks *blocks)
 
                     if (search_func(p->opn1.id) == 0)
                     {
-                        // int reg[5] = {0, 1, 2, 3, 14};
-                        snode = mul_reg_node(STMFD, R13, reg, 5);
+                        //int reg[5] = {0, 1, 2, 3, 14};
+                        snode = mul_reg_node(STMFD,R13, call_reg_list, 5);
                         // newnode->pre->next = snode;
                         // snode->pre = newnode->pre;
                         // snode->next = newnode;
@@ -2330,8 +2330,9 @@ armcode *translatearm(Blocks *blocks)
                         vartable_update_all(vartbl, -func_call_subindex);
                     }
 
-                    // int reg[5] = {0, 1, 2, 3, 14};
-                    ldmnode = mul_reg_node(LDMFD, R13, reg, 5);
+                    
+                    //int reg[5] = {0, 1, 2, 3, 14};
+                    ldmnode = mul_reg_node(LDMFD,R13,call_reg_list,5);
                     q->next = ldmnode;
                     ldmnode->pre = q;
                     q = ldmnode;

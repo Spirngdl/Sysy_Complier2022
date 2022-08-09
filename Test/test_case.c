@@ -25,3 +25,6 @@ int main() {
 		putint(0);
 	return 0;
 }
+
+
+
