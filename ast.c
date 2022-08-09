@@ -246,7 +246,7 @@ float const_exp(struct node *T)
     if (T->kind == EXP_ARRAY) //如果找数组，比较麻烦要求下标
     {
         int rtn = searchSymbolTable(T->type_id); //先处理数组ID
-        int width[10];
+        int width[15];
         width[symbolTable.symbols[rtn].array_dimension - 1] = 1;
         for (int i = symbolTable.symbols[rtn].array_dimension - 1; i > 0; i--)
         {

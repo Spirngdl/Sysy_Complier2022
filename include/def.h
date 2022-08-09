@@ -126,7 +126,7 @@ struct opn
 
 struct codenode
 {                                  //三地址TAC代码结点,采用双向循环链表存放中间语言代码
-    int op;                        // TAC代码的运算符种类
+    int op;             // TAC代码的运算符种类
     struct opn opn1, opn2, result; // 2个操作数和运算结果
     struct codenode *next, *prior;
 
@@ -137,7 +137,7 @@ struct codenode
 
 struct node
 {
-    enum node_kind kind; //结点类型
+    int kind; //结点类型
     int type;
     union
     {

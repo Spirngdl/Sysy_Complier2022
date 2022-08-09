@@ -24,7 +24,7 @@ struct symbol
     int flag;       //符号标记，函数：'F'  变量：'V'   参数：'P'  临时变量：'T'
     // int offset;          //外部变量和局部变量在其静态数据区或活动记录中的偏移量
     //或函数活动记录大小，目标代码生成时使用
-    int length[10];      //数组每一维的长度
+    int length[15];      //数组每一维的长度
     int array_dimension; //数组维度
     List *value;         //保存全局变量的值，用来数组初始化 如果没有完全没有初始化，置为NULL
     float const_value;   //暂存临时的值
@@ -37,7 +37,7 @@ typedef struct ArraySymbol_
     int level;           //层号
     int type;            //类型 int 或float
     char alias[10];      // 别名
-    int length[10];      //数组每一维的长度
+    int length[15];      //数组每一维的长度
     int array_demension; //数组维度
     List *value;         //保存数组的值 如果没有初值，设置为NULL
     char func_name[32];  //所在函数的函数名

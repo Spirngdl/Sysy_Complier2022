@@ -34,12 +34,22 @@ void Driver(struct node *T)
                         // invariant_Extrapolation(head_block);
 
   printf("optimize\n");
-  dag_optimize(head_block);    // DAG优化
+  dag_optimize(head_block); // DAG优化
+  Blocks *cur_blocks = head_block;
+  // while (cur_blocks)
+  // {
+  //   for (int i = 0; i < cur_blocks->count; i++)
+  //   {
+  //     print_IR(cur_blocks->block[i]->tac_list);
+  //   }
+  //   cur_blocks = cur_blocks->next;
+  // }
+  make_uid_block(head_block); //在进入arm翻译前最后一次调整编号
+
   check_immes(head_block);     //检验立即数合法性
   all_fun_reg(head_block);     //进行活跃变量分析
-  make_uid_block(head_block);  //在进入arm翻译前最后一次调整编号
   add_label_block(head_block); //添加label节点
-  Blocks *cur_blocks = head_block;
+  cur_blocks = head_block;
   while (cur_blocks)
   {
     for (int i = 0; i < cur_blocks->count; i++)
