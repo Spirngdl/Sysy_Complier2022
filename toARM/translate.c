@@ -4553,6 +4553,147 @@ armcode *translatearm(Blocks *blocks)
                     init_myreg();
                     break;
 
+                case TOK_DIV:
+                    rn0 = search_var(funcname,p->result.id);
+                    if(rn0 >= 0)
+                    {
+                        if(p->opn1.kind == LITERAL && p->opn2.kind == LITERAL)
+                        {
+
+                        }
+                        else if(p->opn1.kind == LITERAL && p->opn2.kind == ID)
+                        {
+
+                        }
+                        else if(p->opn1.kind == LITERAL && p->opn2.kind == FLOAT_LITERAL)
+                        {
+
+                        }
+                        else if(p->opn1.kind == ID && p->opn2.kind == LITERAL)
+                        {
+
+                        }
+                        else if(p->opn1.kind == ID && p->opn2.kind == ID)
+                        {
+
+                        }
+                        else if(p->opn1.kind == ID && p->opn2.kind == FLOAT_LITERAL)
+                        {
+
+                        }
+                        else if(p->opn1.kind == FLOAT_LITERAL && p->opn2.kind == LITERAL)
+                        {
+
+                        }
+                        else if(p->opn1.kind == FLOAT_LITERAL && p->opn2.kind == ID)
+                        {
+                            
+                        }
+                        else if(p->opn1.kind == FLOAT_LITERAL && p->opn2.kind == FLOAT_LITERAL)
+                        {
+                            
+                        }
+                        else
+                        {
+                            printf("DIV ERROR!\n");
+                        }
+                    }
+                    else if(rn0 == -1)
+                    {
+                        if(p->opn1.kind == LITERAL && p->opn2.kind == LITERAL)
+                        {
+
+                        }
+                        else if(p->opn1.kind == LITERAL && p->opn2.kind == ID)
+                        {
+
+                        }
+                        else if(p->opn1.kind == LITERAL && p->opn2.kind == FLOAT_LITERAL)
+                        {
+
+                        }
+                        else if(p->opn1.kind == ID && p->opn2.kind == LITERAL)
+                        {
+
+                        }
+                        else if(p->opn1.kind == ID && p->opn2.kind == ID)
+                        {
+
+                        }
+                        else if(p->opn1.kind == ID && p->opn2.kind == FLOAT_LITERAL)
+                        {
+
+                        }
+                        else if(p->opn1.kind == FLOAT_LITERAL && p->opn2.kind == LITERAL)
+                        {
+
+                        }
+                        else if(p->opn1.kind == FLOAT_LITERAL && p->opn2.kind == ID)
+                        {
+                            
+                        }
+                        else if(p->opn1.kind == FLOAT_LITERAL && p->opn2.kind == FLOAT_LITERAL)
+                        {
+                            
+                        }
+                        else
+                        {
+                            printf("DIV ERROR!\n");
+                        }
+                    }
+                    else if(rn0 == -2)
+                    {
+                        if(p->opn1.kind == LITERAL && p->opn2.kind == LITERAL)
+                        {
+
+                        }
+                        else if(p->opn1.kind == LITERAL && p->opn2.kind == ID)
+                        {
+
+                        }
+                        else if(p->opn1.kind == LITERAL && p->opn2.kind == FLOAT_LITERAL)
+                        {
+
+                        }
+                        else if(p->opn1.kind == ID && p->opn2.kind == LITERAL)
+                        {
+
+                        }
+                        else if(p->opn1.kind == ID && p->opn2.kind == ID)
+                        {
+
+                        }
+                        else if(p->opn1.kind == ID && p->opn2.kind == FLOAT_LITERAL)
+                        {
+
+                        }
+                        else if(p->opn1.kind == FLOAT_LITERAL && p->opn2.kind == LITERAL)
+                        {
+
+                        }
+                        else if(p->opn1.kind == FLOAT_LITERAL && p->opn2.kind == ID)
+                        {
+                            
+                        }
+                        else if(p->opn1.kind == FLOAT_LITERAL && p->opn2.kind == FLOAT_LITERAL)
+                        {
+                            
+                        }
+                        else
+                        {
+                            printf("DIV ERROR!\n");
+                        }
+                    }
+                    else
+                    {
+                        printf("无用赋值！\n");
+                    }
+                    init_myreg();
+                    break;
+
+                case TOK_MODULO:
+                    break;
+
                 case GOTO:
                     newnode->op = B;
                     newnode->result.type = STRING;
