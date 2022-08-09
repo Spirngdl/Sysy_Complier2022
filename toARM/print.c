@@ -48,12 +48,24 @@ void printarm(armcode *armnode, FILE *fp)
 {
     armcode *p = armnode->next;
     int tmp;
+    fprintf(fp,"\t.text\n");
+    fprintf(fp,"\t.code     32\n");
     while (p != NULL)
     {
         switch (p->op)
         {
         case ARMLABEL:
             fprintf(fp, "%s:\n", p->result.str_id);
+            break;
+
+        case FUNCLABEL:
+            fprintf(fp,"\t.align    2\n");
+            fprintf(fp,"\t.global   %s\n",p->result.str_id);
+            fprintf(fp,"\t.type %s  ,%%function");
+            break;
+
+        case ENDLABEL:
+            fprintf(fp,"\t.size %s , .-%s",p->result.str_id,p->result.str_id);
             break;
 
         case GVAR_INT:
@@ -151,14 +163,22 @@ void printarm(armcode *armnode, FILE *fp)
             break;
 
         case STR:
-            if (p->oper1.index == 0)
+            if(p->oper1.kind == immeindex)
             {
-                fprintf(fp, "\tSTR   R%d , [R%d]\n", p->result.value, p->oper1.value);
+                if (p->oper1.index == 0)
+                {
+                    fprintf(fp, "\tSTR   R%d , [R%d]\n", p->result.value, p->oper1.value);
+                }
+                else
+                {
+                    fprintf(fp, "\tSTR   R%d , [R%d,#%d]\n", p->result.value, p->oper1.value, p->oper1.index);
+                }
             }
-            else
+            else if(p->oper1.kind == regindex)
             {
-                fprintf(fp, "\tSTR   R%d , [R%d,#%d]\n", p->result.value, p->oper1.value, p->oper1.index);
+                fprintf(fp, "\tSTR   R%d , [R%d,R%d]\n", p->result.value, p->oper1.value, p->oper1.index);
             }
+            
             break;
 
         case STMFD:
