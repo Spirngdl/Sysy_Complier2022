@@ -37,7 +37,7 @@ typedef enum _armop
     GVAR_INT,   //整型全局变量
     GVAR_FLOAT, //浮点型全局变量
     GVAR_LABEL, //全局变量地址
-
+    SEG_LABEL,  //段信息
 } armop;
 
 typedef enum _opflag

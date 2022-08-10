@@ -69,6 +69,10 @@ void printarm(armcode *armnode, FILE *fp)
             fprintf(fp,"\t.size %s , .-%s\n",p->result.str_id,p->result.str_id);
             break;
 
+        case SEG_LABEL:
+            fprintf(fp,"\t%s\n",p->result.str_id);
+            break;
+
         case GVAR_INT:
             fprintf(fp, "\t%s   %d\n", p->result.str_id, p->oper1.value);
             break;
@@ -168,7 +172,15 @@ void printarm(armcode *armnode, FILE *fp)
                 }
                 else 
                 {
-                    fprintf(fp, "\tLDR   R%d , [R%d,R%d]\n", p->result.value, p->oper1.value, p->oper1.index);
+                    if(p->oper3.type == LSL)
+                    {
+                        fprintf(fp, "\tLDR   R%d , [R%d,R%d,LSL #%d]\n", p->result.value, p->oper1.value, p->oper1.index,p->oper3.value);
+                    }
+                    else
+                    {
+                        fprintf(fp, "\tLDR   R%d , [R%d,R%d]\n", p->result.value, p->oper1.value, p->oper1.index);
+                    }
+                    
                 }
             }
             else if (p->oper1.type == ILIMME)
