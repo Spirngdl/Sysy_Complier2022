@@ -2,6 +2,43 @@
 struct codenode *node_cur;
 int DAG_ID = 0;
 DAGnode *deb = NULL;
+/**
+ * @brief 如果该基本块内有函数调用，且有实参，生成的新的三地址代码，可能实参中间会夹一些临时变量，对后端不友好
+ *
+ * @param T
+ */
+void Adjust_arg(struct codenode **T)
+{
+    struct codenode *headcode = NULL;
+    struct codenode *tcode = *T;
+    struct codenode *pre_arg = NULL;
+    while (tcode)
+    {
+        if (tcode->op == ARG) //先找到
+        {
+            if (tcode->UID == (*T)->UID) //如果ARG在头，后续可能要修改T
+            {
+                headcode = genLabel("DD"); //先创一个头节点
+                headcode->next = tcode;
+                headcode->prior = tcode->prior;
+                tcode->prior = headcode;
+            }
+            pre_arg = tcode->prior;
+            while (tcode)
+            {
+                if (tcode->op == CALL)
+                {
+                }
+                if (tcode->op != ARG)
+                {
+                    
+                }
+                tcode = tcode->next;
+            }
+        }
+        tcode = tcode->next;
+    }
+}
 DAGnode *create_dagnode()
 {
     DAGnode *newnode = (DAGnode *)malloc(sizeof(DAGnode));
@@ -26,6 +63,7 @@ DAG *creat_dag()
     newnode->callOptSerial = 0;
     newnode->haltRec = newnode->jumperRec = NULL;
     newnode->functionrec = newnode->endfunction = NULL;
+    newnode->has_arg = false;
     newnode->nodes = ListInit();
     return newnode;
 }
@@ -584,10 +622,9 @@ int readquad2(DAG *dag, struct codenode *T)
     bool n2Literal = false, n3Literal = false;
     DAGnode *n1 = NULL, *n2 = NULL, *n3 = NULL;
     float val = 0, val1 = 0, val2 = 0;
-    if(T->UID == 107)
+    if (T->UID == 107)
     {
         int ll = 10;
-        
     }
     if (T->opn1.kind == LITERAL)
     {
@@ -1013,6 +1050,8 @@ int readquad4(DAG *dag, struct codenode **T)
     //拿到的第一个是ARG
     DAGnode *n1 = NULL, *cur = NULL, *head = NULL, *n = NULL;
     struct codenode *tcode = *T;
+    if (tcode->op == ARG)
+        dag->has_arg = true;
     //先处理参数 可能没有参数
     while (tcode->op != CALL)
     {
@@ -1915,7 +1954,11 @@ void dag_optimize(Blocks *blocks)
             }
             if (result->next != NULL)
             {
-                result->prior->next = NULL;
+                result->prior->next = NULL; //把尾指针断一下next
+            }
+            if (dag->has_arg)
+            {
+                result->UID = 512;
             }
             cur_blocks->block[i]->tac_list = result;
         }

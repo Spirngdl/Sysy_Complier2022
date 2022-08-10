@@ -85,6 +85,7 @@ struct codenode *genIR(int op, struct opn opn1, struct opn opn2, struct opn resu
     h->result = result;
     h->next = h->prior = h;
     h->in = h->out = 0;
+    h->UID = 0;
     return h;
 }
 //生成一条标号语句，返回头指针
@@ -490,7 +491,7 @@ int count_mask[16] = {0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4};
  */
 int check_imme(int imme)
 {
-    if(imme < 0)
+    if(imme < 0 && imme > -100)
         imme = -imme;
     int tmp;
     int count1 = 0;
@@ -513,7 +514,7 @@ int check_imme(int imme)
             last = i * 4 + op_unmask[tmp];
             // printf("%d      last is %d\n", i, last);
             int dif = last - first;
-            if (dif == 8)
+            if (dif == 7)
             {
                 // the num is started from 1
                 if ((first % 2) == 0)
@@ -522,7 +523,7 @@ int check_imme(int imme)
                     return -1;
                 }
             }
-            if (dif > 8 && dif < 25)
+            if (dif > 7 && dif < 25)
             {
                 // printf("not fair!\n");
                 return -1;
@@ -545,6 +546,7 @@ int check_imme(int imme)
     }
     return 0;
 }
+
 /**
  * @brief 遍历所有基本块，遍历所有三地址代码，查看使用的立即数是否合法
  *

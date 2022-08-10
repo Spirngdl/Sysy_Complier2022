@@ -44,7 +44,7 @@ void Driver(struct node *T)
   //   }
   //   cur_blocks = cur_blocks->next;
   // }
-
+  int l = check_imme(-1028);
   check_immes(head_block);    //检验立即数合法性
   make_uid_block(head_block); //在进入arm翻译前最后一次调整编号
 
