@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/compiler.exe",
-            "args": ["-S","-O","${workspaceFolder}/Test/test_case.s","${workspaceFolder}/Test/test_case.c"],
+            "args": ["-S","-o","${workspaceFolder}/Test/test_case.s","${workspaceFolder}/Test/test_case.c"],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],

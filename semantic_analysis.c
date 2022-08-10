@@ -468,13 +468,13 @@ struct codenode *arrayinit_bracker_part(struct node *T, int brace_num, int *arra
                     //     ListPushBack(value_list, value);
                     //     // push_initvalue(0, value_list);
                     // }
-                    for (int i = *array_offset; i < final_offset; i++)
-                    {
-                        opn2.kind = LITERAL;
-                        opn2.const_int = 0;
-                        opn1.const_int = *array_offset;
-                        tcode = merge(2, tcode, genIR(ARRAY_ASSIGN, opn1, opn2, result));
-                    }
+                    // for (int i = *array_offset; i < final_offset; i++)
+                    // {
+                    //     opn2.kind = LITERAL;
+                    //     opn2.const_int = 0;
+                    //     opn1.const_int = i;
+                    //     tcode = merge(2, tcode, genIR(ARRAY_ASSIGN, opn1, opn2, result));
+                    // }
                     (*array_offset) = final_offset;
                 }
             }
