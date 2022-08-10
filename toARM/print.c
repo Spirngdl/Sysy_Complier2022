@@ -211,7 +211,15 @@ void printarm(armcode *armnode, FILE *fp)
             }
             else if(p->oper1.kind == regindex)
             {
-                fprintf(fp, "\tSTR   R%d , [R%d,R%d]\n", p->result.value, p->oper1.value, p->oper1.index);
+                if(p->oper3.type == LSL)
+                {
+                    fprintf(fp, "\tSTR   R%d , [R%d,R%d,LSL #%d]\n", p->result.value, p->oper1.value, p->oper1.index,p->oper3.value);
+                }
+                else
+                {
+                    fprintf(fp, "\tSTR   R%d , [R%d,R%d]\n", p->result.value, p->oper1.value, p->oper1.index);
+                }
+                
             }
             
             break;
