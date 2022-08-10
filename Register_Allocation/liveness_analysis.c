@@ -361,6 +361,11 @@ void one_block_tac_liveness (Block* cntr, char* block_in[], char* block_out[], c
     int i = 0, j = 0;
     int reg[MAX_REG] = {0};      // 寄存器数组，空闲为0，占用为1
     available_reg(reg, block_in, block_out, fun_add); // 对reg数组进行处理，得到空闲寄存器集合
+    
+    for (i = 0; i < param_num && i < 4; i++) {
+        reg[i] = 1;
+    }
+
     /*for (i = 0; i < MAX_REG; i++) {
         if (reg[i] == 0) printf("\n\tR%d\tfree", i);
         if (reg[i] == 1) printf("\n\tR%d\tbusy", i);
@@ -392,7 +397,9 @@ void one_block_tac_liveness (Block* cntr, char* block_in[], char* block_out[], c
     for (i = 0; i < num_tac; i++) {
         temp_blocks->block[i] = (Block*)malloc(sizeof(Block));
     }
+    
     divide_TACs_to_blocks(cntr, temp_blocks, num_tac);
+    
     for (i = 0; i < num_tac; i++) {
         one_block_use_def(use[i], def[i], MAX_VAR, *(temp_blocks->block[i]), fun_add, param, param_num);
     }
@@ -568,7 +575,7 @@ void all_block_liveness (Block* cntr[], int num_block, char* fun_add) {
     //printf("\n");
     int reg[MAX_REG] = {0};
 
-    for (i = 0; i < param_num; i++) {
+    for (i = 0; i < param_num && i < 4; i++) {
         reg[i] = 1;
     }
     

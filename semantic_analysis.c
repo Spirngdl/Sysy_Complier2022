@@ -1097,7 +1097,7 @@ int exp_index(struct node *T, int index, int width[]) //处理数组引用的下
                 result.kind = ID;
                 strcpy(result.id, symbolTable.symbols[place].alias);
                 symbolTable.symbols[place].type = ID;
-                T->code = merge(2, T->code, genIR(TOK_ADD, opn1, opn2, result));
+                T->code = merge(3, T->code, T->ptr[1]->code, genIR(TOK_ADD, opn1, opn2, result));
             }
         }
         else //无下一维
