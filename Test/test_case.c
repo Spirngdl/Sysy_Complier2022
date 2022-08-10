@@ -1,3 +1,18 @@
+void sort(int arr[], int len) {
+  int i = 0;
+  while (i < len - 1) {
+    int j = i + 1;
+    while (j < len) {
+      if (arr[i] < arr[j]) {
+        int temp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = temp;
+      }
+      j = j + 1;
+    }
+    i = i + 1;
+  }
+}
 
 
 int param32_arr(int a1[], int a2[], int a3[], int a4[], int a5[], int a6[],
