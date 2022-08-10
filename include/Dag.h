@@ -98,5 +98,6 @@ struct codenode *to_code(DAG *dag, DAGnode *n, int out_count, char *outActive[])
 bool isFutileSet(DAGnode *n, int active[]);                                       // 判断结点 n 是否代表一个无用赋值语句（形如 T = N ，其中 T 为非活跃变量）
 bool isFutileASSIGN(DAG *dag, DAGnode *n, int out_count, char *outActive[]);      //暂时用来判断一个赋值语句是否无用
 void dag_optimize(Blocks *blocks);                                                // dag优化接口
+void Adjust_arg(struct codenode **T);
 
 #endif

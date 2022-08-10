@@ -26,12 +26,27 @@ void Adjust_arg(struct codenode **T)
             pre_arg = tcode->prior;
             while (tcode)
             {
-                if (tcode->op == CALL)
+                if (tcode->op == CALL) //可以结束了
                 {
+                    if (headcode != NULL)
+                    {
+                        *T = headcode->next;
+                        (*T)->prior = headcode->prior;
+                    }
+                    return;
                 }
                 if (tcode->op != ARG)
                 {
-                    
+                    struct codenode *ad_code = tcode;
+                    //先把空位填上
+                    tcode = tcode->prior;
+                    tcode->next = ad_code->next;
+                    ad_code->next->prior = tcode;
+                    //再插到头部
+                    ad_code->prior = pre_arg;
+                    ad_code->next = pre_arg->next;
+                    pre_arg->next = ad_code;
+                    pre_arg = ad_code;
                 }
                 tcode = tcode->next;
             }
@@ -1959,6 +1974,7 @@ void dag_optimize(Blocks *blocks)
             if (dag->has_arg)
             {
                 result->UID = 512;
+                Adjust_arg(&result);
             }
             cur_blocks->block[i]->tac_list = result;
         }
