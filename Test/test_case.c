@@ -1,11 +1,27 @@
-int main(){
-    const int a[4][2] = {{1, 2}, {3, 4}, {}, 7};
-    const int N = 3;
-    int b[4][2] = {};
+int a = 7;
 
-    // int c[4][2] = {1, 2, 3, 4, 5, 6, 7, 8};
-    // int d[N + 1][2] = {1, 2, {3}, {5}, a[3][0], 8};
-    // int e[4][2][1] = {{d[2][1], {c[2][1]}}, {3, 4}, {5, 6}, {7, 8}};
-    // return e[3][1][0] + e[0][0][0] + e[0][1][0] + d[3][0];
-    return 0;
+int func() {
+	int b = a;
+	int a = 1;
+	if (a == b) {
+		a = a + 1;
+		return 1;
+	}
+	else
+		return 0;
+}
+
+int main() {
+	int result = 0;
+	int i = 0;
+	while (i < 100) {
+		if (func() == 1)
+			result = result + 1;
+		i = i + 1;
+	}
+	if (result < 100)
+		putint(1);
+	else
+		putint(0);
+	return 0;
 }
