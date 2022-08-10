@@ -2333,8 +2333,12 @@ armcode *translatearm(Blocks *blocks)
                         }
                         else if (rn0 == -1)
                         {
-                            vartable_index = vartable_select(vartbl, p->result.id);
-                            strnode = create_strnode(R0, R13, vartbl->table[vartable_index].index);
+                            // vartable_index = vartable_select(vartbl, p->result.id);
+                            // strnode = create_strnode(R0, R13, vartbl->table[vartable_index].index);
+                            cur_stk_offset -= 4;
+                            strnode = create_strnode(R0,R13,cur_stk_offset);
+                            vartable_insert(vartbl,p->result.id,memindex,cur_stk_offset);
+
                             q->next = strnode;
                             strnode->pre = q;
                             q = strnode;
