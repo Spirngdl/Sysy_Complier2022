@@ -348,7 +348,7 @@ void graph_coloring (char*** in, char*** out, int num_block, int num_reg, char* 
     for (i = 0; i < num_var; i++) {
         free(var_list[i]);
     }
-    // free(var_list[i]);
+    free(var_list);
 }
 
 void reg_param (char* fun_add, char* param[], int param_num) {
@@ -427,6 +427,7 @@ int search_fun_spilling (char* fun_name) {
             num++;
         }
     }
+    num = num + get_array_infunc(fun_name);
     return num;
 }
 

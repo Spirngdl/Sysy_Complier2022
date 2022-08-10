@@ -46,6 +46,7 @@ int get_array_infunc(char *func_name)
                 width *= arrayTalbe.symbols[i].length[j];
             }
             result += width;
+            result++; //考虑把数组的地址也压栈，多开一个
         }
     }
     return result;

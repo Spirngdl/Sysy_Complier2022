@@ -1202,6 +1202,8 @@ void boolExp(struct node *T, char *Etrue, char *Efalse) //二代
             }
             else
             {
+                //默认算TOK_INT
+                T->ptr[0]->type = TOK_INT;
                 Exp(T->ptr[0]); //处理左
                 opn1.kind = ID;
                 strcpy(opn1.id, symbolTable.symbols[T->ptr[0]->place].alias);
@@ -1213,7 +1215,8 @@ void boolExp(struct node *T, char *Etrue, char *Efalse) //二代
                 opn2.const_int = T->ptr[1]->type_int;
             }
             else
-            {
+            { //默认算TOK_INT
+                T->ptr[1]->type = TOK_INT;
                 Exp(T->ptr[1]); //处理右
                 opn2.kind = ID;
                 strcpy(opn2.id, symbolTable.symbols[T->ptr[1]->place].alias);
