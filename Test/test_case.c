@@ -1,47 +1,9 @@
-int buf[2][100];
-
-// sort [l, r)
-void merge_sort(int l, int r)
-{
-    if (l + 1 >= r)
-        return;
-
-    int mid = (l + r) / 2;
-    merge_sort(l, mid);
-    merge_sort(mid, r);
-
-    int i = l, j = mid, k = l;
-    while (i < mid && j < r) {
-        if (buf[0][i] < buf[0][j]) {
-            buf[1][k] = buf[0][i];
-            i = i + 1;
-        } else {
-            buf[1][k] = buf[0][j];
-            j = j + 1;
-        }
-        k = k + 1;
-    }
-    while (i < mid) {
-        buf[1][k] = buf[0][i];
-        i = i + 1;
-        k = k + 1;
-    }
-    while (j < r) {
-        buf[1][k] = buf[0][j];
-        j = j + 1;
-        k = k + 1;
-    }
-
-    while (l < r) {
-        buf[0][l] = buf[1][l];
-        l = l + 1;
-    }
-}
-
-int main()
-{
-    int n = getarray(buf[0]);
-    merge_sort(0, n);
-    putarray(n, buf[0]);
-    return 0;
+//test array define
+int main(){
+    int a[4][2] = {};
+    int b[4][2] = {1, 2, 3, 4, 5, 6, 7, 8};
+    int c[4][2] = {{1, 2}, {3, 4}, {5, 6}, {7, 8}};
+    int d[4][2] = {1, 2, {3}, {5}, 7 , 8};
+    int e[4][2] = {{d[2][1], c[2][1]}, {3, 4}, {5, 6}, {7, 8}};
+    return e[3][1] + e[0][0] + e[0][1] + a[2][0];
 }
