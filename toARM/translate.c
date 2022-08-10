@@ -12,7 +12,7 @@ bool MULFLAG = false;
 vartable *vartbl;
 
 int func_enter_subindex;
-int func_call_subindex;
+int func_call_subindex = 0;
 int func_enter_reg[16];
 int func_enter_regnum;
 
@@ -2285,6 +2285,7 @@ armcode *translatearm(Blocks *blocks)
                     {
                         // int reg[5] = {0, 1, 2, 3, 14};
                         snode = mul_reg_node(STMFD, R13, call_reg_list, 5);
+                        vartable_update_all(vartbl, 20);
                         // newnode->pre->next = snode;
                         // snode->pre = newnode->pre;
                         // snode->next = newnode;
@@ -2372,6 +2373,8 @@ armcode *translatearm(Blocks *blocks)
                         addnode->pre = q;
                         q = addnode;
                         vartable_update_all(vartbl, -func_call_subindex);
+
+                        func_call_subindex = 0;
                     }
 
                     // int reg[5] = {0, 1, 2, 3, 14};
