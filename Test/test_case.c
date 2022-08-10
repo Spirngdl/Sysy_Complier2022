@@ -1,9 +1,9 @@
-//test array define
-int main(){
-    int a[4][2] = {};
-    int b[4][2] = {1, 2, 3, 4, 5, 6, 7, 8};
-    int c[4][2] = {{1, 2}, {3, 4}, {5, 6}, {7, 8}};
-    int d[4][2] = {1, 2, {3}, {5}, 7 , 8};
-    int e[4][2] = {{d[2][1], c[2][1]}, {3, 4}, {5, 6}, {7, 8}};
-    return e[3][1] + e[0][0] + e[0][1] + a[2][0];
+
+int param16(int a1, int a2, int a3, int a4, int a5, int a6, int a7, int a8,
+            int a9, int a10, int a11, int a12, int a13, int a14, int a15,
+            int a16) {
+  int arr[16] = {a1, a2,  a3,  a4,  a5,  a6,  a7,  a8,
+                 a9, a10, a11, a12, a13, a14, a15, a16};
+  return 0;
 }
+

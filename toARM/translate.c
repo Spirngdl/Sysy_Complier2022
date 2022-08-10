@@ -2583,7 +2583,7 @@ armcode *translatearm(Blocks *blocks)
 
                         if(check_imme(p->opn1.const_int) == 0)
                         {
-                            movnode = create_movnode(R2,IMME,p->opn1.const_int);
+                            movnode = create_movnode(R2,IMME,p->opn1.const_int*4);
                             armlink_insert(newnode,movnode);
                         }
                         else
@@ -2592,7 +2592,7 @@ armcode *translatearm(Blocks *blocks)
                             ldrnode->op = LDR;
                             ldrnode->result.value = R2;
                             ldrnode->oper1.type = ILIMME;
-                            ldrnode->oper1.value = p->opn1.const_int;
+                            ldrnode->oper1.value = p->opn1.const_int*4;
                             armlink_insert(newnode,ldrnode);
                         }
 
@@ -2640,7 +2640,7 @@ armcode *translatearm(Blocks *blocks)
 
                         if(check_imme(p->opn1.const_int) == 0)
                         {
-                            movnode = create_movnode(R2,IMME,p->opn1.const_int);
+                            movnode = create_movnode(R2,IMME,p->opn1.const_int*4);
                             armlink_insert(newnode,movnode);
                         }
                         else
@@ -2649,7 +2649,7 @@ armcode *translatearm(Blocks *blocks)
                             ldrnode->op = LDR;
                             ldrnode->result.value = R2;
                             ldrnode->oper1.type = ILIMME;
-                            ldrnode->oper1.value = p->opn1.const_int;
+                            ldrnode->oper1.value = p->opn1.const_int*4;
                             armlink_insert(newnode,ldrnode);
                         }
 

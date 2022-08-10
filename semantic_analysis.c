@@ -361,7 +361,7 @@ struct codenode *arrayinit_bracker_part(struct node *T, int brace_num, int *arra
 
                 if (initarray->kind == ID) //如果是变量，考虑查找值,如果是全局的话可以直接拿到对应的值
                 {
-                    int place = searchSymbolTable(T->type_id);
+                    int place = searchSymbolTable(initarray->type_id);
                     if (place != -1 && symbolTable.symbols[place].flag == CONST_VAR) //找到了变量 且是CONST
                     {
                         //直接取值
@@ -371,7 +371,7 @@ struct codenode *arrayinit_bracker_part(struct node *T, int brace_num, int *arra
                     else //
                     {
                         opn2.kind = ID;
-                        strcpy(opn2.id, initarray->type_id);
+                        strcpy(opn2.id, symbolTable.symbols[place].alias);
                     }
                 }
                 else if (initarray->kind == EXP_ARRAY) //不处理了直接返回ARRAY_ASSIGN
