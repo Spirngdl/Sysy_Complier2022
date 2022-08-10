@@ -2716,8 +2716,17 @@ armcode *translatearm(Blocks *blocks)
 
                                 // addnode = create_addnode(rn0,REG,rn0,IMME,p->opn1.const_int*4,NUL,0);     //首址加上偏移
                                 // armlink_insert(newnode,addnode);
-
-                                init_strnode(newnode,R_op2,rn0,p->opn1.const_int*4,immeindex);
+                                if(p->opn1.const_int < 1024)
+                                {
+                                    init_strnode(newnode,R_op2,rn0,p->opn1.const_int*4,immeindex);
+                                }
+                                else
+                                {
+                                    R_op1 = alloc_myreg();
+                                    movnode = create_movnode(R_op1,IMME,p->opn1.const_int*4);
+                                    armlink_insert(newnode,movnode);
+                                    init_strnode(newnode,R_op2,rn0,R_op1,regindex);
+                                }
                             }
                             else if (p->opn2.kind == ID)
                             {
@@ -2727,7 +2736,18 @@ armcode *translatearm(Blocks *blocks)
                                 rn2 = search_var(funcname, p->opn2.id);
                                 if (rn2 >= 0)
                                 {
-                                    init_strnode(newnode,rn2,rn0,p->opn1.const_int*4,immeindex);
+                                    // init_strnode(newnode,rn2,rn0,p->opn1.const_int*4,immeindex);
+                                    if(p->opn1.const_int < 1024)
+                                    {
+                                        init_strnode(newnode,rn2,rn0,p->opn1.const_int*4,immeindex);
+                                    }
+                                    else
+                                    {
+                                        R_op1 = alloc_myreg();
+                                        movnode = create_movnode(R_op1,IMME,p->opn1.const_int*4);
+                                        armlink_insert(newnode,movnode);
+                                        init_strnode(newnode,rn2,rn0,R_op1,regindex);
+                                    }
                                 }
                                 else if (rn2 == -1)
                                 {
@@ -2737,7 +2757,18 @@ armcode *translatearm(Blocks *blocks)
                                     ldrnode = create_ldrnode(R_op2, NULL, R13, vartbl->table[vartable_index].index);
                                     armlink_insert(newnode, ldrnode);
 
-                                    init_strnode(newnode,R_op2,rn0,p->opn1.const_int*4,immeindex);
+                                    // init_strnode(newnode,R_op2,rn0,p->opn1.const_int*4,immeindex);
+                                    if(p->opn1.const_int < 1024)
+                                    {
+                                        init_strnode(newnode,R_op2,rn0,p->opn1.const_int*4,immeindex);
+                                    }
+                                    else
+                                    {
+                                        R_op1 = alloc_myreg();
+                                        movnode = create_movnode(R_op1,IMME,p->opn1.const_int*4);
+                                        armlink_insert(newnode,movnode);
+                                        init_strnode(newnode,R_op2,rn0,R_op1,regindex);
+                                    }
                                 }
                                 else if (rn2 == -2)
                                 {
@@ -2748,7 +2779,18 @@ armcode *translatearm(Blocks *blocks)
                                     ldrnode = create_ldrnode(R_op2, NULL, R_op2, 0);
                                     armlink_insert(newnode, ldrnode);
 
-                                    init_strnode(newnode,R_op2,rn0,p->opn1.const_int*4,immeindex);
+                                    // init_strnode(newnode,R_op2,rn0,p->opn1.const_int*4,immeindex);
+                                    if(p->opn1.const_int < 1024)
+                                    {
+                                        init_strnode(newnode,R_op2,rn0,p->opn1.const_int*4,immeindex);
+                                    }
+                                    else
+                                    {
+                                        R_op1 = alloc_myreg();
+                                        movnode = create_movnode(R_op1,IMME,p->opn1.const_int*4);
+                                        armlink_insert(newnode,movnode);
+                                        init_strnode(newnode,R_op2,rn0,R_op1,regindex);
+                                    }
                                 }
                                 else
                                 {
@@ -3003,7 +3045,37 @@ armcode *translatearm(Blocks *blocks)
                                 // addnode = create_addnode(R_res,REG,R_res,IMME,p->opn1.const_int*4,NUL,0);     //计算出相当于SP的偏移
                                 // armlink_insert(newnode,addnode);
 
-                                init_strnode(newnode,R_op2,R_res,p->opn1.const_int*4,immeindex);
+                                // init_strnode(newnode,R_op2,R_res,p->opn1.const_int*4,immeindex);
+                                if(p->opn1.const_int < 1024)
+                                {
+                                    init_strnode(newnode,R_op2,R_res,p->opn1.const_int*4,immeindex);
+                                }
+                                else
+                                {
+                                    R_op1 = alloc_myreg();
+                                    if(R_op1 != -1)
+                                    {
+                                        movnode = create_movnode(R_op1,IMME,p->opn1.const_int*4);
+                                        armlink_insert(newnode,movnode);
+                                        init_strnode(newnode,R_op2,R_res,R_op1,regindex);
+                                    }
+                                    else
+                                    {
+                                        reg[0] = get_other_reg(rn0, rn2);
+
+                                        snode = mul_reg_node(STMFD, R13, reg, 1);
+                                        armlink_insert(newnode, snode);
+
+                                        movnode = create_movnode(reg[0],IMME,p->opn1.const_int*4);
+                                        armlink_insert(newnode,movnode);
+                                        init_strnode(newnode,R_op2,R_res,reg[0],regindex);
+
+                                        ldmnode = mul_reg_node(LDMFD, R13, reg, 1);
+                                        q->next = ldmnode;
+                                        ldmnode->pre = q;
+                                        q = ldmnode;
+                                    }
+                                }
                                
                             }
                             else if (p->opn2.kind == ID)
@@ -3014,7 +3086,37 @@ armcode *translatearm(Blocks *blocks)
                                 rn2 = search_var(funcname, p->opn2.id);
                                 if (rn2 >= 0)
                                 {
-                                    init_strnode(newnode,rn2,R_res,p->opn1.const_int*4,immeindex);
+                                    // init_strnode(newnode,rn2,R_res,p->opn1.const_int*4,immeindex);
+                                    if(p->opn1.const_int < 1024)
+                                    {
+                                        init_strnode(newnode,rn2,R_res,p->opn1.const_int*4,immeindex);
+                                    }
+                                    else
+                                    {
+                                        R_op1 = alloc_myreg();
+                                        if(R_op1 != -1)
+                                        {
+                                            movnode = create_movnode(R_op1,IMME,p->opn1.const_int*4);
+                                            armlink_insert(newnode,movnode);
+                                            init_strnode(newnode,rn2,R_res,R_op1,regindex);
+                                        }
+                                        else
+                                        {
+                                            reg[0] = get_other_reg(rn0, rn2);
+
+                                            snode = mul_reg_node(STMFD, R13, reg, 1);
+                                            armlink_insert(newnode, snode);
+
+                                            movnode = create_movnode(reg[0],IMME,p->opn1.const_int*4);
+                                            armlink_insert(newnode,movnode);
+                                            init_strnode(newnode,rn2,R_res,reg[0],regindex);
+
+                                            ldmnode = mul_reg_node(LDMFD, R13, reg, 1);
+                                            q->next = ldmnode;
+                                            ldmnode->pre = q;
+                                            q = ldmnode;
+                                        }
+                                    }
                                 }
                                 else if (rn2 == -1)
                                 {
@@ -3024,7 +3126,37 @@ armcode *translatearm(Blocks *blocks)
                                     ldrnode = create_ldrnode(R_op2, NULL, R13, vartbl->table[vartable_index].index);
                                     armlink_insert(newnode, ldrnode);
 
-                                    init_strnode(newnode,R_op2,R_res,p->opn1.const_int*4,immeindex);
+                                    // init_strnode(newnode,R_op2,R_res,p->opn1.const_int*4,immeindex);
+                                    if(p->opn1.const_int < 1024)
+                                    {
+                                        init_strnode(newnode,R_op2,R_res,p->opn1.const_int*4,immeindex);
+                                    }
+                                    else
+                                    {
+                                        R_op1 = alloc_myreg();
+                                        if(R_op1 != -1)
+                                        {
+                                            movnode = create_movnode(R_op1,IMME,p->opn1.const_int*4);
+                                            armlink_insert(newnode,movnode);
+                                            init_strnode(newnode,R_op2,R_res,R_op1,regindex);
+                                        }
+                                        else
+                                        {
+                                            reg[0] = get_other_reg(rn0, rn2);
+
+                                            snode = mul_reg_node(STMFD, R13, reg, 1);
+                                            armlink_insert(newnode, snode);
+
+                                            movnode = create_movnode(reg[0],IMME,p->opn1.const_int*4);
+                                            armlink_insert(newnode,movnode);
+                                            init_strnode(newnode,R_op2,R_res,reg[0],regindex);
+
+                                            ldmnode = mul_reg_node(LDMFD, R13, reg, 1);
+                                            q->next = ldmnode;
+                                            ldmnode->pre = q;
+                                            q = ldmnode;
+                                        }
+                                    }
                                 }
                                 else if (rn2 == -2)
                                 {
@@ -3035,7 +3167,37 @@ armcode *translatearm(Blocks *blocks)
                                     ldrnode = create_ldrnode(R_op2, NULL, R_op2, 0);
                                     armlink_insert(newnode, ldrnode);
 
-                                    init_strnode(newnode,R_op2,R_res,p->opn1.const_int*4,immeindex);
+                                    // init_strnode(newnode,R_op2,R_res,p->opn1.const_int*4,immeindex);
+                                    if(p->opn1.const_int < 1024)
+                                    {
+                                        init_strnode(newnode,R_op2,R_res,p->opn1.const_int*4,immeindex);
+                                    }
+                                    else
+                                    {
+                                        R_op1 = alloc_myreg();
+                                        if(R_op1 != -1)
+                                        {
+                                            movnode = create_movnode(R_op1,IMME,p->opn1.const_int*4);
+                                            armlink_insert(newnode,movnode);
+                                            init_strnode(newnode,R_op2,R_res,R_op1,regindex);
+                                        }
+                                        else
+                                        {
+                                            reg[0] = get_other_reg(rn0, rn2);
+
+                                            snode = mul_reg_node(STMFD, R13, reg, 1);
+                                            armlink_insert(newnode, snode);
+
+                                            movnode = create_movnode(reg[0],IMME,p->opn1.const_int*4);
+                                            armlink_insert(newnode,movnode);
+                                            init_strnode(newnode,R_op2,R_res,reg[0],regindex);
+
+                                            ldmnode = mul_reg_node(LDMFD, R13, reg, 1);
+                                            q->next = ldmnode;
+                                            ldmnode->pre = q;
+                                            q = ldmnode;
+                                        }
+                                    }
                                 }
                                 else
                                 {
@@ -3465,7 +3627,37 @@ armcode *translatearm(Blocks *blocks)
                                 // addnode = create_addnode(R_res,REG,R_res,IMME,p->opn1.const_int*4,NUL,0);     //计算出相当于SP的偏移
                                 // armlink_insert(newnode,addnode);
 
-                                init_strnode(newnode,R_op2,R_res,p->opn1.const_int*4,immeindex);
+                                // init_strnode(newnode,R_op2,R_res,p->opn1.const_int*4,immeindex);
+                                if(p->opn1.const_int < 1024)
+                                {
+                                    init_strnode(newnode,R_op2,R_res,p->opn1.const_int*4,immeindex);
+                                }
+                                else
+                                {
+                                    R_op1 = alloc_myreg();
+                                    if(R_op1 != -1)
+                                    {
+                                        movnode = create_movnode(R_op1,IMME,p->opn1.const_int*4);
+                                        armlink_insert(newnode,movnode);
+                                        init_strnode(newnode,R_op2,R_res,R_op1,regindex);
+                                    }
+                                    else
+                                    {
+                                        reg[0] = get_other_reg(rn0, rn2);
+
+                                        snode = mul_reg_node(STMFD, R13, reg, 1);
+                                        armlink_insert(newnode, snode);
+
+                                        movnode = create_movnode(reg[0],IMME,p->opn1.const_int*4);
+                                        armlink_insert(newnode,movnode);
+                                        init_strnode(newnode,R_op2,R_res,reg[0],regindex);
+
+                                        ldmnode = mul_reg_node(LDMFD, R13, reg, 1);
+                                        q->next = ldmnode;
+                                        ldmnode->pre = q;
+                                        q = ldmnode;
+                                    }
+                                }
                                
                             }
                             else if (p->opn2.kind == ID)
@@ -3476,7 +3668,37 @@ armcode *translatearm(Blocks *blocks)
                                 rn2 = search_var(funcname, p->opn2.id);
                                 if (rn2 >= 0)
                                 {
-                                    init_strnode(newnode,rn2,R_res,p->opn1.const_int*4,immeindex);
+                                    // init_strnode(newnode,rn2,R_res,p->opn1.const_int*4,immeindex);
+                                    if(p->opn1.const_int < 1024)
+                                    {
+                                        init_strnode(newnode,rn2,R_res,p->opn1.const_int*4,immeindex);
+                                    }
+                                    else
+                                    {
+                                        R_op1 = alloc_myreg();
+                                        if(R_op1 != -1)
+                                        {
+                                            movnode = create_movnode(R_op1,IMME,p->opn1.const_int*4);
+                                            armlink_insert(newnode,movnode);
+                                            init_strnode(newnode,rn2,R_res,R_op1,regindex);
+                                        }
+                                        else
+                                        {
+                                            reg[0] = get_other_reg(rn0, rn2);
+
+                                            snode = mul_reg_node(STMFD, R13, reg, 1);
+                                            armlink_insert(newnode, snode);
+
+                                            movnode = create_movnode(reg[0],IMME,p->opn1.const_int*4);
+                                            armlink_insert(newnode,movnode);
+                                            init_strnode(newnode,rn2,R_res,reg[0],regindex);
+
+                                            ldmnode = mul_reg_node(LDMFD, R13, reg, 1);
+                                            q->next = ldmnode;
+                                            ldmnode->pre = q;
+                                            q = ldmnode;
+                                        }
+                                    }
                                 }
                                 else if (rn2 == -1)
                                 {
@@ -3486,7 +3708,37 @@ armcode *translatearm(Blocks *blocks)
                                     ldrnode = create_ldrnode(R_op2, NULL, R13, vartbl->table[vartable_index].index);
                                     armlink_insert(newnode, ldrnode);
 
-                                    init_strnode(newnode,R_op2,R_res,p->opn1.const_int*4,immeindex);
+                                    // init_strnode(newnode,R_op2,R_res,p->opn1.const_int*4,immeindex);
+                                    if(p->opn1.const_int < 1024)
+                                    {
+                                        init_strnode(newnode,R_op2,R_res,p->opn1.const_int*4,immeindex);
+                                    }
+                                    else
+                                    {
+                                        R_op1 = alloc_myreg();
+                                        if(R_op1 != -1)
+                                        {
+                                            movnode = create_movnode(R_op1,IMME,p->opn1.const_int*4);
+                                            armlink_insert(newnode,movnode);
+                                            init_strnode(newnode,R_op2,R_res,R_op1,regindex);
+                                        }
+                                        else
+                                        {
+                                            reg[0] = get_other_reg(rn0, rn2);
+
+                                            snode = mul_reg_node(STMFD, R13, reg, 1);
+                                            armlink_insert(newnode, snode);
+
+                                            movnode = create_movnode(reg[0],IMME,p->opn1.const_int*4);
+                                            armlink_insert(newnode,movnode);
+                                            init_strnode(newnode,R_op2,R_res,reg[0],regindex);
+
+                                            ldmnode = mul_reg_node(LDMFD, R13, reg, 1);
+                                            q->next = ldmnode;
+                                            ldmnode->pre = q;
+                                            q = ldmnode;
+                                        }
+                                    }
                                 }
                                 else if (rn2 == -2)
                                 {
@@ -3497,7 +3749,37 @@ armcode *translatearm(Blocks *blocks)
                                     ldrnode = create_ldrnode(R_op2, NULL, R_op2, 0);
                                     armlink_insert(newnode, ldrnode);
 
-                                    init_strnode(newnode,R_op2,R_res,p->opn1.const_int*4,immeindex);
+                                    // init_strnode(newnode,R_op2,R_res,p->opn1.const_int*4,immeindex);
+                                    if(p->opn1.const_int < 1024)
+                                    {
+                                        init_strnode(newnode,R_op2,R_res,p->opn1.const_int*4,immeindex);
+                                    }
+                                    else
+                                    {
+                                        R_op1 = alloc_myreg();
+                                        if(R_op1 != -1)
+                                        {
+                                            movnode = create_movnode(R_op1,IMME,p->opn1.const_int*4);
+                                            armlink_insert(newnode,movnode);
+                                            init_strnode(newnode,R_op2,R_res,R_op1,regindex);
+                                        }
+                                        else
+                                        {
+                                            reg[0] = get_other_reg(rn0, rn2);
+
+                                            snode = mul_reg_node(STMFD, R13, reg, 1);
+                                            armlink_insert(newnode, snode);
+
+                                            movnode = create_movnode(reg[0],IMME,p->opn1.const_int*4);
+                                            armlink_insert(newnode,movnode);
+                                            init_strnode(newnode,R_op2,R_res,reg[0],regindex);
+
+                                            ldmnode = mul_reg_node(LDMFD, R13, reg, 1);
+                                            q->next = ldmnode;
+                                            ldmnode->pre = q;
+                                            q = ldmnode;
+                                        }
+                                    }
                                 }
                                 else
                                 {
@@ -3927,7 +4209,37 @@ armcode *translatearm(Blocks *blocks)
                                 // addnode = create_addnode(rn1,REG,rn1,IMME,p->opn2.const_int*4,NUL,0);
                                 // armlink_insert(newnode,addnode);
 
-                                init_ldrnode(newnode,rn0,NULL,rn1,p->opn2.const_int*4,immeindex);
+                                // init_ldrnode(newnode,rn0,NULL,rn1,p->opn2.const_int*4,immeindex);
+                                if(p->opn2.const_int < 1024)
+                                {
+                                    init_ldrnode(newnode,rn0,NULL,rn1,p->opn2.const_int*4,immeindex);
+                                }
+                                else
+                                {
+                                    R_op2 = alloc_myreg();
+                                    if(R_op2 != -1)
+                                    {
+                                        movnode = create_movnode(R_op2,IMME,p->opn2.const_int*4);
+                                        armlink_insert(newnode,movnode);
+                                        init_ldrnode(newnode,rn0,NULL,rn1,R_op2,regindex);
+                                    }
+                                    else
+                                    {
+                                        reg[0] = get_other_reg(rn0, rn2);
+
+                                        snode = mul_reg_node(STMFD, R13, reg, 1);
+                                        armlink_insert(newnode, snode);
+
+                                        movnode = create_movnode(reg[0],IMME,p->opn2.const_int*4);
+                                        armlink_insert(newnode,movnode);
+                                        init_ldrnode(newnode,rn0,NULL,rn1,reg[0],regindex);
+
+                                        ldmnode = mul_reg_node(LDMFD, R13, reg, 1);
+                                        q->next = ldmnode;
+                                        ldmnode->pre = q;
+                                        q = ldmnode;
+                                    }
+                                }
 
                                 // newnode->op = LDR;
                                 // newnode->result.value = rn0;
@@ -4013,7 +4325,37 @@ armcode *translatearm(Blocks *blocks)
                                 // addnode = create_addnode(R_op1,REG,R_op1,IMME,p->opn2.const_int*4,NUL,0);
                                 // armlink_insert(newnode,addnode);
 
-                                init_ldrnode(newnode,rn0,NULL,R_op1,p->opn2.const_int*4,immeindex);
+                                // init_ldrnode(newnode,rn0,NULL,R_op1,p->opn2.const_int*4,immeindex);
+                                if(p->opn2.const_int < 1024)
+                                {
+                                    init_ldrnode(newnode,rn0,NULL,R_op1,p->opn2.const_int*4,immeindex);
+                                }
+                                else
+                                {
+                                    R_op2 = alloc_myreg();
+                                    if(R_op2 != -1)
+                                    {
+                                        movnode = create_movnode(R_op2,IMME,p->opn2.const_int*4);
+                                        armlink_insert(newnode,movnode);
+                                        init_ldrnode(newnode,rn0,NULL,R_op1,R_op2,regindex);
+                                    }
+                                    else
+                                    {
+                                        reg[0] = get_other_reg(rn0, rn2);
+
+                                        snode = mul_reg_node(STMFD, R13, reg, 1);
+                                        armlink_insert(newnode, snode);
+
+                                        movnode = create_movnode(reg[0],IMME,p->opn2.const_int*4);
+                                        armlink_insert(newnode,movnode);
+                                        init_ldrnode(newnode,rn0,NULL,R_op1,reg[0],regindex);
+
+                                        ldmnode = mul_reg_node(LDMFD, R13, reg, 1);
+                                        q->next = ldmnode;
+                                        ldmnode->pre = q;
+                                        q = ldmnode;
+                                    }
+                                }
 
                                 // newnode->op = LDR;
                                 // newnode->result.value = rn0;
@@ -4086,7 +4428,38 @@ armcode *translatearm(Blocks *blocks)
                                 // addnode = create_addnode(R_op1,REG,R_op1,IMME,p->opn2.const_int*4,NUL,0);
                                 // armlink_insert(newnode,addnode);
 
-                                init_ldrnode(newnode,rn0,NULL,R_op1,p->opn2.const_int*4,immeindex);
+                                // init_ldrnode(newnode,rn0,NULL,R_op1,p->opn2.const_int*4,immeindex);
+
+                                if(p->opn2.const_int < 1024)
+                                {
+                                    init_ldrnode(newnode,rn0,NULL,R_op1,p->opn2.const_int*4,immeindex);
+                                }
+                                else
+                                {
+                                    R_op2 = alloc_myreg();
+                                    if(R_op2 != -1)
+                                    {
+                                        movnode = create_movnode(R_op2,IMME,p->opn2.const_int*4);
+                                        armlink_insert(newnode,movnode);
+                                        init_ldrnode(newnode,rn0,NULL,R_op1,R_op2,regindex);
+                                    }
+                                    else
+                                    {
+                                        reg[0] = get_other_reg(rn0, rn2);
+
+                                        snode = mul_reg_node(STMFD, R13, reg, 1);
+                                        armlink_insert(newnode, snode);
+
+                                        movnode = create_movnode(reg[0],IMME,p->opn2.const_int*4);
+                                        armlink_insert(newnode,movnode);
+                                        init_ldrnode(newnode,rn0,NULL,R_op1,reg[0],regindex);
+
+                                        ldmnode = mul_reg_node(LDMFD, R13, reg, 1);
+                                        q->next = ldmnode;
+                                        ldmnode->pre = q;
+                                        q = ldmnode;
+                                    }
+                                }
 
                                 // newnode->op = LDR;
                                 // newnode->result.value = rn0;
@@ -4163,7 +4536,37 @@ armcode *translatearm(Blocks *blocks)
                                 // addnode = create_addnode(rn1,REG,rn1,IMME,p->opn2.const_int*4,NUL,0);
                                 // armlink_insert(newnode,addnode);
 
-                                init_ldrnode(newnode,R_res,NULL,rn1,p->opn2.const_int*4,immeindex);
+                                // init_ldrnode(newnode,R_res,NULL,rn1,p->opn2.const_int*4,immeindex);
+                                if(p->opn2.const_int < 1024)
+                                {
+                                    init_ldrnode(newnode,R_res,NULL,rn1,p->opn2.const_int*4,immeindex);
+                                }
+                                else
+                                {
+                                    R_op2 = alloc_myreg();
+                                    if(R_op2 != -1)
+                                    {
+                                        movnode = create_movnode(R_op2,IMME,p->opn2.const_int*4);
+                                        armlink_insert(newnode,movnode);
+                                        init_ldrnode(newnode,R_res,NULL,rn1,R_op2,regindex);
+                                    }
+                                    else
+                                    {
+                                        reg[0] = get_other_reg(rn0, rn2);
+
+                                        snode = mul_reg_node(STMFD, R13, reg, 1);
+                                        armlink_insert(newnode, snode);
+
+                                        movnode = create_movnode(reg[0],IMME,p->opn2.const_int*4);
+                                        armlink_insert(newnode,movnode);
+                                        init_ldrnode(newnode,R_res,NULL,rn1,reg[0],regindex);
+
+                                        ldmnode = mul_reg_node(LDMFD, R13, reg, 1);
+                                        q->next = ldmnode;
+                                        ldmnode->pre = q;
+                                        q = ldmnode;
+                                    }
+                                }
 
                                 // newnode->op = LDR;
                                 // newnode->result.value = rn0;
@@ -4236,7 +4639,37 @@ armcode *translatearm(Blocks *blocks)
                                 // armlink_insert(newnode,addnode);
 
                                 // init_ldrnode(newnode,R_res,NULL,R13,R_op1,regindex);
-                                init_ldrnode(newnode,R_res,NULL,R_op1,p->opn2.const_int*4,immeindex);
+                                // init_ldrnode(newnode,R_res,NULL,R_op1,p->opn2.const_int*4,immeindex);
+                                if(p->opn2.const_int < 1024)
+                                {
+                                    init_ldrnode(newnode,R_res,NULL,R_op1,p->opn2.const_int*4,immeindex);
+                                }
+                                else
+                                {
+                                    R_op2 = alloc_myreg();
+                                    if(R_op2 != -1)
+                                    {
+                                        movnode = create_movnode(R_op2,IMME,p->opn2.const_int*4);
+                                        armlink_insert(newnode,movnode);
+                                        init_ldrnode(newnode,R_res,NULL,R_op1,R_op2,regindex);
+                                    }
+                                    else
+                                    {
+                                        reg[0] = get_other_reg(rn0, rn2);
+
+                                        snode = mul_reg_node(STMFD, R13, reg, 1);
+                                        armlink_insert(newnode, snode);
+
+                                        movnode = create_movnode(reg[0],IMME,p->opn2.const_int*4);
+                                        armlink_insert(newnode,movnode);
+                                        init_ldrnode(newnode,R_res,NULL,R_op1,reg[0],regindex);
+
+                                        ldmnode = mul_reg_node(LDMFD, R13, reg, 1);
+                                        q->next = ldmnode;
+                                        ldmnode->pre = q;
+                                        q = ldmnode;
+                                    }
+                                }
                                 // newnode->op = LDR;
                                 // newnode->result.value = R_res;
                                 // newnode->oper1.type = MEM;
@@ -4367,7 +4800,37 @@ armcode *translatearm(Blocks *blocks)
                                 // armlink_insert(newnode,addnode);
 
                                 // init_ldrnode(newnode,R_res,NULL,R13,R_op1,regindex);
-                                init_ldrnode(newnode,R_res,NULL,R_op1,p->opn2.const_int*4,immeindex);
+                                // init_ldrnode(newnode,R_res,NULL,R_op1,p->opn2.const_int*4,immeindex);
+                                if(p->opn2.const_int < 1024)
+                                {
+                                    init_ldrnode(newnode,R_res,NULL,R_op1,p->opn2.const_int*4,immeindex);
+                                }
+                                else
+                                {
+                                    R_op2 = alloc_myreg();
+                                    if(R_op2 != -1)
+                                    {
+                                        movnode = create_movnode(R_op2,IMME,p->opn2.const_int*4);
+                                        armlink_insert(newnode,movnode);
+                                        init_ldrnode(newnode,R_res,NULL,R_op1,R_op2,regindex);
+                                    }
+                                    else
+                                    {
+                                        reg[0] = get_other_reg(rn0, rn2);
+
+                                        snode = mul_reg_node(STMFD, R13, reg, 1);
+                                        armlink_insert(newnode, snode);
+
+                                        movnode = create_movnode(reg[0],IMME,p->opn2.const_int*4);
+                                        armlink_insert(newnode,movnode);
+                                        init_ldrnode(newnode,R_res,NULL,R_op1,reg[0],regindex);
+
+                                        ldmnode = mul_reg_node(LDMFD, R13, reg, 1);
+                                        q->next = ldmnode;
+                                        ldmnode->pre = q;
+                                        q = ldmnode;
+                                    }
+                                }
                                 // newnode->op = LDR;
                                 // newnode->result.value = R_res;
                                 // newnode->oper1.type = MEM;
@@ -4507,8 +4970,37 @@ armcode *translatearm(Blocks *blocks)
                                 // addnode = create_addnode(rn1,REG,rn1,IMME,p->opn2.const_int*4,NUL,0);
                                 // armlink_insert(newnode,addnode);
 
-                                init_ldrnode(newnode,R_res,NULL,rn1,p->opn2.const_int*4,immeindex);
+                                // init_ldrnode(newnode,R_res,NULL,rn1,p->opn2.const_int*4,immeindex);
+                                if(p->opn2.const_int < 1024)
+                                {
+                                    init_ldrnode(newnode,R_res,NULL,rn1,p->opn2.const_int*4,immeindex);
+                                }
+                                else
+                                {
+                                    R_op2 = alloc_myreg();
+                                    if(R_op2 != -1)
+                                    {
+                                        movnode = create_movnode(R_op2,IMME,p->opn2.const_int*4);
+                                        armlink_insert(newnode,movnode);
+                                        init_ldrnode(newnode,R_res,NULL,rn1,R_op2,regindex);
+                                    }
+                                    else
+                                    {
+                                        reg[0] = get_other_reg(rn0, rn2);
 
+                                        snode = mul_reg_node(STMFD, R13, reg, 1);
+                                        armlink_insert(newnode, snode);
+
+                                        movnode = create_movnode(reg[0],IMME,p->opn2.const_int*4);
+                                        armlink_insert(newnode,movnode);
+                                        init_ldrnode(newnode,R_res,NULL,rn1,reg[0],regindex);
+
+                                        ldmnode = mul_reg_node(LDMFD, R13, reg, 1);
+                                        q->next = ldmnode;
+                                        ldmnode->pre = q;
+                                        q = ldmnode;
+                                    }
+                                }
                                 // newnode->op = LDR;
                                 // newnode->result.value = rn0;
                                 // newnode->oper1.type = MEM;
@@ -4580,7 +5072,37 @@ armcode *translatearm(Blocks *blocks)
                                 // armlink_insert(newnode,addnode);
 
                                 // init_ldrnode(newnode,R_res,NULL,R13,R_op1,regindex);
-                                init_ldrnode(newnode,R_res,NULL,R_op1,p->opn2.const_int*4,immeindex);
+                                // init_ldrnode(newnode,R_res,NULL,R_op1,p->opn2.const_int*4,immeindex);
+                                if(p->opn2.const_int < 1024)
+                                {
+                                    init_ldrnode(newnode,R_res,NULL,R_op1,p->opn2.const_int*4,immeindex);
+                                }
+                                else
+                                {
+                                    R_op2 = alloc_myreg();
+                                    if(R_op2 != -1)
+                                    {
+                                        movnode = create_movnode(R_op2,IMME,p->opn2.const_int*4);
+                                        armlink_insert(newnode,movnode);
+                                        init_ldrnode(newnode,R_res,NULL,R_op1,R_op2,regindex);
+                                    }
+                                    else
+                                    {
+                                        reg[0] = get_other_reg(rn0, rn2);
+
+                                        snode = mul_reg_node(STMFD, R13, reg, 1);
+                                        armlink_insert(newnode, snode);
+
+                                        movnode = create_movnode(reg[0],IMME,p->opn2.const_int*4);
+                                        armlink_insert(newnode,movnode);
+                                        init_ldrnode(newnode,R_res,NULL,R_op1,reg[0],regindex);
+
+                                        ldmnode = mul_reg_node(LDMFD, R13, reg, 1);
+                                        q->next = ldmnode;
+                                        ldmnode->pre = q;
+                                        q = ldmnode;
+                                    }
+                                }
                                 // newnode->op = LDR;
                                 // newnode->result.value = R_res;
                                 // newnode->oper1.type = MEM;
@@ -4711,7 +5233,37 @@ armcode *translatearm(Blocks *blocks)
                                 // armlink_insert(newnode,addnode);
 
                                 // init_ldrnode(newnode,R_res,NULL,R13,R_op1,regindex);
-                                init_ldrnode(newnode,R_res,NULL,R_op1,p->opn2.const_int*4,immeindex);
+                                // init_ldrnode(newnode,R_res,NULL,R_op1,p->opn2.const_int*4,immeindex);
+                                if(p->opn2.const_int < 1024)
+                                {
+                                    init_ldrnode(newnode,R_res,NULL,R_op1,p->opn2.const_int*4,immeindex);
+                                }
+                                else
+                                {
+                                    R_op2 = alloc_myreg();
+                                    if(R_op2 != -1)
+                                    {
+                                        movnode = create_movnode(R_op2,IMME,p->opn2.const_int*4);
+                                        armlink_insert(newnode,movnode);
+                                        init_ldrnode(newnode,R_res,NULL,R_op1,R_op2,regindex);
+                                    }
+                                    else
+                                    {
+                                        reg[0] = get_other_reg(rn0, rn2);
+
+                                        snode = mul_reg_node(STMFD, R13, reg, 1);
+                                        armlink_insert(newnode, snode);
+
+                                        movnode = create_movnode(reg[0],IMME,p->opn2.const_int*4);
+                                        armlink_insert(newnode,movnode);
+                                        init_ldrnode(newnode,R_res,NULL,R_op1,reg[0],regindex);
+
+                                        ldmnode = mul_reg_node(LDMFD, R13, reg, 1);
+                                        q->next = ldmnode;
+                                        ldmnode->pre = q;
+                                        q = ldmnode;
+                                    }
+                                }
                                 // newnode->op = LDR;
                                 // newnode->result.value = R_res;
                                 // newnode->oper1.type = MEM;
