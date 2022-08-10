@@ -2471,8 +2471,24 @@ armcode *translatearm(Blocks *blocks)
                     addnode->result.value = R13;
                     addnode->oper1.type = REG;
                     addnode->oper1.value = R13;
-                    addnode->oper2.type = IMME;
-                    addnode->oper2.value = func_enter_subindex;
+                    if(check_imme(func_enter_subindex) == 0)
+                    {
+                        addnode->oper2.type = IMME;
+                        addnode->oper2.value = func_enter_subindex;
+                    }
+                    else
+                    {
+                        R_res = alloc_myreg();
+                        ldrnode = initnewnode();
+                        ldrnode->op = LDR;
+                        ldrnode->result.value = R_res;
+                        ldrnode->oper1.type = ILIMME;
+                        ldrnode->oper1.value = func_enter_subindex;
+                        armlink_insert(newnode,ldrnode);
+
+                        addnode->oper2.type = REG;
+                        addnode->oper2.value = R_res;
+                    }
                     armlink_insert(q, addnode);
                     vartable_update_all(vartbl, -func_enter_subindex);
 
