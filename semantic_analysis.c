@@ -132,7 +132,7 @@ void array_decl(struct node *T)
 {
     int rtn, num, arr_rtn;
     int array_dimension = astsymbol.symbols[T->place].array_dimension; //维度大小
-    int length[10];
+    int length[15];
     char *Alias = newAlias();
     memcpy(length, astsymbol.symbols[T->place].length, array_dimension * sizeof(int)); //数组复制
     rtn = fillSymbolTable(T->type_id, Alias, LEV, T->type, ARRAY);                     //符号表
@@ -467,6 +467,13 @@ struct codenode *arrayinit_bracker_part(struct node *T, int brace_num, int *arra
                     //     value->v_int = 0;
                     //     ListPushBack(value_list, value);
                     //     // push_initvalue(0, value_list);
+                    // }
+                    // for (int i = *array_offset; i < final_offset; i++)
+                    // {
+                    //     opn2.kind = LITERAL;
+                    //     opn2.const_int = 0;
+                    //     opn1.const_int = i;
+                    //     tcode = merge(2, tcode, genIR(ARRAY_ASSIGN, opn1, opn2, result));
                     // }
                     (*array_offset) = final_offset;
                 }
@@ -1052,7 +1059,7 @@ void exp_array(struct node *T)
         T->type = symbolTable.symbols[rtn].type;
     }
     //处理下标
-    int width[10];
+    int width[15];
     width[symbolTable.symbols[rtn].array_dimension - 1] = 1;
     for (int i = symbolTable.symbols[rtn].array_dimension - 1; i > 0; i--)
     {
@@ -1195,6 +1202,8 @@ void boolExp(struct node *T, char *Etrue, char *Efalse) //二代
             }
             else
             {
+                //默认算TOK_INT
+                T->ptr[0]->type = TOK_INT;
                 Exp(T->ptr[0]); //处理左
                 opn1.kind = ID;
                 strcpy(opn1.id, symbolTable.symbols[T->ptr[0]->place].alias);
@@ -1206,7 +1215,8 @@ void boolExp(struct node *T, char *Etrue, char *Efalse) //二代
                 opn2.const_int = T->ptr[1]->type_int;
             }
             else
-            {
+            { //默认算TOK_INT
+                T->ptr[1]->type = TOK_INT;
                 Exp(T->ptr[1]); //处理右
                 opn2.kind = ID;
                 strcpy(opn2.id, symbolTable.symbols[T->ptr[1]->place].alias);
@@ -1467,7 +1477,7 @@ void param_array(struct node *T)
     int rtn, num;
     struct opn opn1, opn2, result;
     int array_dimension = astsymbol.symbols[T->place].array_dimension;
-    int length[10];
+    int length[15];
     length[0] = 0;
     if (array_dimension > 1)
     {

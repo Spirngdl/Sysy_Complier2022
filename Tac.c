@@ -85,6 +85,7 @@ struct codenode *genIR(int op, struct opn opn1, struct opn opn2, struct opn resu
     h->result = result;
     h->next = h->prior = h;
     h->in = h->out = 0;
+    h->UID = 0;
     return h;
 }
 //生成一条标号语句，返回头指针
@@ -490,7 +491,7 @@ int count_mask[16] = {0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4};
  */
 int check_imme(int imme)
 {
-    if(imme < 0)
+    if(imme < 0 && imme > -100)
         imme = -imme;
     int tmp;
     int count1 = 0;
@@ -545,6 +546,7 @@ int check_imme(int imme)
     }
     return 0;
 }
+
 /**
  * @brief 遍历所有基本块，遍历所有三地址代码，查看使用的立即数是否合法
  *

@@ -56,6 +56,8 @@ typedef struct DAG_
     size_t arrOptSerial;
     //函数调用顺序
     size_t callOptSerial;
+    //判断是否有ARG需要调一下三地址代码
+    bool has_arg;
 } DAG;
 
 // DAGNODE
@@ -75,7 +77,7 @@ DAGnode *findNode_OP_value(DAG *dag, int op, int l, int r, int t);             /
 DAGnode *find_value_num(DAG *dga, float value, int l, int r, int t, int kind); //通过Literal查找或 FLOAT_LITERAL
 bool isLiteralNode(DAG *dag, char *symbol);                                    //判断带有附加标识符symbol的结点是否表示一个字面常量
 DAGnode *findNode_ArrayAssign(DAG *dag, int kind, int l, int r);               //
-float getLiteral(DAG *dag, DAGnode *n);                                          //取得一个字面常量结点所表示的常量值
+float getLiteral(DAG *dag, DAGnode *n);                                        //取得一个字面常量结点所表示的常量值
 void removeSymbol(DAG *dag, char *symbol);                                     //删除DAG上所有等于target的附加标识符
 int findnode_depend_on(DAG *dag, DAGnode *n, int vector[]);                    //查找DAG上所有依赖于n的结点
 int readquad(DAG *dag, struct codenode **T);                                   //读取三地址代码
