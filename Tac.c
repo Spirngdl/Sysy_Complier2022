@@ -513,7 +513,7 @@ int check_imme(int imme)
             last = i * 4 + op_unmask[tmp];
             // printf("%d      last is %d\n", i, last);
             int dif = last - first;
-            if (dif == 8)
+            if (dif == 7)
             {
                 // the num is started from 1
                 if ((first % 2) == 0)
@@ -522,7 +522,7 @@ int check_imme(int imme)
                     return -1;
                 }
             }
-            if (dif > 8 && dif < 25)
+            if (dif > 7 && dif < 25)
             {
                 // printf("not fair!\n");
                 return -1;
