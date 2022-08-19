@@ -230,11 +230,11 @@ void add_one_point (struct var_of_RIG* list[], int** RIG, int num_reg, int num_v
             }
         }
     }
-    if (flag == 1) {
-        list[order]->reg = temp_reg;
-    } else if (flag == 0) {
+    //if (flag == 1) {
+    //    list[order]->reg = temp_reg;
+    //} else if (flag == 0) {
         list[order]->reg = -2;
-    }
+    //}
 }
 
 // 完成寄存器分配方案，并尽可能减少变量溢出
