@@ -8,6 +8,7 @@
 /*int str_exist_strs (char* str, char* strTotal[], int size) {
     int i = 0;
     for (i = 0; i < size; i++) {
+        
         if ((strTotal[i] != NULL) && (strcmp(str, strTotal[i]) == 0)) {
             return i;
         }

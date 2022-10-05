@@ -12,3 +12,4 @@ test_case.c
 tac.txt
 test_case.s
 compiler.exe
+.vscode
