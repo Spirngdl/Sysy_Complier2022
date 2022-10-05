@@ -637,10 +637,6 @@ int readquad2(DAG *dag, struct codenode *T)
     bool n2Literal = false, n3Literal = false;
     DAGnode *n1 = NULL, *n2 = NULL, *n3 = NULL;
     float val = 0, val1 = 0, val2 = 0;
-    if (T->UID == 107)
-    {
-        int ll = 10;
-    }
     if (T->opn1.kind == LITERAL)
     {
         n2Literal = true;

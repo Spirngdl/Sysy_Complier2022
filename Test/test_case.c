@@ -1,14 +1,27 @@
+int a = 7;
 
-int foo()
-{
-
-
-    int a = 3, b = 7, c = 5, d = 6, e = 1, f = 0, g = 3, h = 5,
-        i = 4, j = 2, k = 7, l = 9, m = 8, n = 1, o = 4, p = 6;
-
-    int sum1 = a + b + c + d + e + f + g + h;
-    int sum2 = i + j + k + l + m + n + o + p;
-
-    return sum1 + sum2;
+int func() {
+	int b = a;
+	int a = 1;
+	if (a == b) {
+		a = a + 1;
+		return 1;
+	}
+	else
+		return 0;
 }
 
+int main() {
+	int result = 0;
+	int i = 0;
+	while (i < 100) {
+		if (func() == 1)
+			result = result + 1;
+		i = i + 1;
+	}
+	if (result < 100)
+		putint(1);
+	else
+		putint(0);
+	return 0;
+}
