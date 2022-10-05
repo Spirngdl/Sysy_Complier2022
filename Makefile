@@ -5,7 +5,7 @@ all: calc_c.tab.c lex.yy.c ast.c
 							  Register_Allocation/graph_coloring.c Register_Allocation/liveness_analysis.c  optimize/dag.c \
 							  optimize/constant_propagation.c  optimize/Loop_opt.c \
 							  toARM/translate.c toARM/print.c toARM/vartableopt.c SomeInterface.c toARM/global_var.c\
-							  -lm
+							  -lm  
 							
 clean:
 	$(RM) *.o *.exe calc_c.tab.c lex.yy.c calc_c.tab.h calc

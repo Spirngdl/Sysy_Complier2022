@@ -1,9 +1,11 @@
 int a = 7;
 
-int func() {
+int func()
+{
 	int b = a;
 	int a = 1;
-	if (a == b) {
+	if (a == b)
+	{
 		a = a + 1;
 		return 1;
 	}
@@ -11,10 +13,12 @@ int func() {
 		return 0;
 }
 
-int main() {
+int main()
+{
 	int result = 0;
 	int i = 0;
-	while (i < 100) {
+	while (i < 100)
+	{
 		if (func() == 1)
 			result = result + 1;
 		i = i + 1;

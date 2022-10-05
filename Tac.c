@@ -467,18 +467,7 @@ void make_uid_block(Blocks *block)
         cur_blocks = cur_blocks->next;
     }
 }
-void test_array()
-{
-    List *var = symbolTable.symbols[0].value;
-    void *element;
-    var->first(var, false);
-    while (var->next(var, &element))
-    {
-        int i = (int)(long long)element;
-        printf("%d ", i);
-    }
-    printf("\n");
-}
+
 //用于判断合法立即数
 int op_mask[16] = {0, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1};
 int op_unmask[16] = {0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4};

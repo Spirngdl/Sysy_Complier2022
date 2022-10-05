@@ -1,4 +1,3 @@
-主要写一下各个文件的作用，
 
 前端中 calc_c.y，calc.l，lex.yy.c，calc_c.tab.h，calc_c.tab.c
 
